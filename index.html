@@ -790,7 +790,7 @@
 
             <div style="text-align: center; margin-top: 25px; font-size: 11px; color: var(--text-secondary);"
                 id="credits-text">
-                CA Wayspot Tools v1.5.0<br><span data-i18n="credits">จัดทำโดย CA: Community Ambassador Thailand</span>
+                CA Wayspot Tools v1.5.2<br><span data-i18n="credits">จัดทำโดย CA: Community Ambassador Thailand</span>
             </div>
 
             <div class="modal-buttons">
@@ -861,7 +861,7 @@
                 tooltipMyLocation: "ตำแหน่งของฉัน",
                 addWayspotTitle: "📍 เพิ่ม Wayspot",
                 wayspotTypeLabel: "ประเภท Wayspot",
-                optPokestop: "PokStop",
+                optPokestop: "PokéStop",
                 optGym: "Gym",
                 optCaPokestop: "CA PokéStop",
                 optCaGym: "CA Gym",
@@ -1174,7 +1174,10 @@
             const modal = overlay.querySelector('.modal');
             overlay.classList.remove('active');
             modal.classList.remove('active');
-            setTimeout(() => { overlay.style.display = 'none'; }, 300);
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                modal.scrollTop = 0;
+            }, 300);
         }
 
         // Show welcome by default (only on first visit)
@@ -1576,6 +1579,13 @@
             var newLatLng = L.latLng(lat, lng);
             createSpot(newLatLng, null, false);
             map.flyTo(newLatLng, 17);
+
+            // Clear form
+            document.getElementById('spotName').value = '';
+            document.getElementById('spotImage').value = '';
+            document.getElementById('spotLat').value = '';
+            document.getElementById('spotLng').value = '';
+            document.getElementById('spotType').value = 'pokestop';
         });
 
         window.openEditModal = function (id) {
