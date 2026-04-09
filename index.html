@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CA Wayspot Tools</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,328 +12,544 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/s2-geometry@1.2.10/src/s2geometry.js"></script>
+    <script src="https://accounts.google.com/gsi/client" onload="initGSI()" async defer></script>
     
     <style>
+        :root {
+            --bg-glass: rgba(255, 255, 255, 0.85);
+            --bg-glass-dark: rgba(240, 240, 245, 0.85);
+            --border-glass: rgba(0, 0, 0, 0.1);
+            --text-main: #1d1d1f;
+            --text-secondary: #86868b;
+            --accent-blue: #007aff;
+            --accent-red: #ff3b30;
+            --accent-green: #34c759;
+            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.08);
+            --border-radius-lg: 18px;
+            --border-radius-md: 12px;
+            --font-family: "Noto Sans Thai", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --body-bg: #f5f5f7;
+            --input-bg: rgba(255,255,255,0.8);
+            --btn-secondary: rgba(0,0,0,0.05);
+            --btn-secondary-hover: rgba(0,0,0,0.1);
+            --modal-overlay: rgba(0,0,0,0.3);
+            --popup-bg: rgba(255,255,255,0.9);
+            --info-item: rgba(255,255,255,0.6);
+            --marker-border: white;
+            --btn-popup: #f2f2f7;
+        }
+
+        body.dark-mode {
+            --bg-glass: rgba(30, 30, 32, 0.85);
+            --bg-glass-dark: rgba(44, 44, 46, 0.85);
+            --border-glass: rgba(255, 255, 255, 0.15);
+            --text-main: #f5f5f7;
+            --text-secondary: #a1a1a6;
+            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --body-bg: #000000;
+            --input-bg: rgba(60, 60, 62, 0.8);
+            --btn-secondary: rgba(255,255,255,0.1);
+            --btn-secondary-hover: rgba(255,255,255,0.15);
+            --modal-overlay: rgba(0,0,0,0.6);
+            --popup-bg: rgba(44,44,46,0.9);
+            --info-item: rgba(255,255,255,0.1);
+            --marker-border: #1e1e1e;
+            --btn-popup: #3a3a3c;
+        }
+
+        body.dark-mode .leaflet-layer,
+        body.dark-mode .leaflet-control-zoom-in,
+        body.dark-mode .leaflet-control-zoom-out,
+        body.dark-mode .leaflet-control-attribution {
+            filter: invert(1) hue-rotate(180deg) brightness(95%) contrast(0.9);
+        }
+
         body { 
             margin: 0; 
             padding: 0; 
-            font-family: 'Noto Sans Thai', sans-serif; 
+            font-family: var(--font-family);
+            color: var(--text-main);
+            background: var(--body-bg);
+            -webkit-font-smoothing: antialiased;
         }
         
-        #map { width: 100vw; height: 100vh; }
+        #map { width: 100vw; height: 100vh; z-index: 1; }
         
+        /* Glass Panel Styling */
+        .glass-panel {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-soft);
+        }
+
         #control-panel {
             position: absolute; top: 20px; left: 20px; z-index: 1000;
-            background: rgba(255, 255, 255, 0.95); padding: 20px; border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 280px; max-height: 90vh; overflow-y: auto;
-        }
-        #control-panel h3 { margin-top: 0; margin-bottom: 15px; color: #333; text-align: center; }
-        .input-group { margin-bottom: 12px; }
-        .input-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #555; }
-        
-        .input-group input[type="text"], .input-group input[type="number"], .input-group select, button { 
-            font-family: 'Noto Sans Thai', sans-serif;
-            width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; 
-        }
-        
-        .btn-add { 
-            width: 100%; padding: 10px; border: none; border-radius: 6px; cursor: pointer; 
-            font-weight: bold; font-size: 14px; margin-bottom: 8px; transition: all 0.2s; 
-        }
-        
-        .btn-coord { background: #cbf9bb; color: #4d4d4d; }
-        .btn-coord:hover { background: #b0e3a0; }
-        
-        .btn-import { background: #ffe2bb; color: #4d4d4d; }
-        .btn-import:hover { background: #e5c9a4; }
-        
-        .btn-export { background: #c2f9ff; color: #4d4d4d; }
-        .btn-export:hover { background: #a6dce2; }
-        
-        .btn-clear { background: #ffc5cd; color: #aa2b00; }
-        .btn-clear:hover { background: #e5aebd; }
-
-        .filter-container {
-            background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-top: 10px;
-        }
-        .filter-container label {
-            display: flex; align-items: center; font-weight: normal; margin-bottom: 6px; font-size: 13px; cursor: pointer;
-        }
-        .filter-container input[type="checkbox"] {
-            width: auto; margin-right: 8px; cursor: pointer;
+            padding: 20px; width: 300px; max-height: 90vh; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 15px;
         }
 
-        .drag-setting {
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px dashed #ddd;
+        .panel-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 5px;
         }
+        .panel-header h3 { margin: 0; font-size: 18px; font-weight: 600; }
+        .btn-icon {
+            background: var(--btn-secondary); border: none; border-radius: 50%;
+            width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: background 0.2s; font-size: 16px;
+        }
+        .btn-icon:hover { background: var(--btn-secondary-hover); }
 
-        .copyright-section { text-align: center; margin-top: 15px; }
-        .version-text { font-size: 12px; color: #b3b3b3; font-weight: normal; margin-bottom: 5px; }
-        .copyright-text { font-size: 12px; color: #b3b3b3; font-weight: normal; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        .input-row { display: flex; gap: 10px; }
+        .input-group label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+        
+        input[type="text"], input[type="number"], select { 
+            font-family: var(--font-family); font-size: 14px; color: var(--text-main);
+            width: 100%; padding: 10px 12px; height: 42px; border: 1px solid var(--border-glass); 
+            border-radius: var(--border-radius-md); box-sizing: border-box; 
+            background: var(--input-bg); outline: none; transition: border 0.3s, box-shadow 0.3s;
+        }
+        select {
+            -webkit-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2386868b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 15px center; padding-right: 35px;
+        }
+        input:focus, select:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1); }
+        
+        .btn { 
+            width: 100%; padding: 12px; border: none; border-radius: var(--border-radius-md); 
+            cursor: pointer; font-weight: 600; font-size: 15px; transition: all 0.2s; 
+            font-family: var(--font-family); text-align: center;
+        }
+        .btn-primary { background: var(--accent-blue); color: white; }
+        .btn-primary:active { transform: scale(0.98); background: #0066d6; }
+        .btn-secondary { background: var(--btn-secondary); color: var(--text-main); }
+        .btn-secondary:hover { background: var(--btn-secondary-hover); }
+        .btn-danger { background: rgba(255, 59, 48, 0.1); color: var(--accent-red); }
+        .btn-danger:hover { background: rgba(255, 59, 48, 0.2); }
 
+        /* FABs */
+        .fab-container { position: absolute; right: 20px; bottom: 30px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+        .fab {
+            position: relative;
+            width: 50px; height: 50px; border-radius: 25px; border: 1px solid var(--border-glass);
+            background: var(--bg-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: flex; justify-content: center; align-items: center;
+            font-size: 20px; cursor: pointer; transition: transform 0.2s; color: var(--accent-blue);
+        }
+        .fab[data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute; right: 115%; top: 50%; transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.75); color: white; padding: 6px 12px;
+            border-radius: 8px; font-size: 13px; font-weight: 500; font-family: var(--font-family);
+            white-space: nowrap; opacity: 0; pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+        }
+        .fab:hover { transform: scale(1.05); background: white; }
+        .fab:hover[data-tooltip]::after { opacity: 1; transform: translateY(-50%) translateX(-4px); }
+        .fab.active { background: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+        .fab.active:hover { background: #0066d6; }
+        .fab:hover[data-tooltip]::after { opacity: 1; transform: translateY(-50%) translateX(-4px); }
+
+        /* Info Panel */
         #info-panel {
-            position: absolute; top: 20px; right: 20px; z-index: 1000;
-            background: rgba(255, 255, 255, 0.95); padding: 15px 20px; border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 280px;
+            position: absolute; bottom: 30px; right: 80px; z-index: 1000;
+            padding: 20px; width: 300px; max-height: 50vh; overflow-y: auto;
+            display: none; transform-origin: bottom right; animation: scaleIn 0.2s ease-out;
         }
-        #info-panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px; }
-        #info-panel-header h3 { margin: 0; color: #333; font-size: 16px; }
-        
-        #btn-toggle-info { background: #f8f9fa; border: 1px solid #ccc; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; width: auto; color: #333; }
-        #info-content { max-height: 60vh; overflow-y: auto; display: block; }
-        .info-category h4 { margin: 10px 0 5px 0; font-size: 14px; }
-        .info-item { font-size: 13px; padding: 5px; border-bottom: 1px dashed #eee; }
-        .info-item-coords { font-size: 11px; color: gray; font-family: 'Courier New', Courier, monospace; } 
+        .info-category { margin-top: 15px; }
+        .info-category h4 { margin: 0 0 10px 0; font-size: 14px; border-bottom: 1px solid var(--border-glass); padding-bottom: 5px;}
+        .info-item { font-size: 13px; padding: 8px; background: var(--info-item); border-radius: 8px; margin-bottom: 6px; }
+        .info-item-coords { font-size: 11px; color: var(--text-secondary); margin-top: 4px; display: block;}
 
-        #btn-locate {
-            position: absolute; bottom: 30px; right: 30px; z-index: 1000; background: #ffffff;
-            border: 2px solid #007BFF; color: #007BFF; padding: 12px 20px; border-radius: 50px;
-            font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 8px; width: auto;
-        }
-        #btn-locate:hover { background: #007BFF; color: white; transform: scale(1.05); }
-
-        .custom-marker { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background-color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); border-style: solid; border-width: 3px; }
-        .leaflet-drag-target .custom-marker { transform: scale(1.1); box-shadow: 0 5px 15px rgba(0,0,0,0.5); opacity: 0.8;}
-
-        #edit-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
-        #edit-modal { background: white; padding: 25px; border-radius: 12px; width: 300px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
-        #edit-modal h3 { margin-top: 0; text-align: center; color: #333; }
-        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-save { flex: 1; background: #007BFF; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-cancel { flex: 1; background: #6c757d; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        
-        .popup-buttons { display: flex; gap: 5px; justify-content: center; margin-top: 10px;}
-        .popup-btn { padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; color: white; width: auto;}
-        .btn-edit-popup { background: #ffc107; color: #000; }
-        .btn-del-popup { background: #dc3545; }
-        
-        .leaflet-popup-content-wrapper, .leaflet-popup-tip { font-family: 'Noto Sans Thai', sans-serif; }
-        .popup-spot-image {
-            width: 160px; height: 160px; border-radius: 50%; object-fit: cover;
-            margin: 10px auto; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.2); border: 3px solid #ddd;
-        }
-
-        .leaflet-bottom.leaflet-left { margin-bottom: 20px; margin-left: 10px; }
-
-        #welcome-modal-overlay {
+        /* Modals */
+        .modal-overlay { 
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-            background: rgba(0,0,0,0.6); z-index: 3000; 
-            display: flex; justify-content: center; align-items: center;
-            backdrop-filter: blur(3px);
+            background: var(--modal-overlay); z-index: 3000; 
+            display: none; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+            opacity: 0; transition: opacity 0.3s;
         }
-        #welcome-modal {
-            background: white; padding: 30px; border-radius: 15px; 
-            width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            animation: popIn 0.4s ease-out;
+        .modal { 
+            background: var(--bg-glass); border-radius: 24px; padding: 30px; 
+            width: 90%; max-width: 360px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            transform: scale(0.9); transition: transform 0.3s ease-out;
+            max-height: 90vh; overflow-y: auto; border: 1px solid var(--border-glass);
         }
-        @keyframes popIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        #welcome-modal h2 { margin-top: 0; color: #007BFF; margin-bottom: 10px;}
-        #welcome-modal p { color: #555; font-size: 14px; line-height: 1.6; margin-bottom: 25px; }
-        .btn-start {
-            background: #28a745; color: white; border: none; padding: 12px 25px; 
-            border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 16px;
-            transition: all 0.2s; box-shadow: 0 4px 10px rgba(40,167,69,0.3);
-            width: 100%;
-        }
-        .btn-start:hover { background: #218838; transform: scale(1.05); }
+        .modal.active { transform: scale(1); }
+        .modal-overlay.active { opacity: 1; }
+        
+        .modal h2, .modal h3 { margin-top: 0; margin-bottom: 20px; text-align: center; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 25px; }
 
-        /* Mobile UI Responsive */
+        /* iOS Toggle Switch */
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .toggle-row:last-child { border-bottom: none; }
+        .toggle-label { font-size: 15px; font-weight: 500; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e5e5ea; transition: .3s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: var(--accent-green); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Leaflet Overrides */
+        .leaflet-popup-content-wrapper { border-radius: 16px; box-shadow: var(--shadow-soft); border: 1px solid var(--border-glass); backdrop-filter: blur(10px); background: var(--popup-bg); color: var(--text-main); }
+        .leaflet-popup-tip { background: var(--popup-bg); }
+        .custom-marker { width: 36px; height: 36px; box-sizing: border-box; border-radius: 50%; object-fit: cover; background-color: var(--marker-border); box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-style: solid; border-width: 3px; }
+        .leaflet-drag-target .custom-marker { transform: scale(1.1); box-shadow: 0 8px 20px rgba(0,0,0,0.4); opacity: 0.9;}
+        
+        .popup-buttons { display: flex; gap: 8px; justify-content: center; margin-top: 15px;}
+        .popup-btn { padding: 8px 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; width: 100%; transition: opacity 0.2s; }
+        .popup-btn:active { opacity: 0.7; }
+        .btn-edit-popup { background: var(--btn-popup); color: var(--accent-blue); }
+        .btn-del-popup { background: var(--btn-popup); color: var(--accent-red); }
+        .popup-spot-image { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; margin: 5px auto 10px; display: block; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+        .section-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 10px; }
+
+        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
         @media (max-width: 768px) {
-            #control-panel {
-                top: 10px; left: 10px; right: 10px; width: auto; max-height: 50vh; padding: 15px;
-            }
-            #info-panel {
-                top: auto; bottom: 85px; left: 10px; right: 10px; width: auto; max-height: 35vh; padding: 15px;
-            }
-            #info-panel-header h3 { font-size: 14px; }
-            #btn-locate {
-                bottom: 25px; right: 10px; padding: 10px 15px; font-size: 13px;
-            }
-            #edit-modal {
-                width: 90%; max-width: 320px; padding: 15px; max-height: 90vh; overflow-y: auto;
-            }
-            .leaflet-control-zoom {
-                display: none !important; /* ซ่อนปุ่มซูมบนมือถือเพื่อประหยัดพื้นที่ */
-            }
-            #control-content, #info-content {
-                max-height: 38vh;
-            }
+            #control-panel { top: auto; bottom: 20px; left: 15px; right: 15px; width: auto; padding: 15px; max-height: 40vh; }
+            .fab-container { bottom: calc(40vh + 30px); right: 15px; }
+            #info-panel { bottom: calc(40vh + 30px); right: 15px; left: 15px; width: auto; max-height: 40vh; transform-origin: bottom center; }
+            .leaflet-control-zoom { display: none !important; }
         }
-
-        #drag-alert-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 4000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
-        #drag-alert-modal { background: white; padding: 25px; border-radius: 12px; width: 320px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); text-align: center; animation: popIn 0.3s ease-out; }
-        #drag-alert-modal h3 { margin-top: 0; color: #FF9800; font-size: 18px; margin-bottom: 15px; }
-        #drag-alert-modal p { color: #555; font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
-        .btn-drag-alert-ok { background: #007BFF; color: white; border: none; padding: 10px 30px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
-        .btn-drag-alert-ok:hover { background: #0056b3; transform: scale(1.05); }
     </style>
 </head>
 <body>
 
-    <div id="welcome-modal-overlay">
-        <div id="welcome-modal">
-            <h2>👋 ยินดีต้อนรับ!</h2>
-            <p>
-                <b>CA Wayspot Tools</b><br><br>
-                เครื่องมือนี้ออกแบบมาเพื่อช่วยคุณจำลอง กะระยะ และวางแผนการตั้ง CA Wayspot บนพื้นที่กลุ่มของคุณให้ง่ายขึ้น รองรับการนำเข้าไฟล์ KML จาก Google My Map ครับ<br>
-                ข้อมูลการกำหนดตำแหน่งจะถูกบันทึกอัตโนมัติ<br>
-                สามารถเข้ามาแก้ไขได้ทุกเมื่อ<br><br>
-                ขอให้สนุกครับ<br><br>
-                ลองคลิกบนแผนที่ หรือกรอกพิกัดเพื่อเริ่มต้นได้เลยครับ!
-            </p>
-            <button class="btn-start" onclick="closeWelcomeModal()">🚀 เริ่มต้นใช้งาน</button>
-        </div>
+    <!-- Main Map -->
+    <div id="map"></div>
+
+    <!-- Floating Action Buttons -->
+    <div class="fab-container">
+        <button class="fab active" id="fab-add-mode" onclick="setMode('add')" data-tooltip="เพิ่ม Wayspot">📍</button>
+        <button class="fab" id="fab-edit-mode" onclick="setMode('edit')" data-tooltip="แก้ไขตำแหน่ง">✏️</button>
+        <button class="fab" onclick="toggleInfoPanel()" data-tooltip="รายการ Wayspot">📋</button>
+        <button class="fab" onclick="openModal('settings-modal-overlay')" data-tooltip="การตั้งค่า">⚙️</button>
+        <button class="fab" id="btn-locate" data-tooltip="ตำแหน่งของฉัน">🧭</button>
     </div>
 
-    <div id="drag-alert-overlay">
-        <div id="drag-alert-modal">
-            <h3>⚠️ แจ้งเตือน</h3>
-            <p>เมื่อเปิดโหมดการอนุญาตให้ลากเพื่อย้ายตำแหน่ง จะปิดการเพิ่มตำแหน่งด้วยการคลิกโดยอัตโนมัติ <br> หากต้องการเพิ่มตำแหน่ง Wayspot ด้วยการคลิก กรุณาปิดโหมดอนุญาตให้ลากเพื่อย้ายตำแหน่ง</p>
-            <button class="btn-drag-alert-ok" onclick="document.getElementById('drag-alert-overlay').style.display = 'none'">ตกลง</button>
-        </div>
-    </div>
-
-    <div id="control-panel">
-        <div id="control-panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px dashed #ccc; padding-bottom: 10px;">
-            <h3 style="margin: 0; text-align: left; font-size: 16px; color: #333;">📍 เครื่องมือตั้งค่า</h3>
-            <button id="btn-toggle-control" onclick="toggleControlPanel()" style="background: #f8f9fa; border: 1px solid #ccc; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; width: auto; color: #333;">🔼 ย่อ</button>
-        </div>
-        <div id="control-content">
-
-        <div class="input-group">
-            <label>เลือกประเภทของ Wayspot:</label>
-            <select id="spotType">
-                <option value="pokestop">PokeStop</option>
-                <option value="gym">Gym</option>
-                <option value="caspot">CA PokeStop</option>
-                <option value="cagym">CA Gym</option>
-            </select>
-        </div>
-        <div class="input-group">
-            <label>ชื่อ Wayspot:</label>
-            <input type="text" id="spotName" placeholder="เช่น ศาลพระภูมิหน้าปากซอย">
-        </div>
-        <div class="input-group">
-            <label>URL รูปภาพ (เว้นว่างเพื่อใช้รูปเริ่มต้น):</label>
-            <input type="text" id="spotImage" placeholder="https://...">
-        </div>
-        <div class="input-group">
-            <label>รัศมี (40 - 80 เมตร):</label>
-            <input type="number" id="spotRadius" value="40" min="40" max="80">
-        </div>
-
-        <div class="input-group">
-            <label>ละติจูด (Latitude):</label>
-            <input type="number" id="spotLat" placeholder="เช่น 13.7649" step="any">
-        </div>
-        <div class="input-group">
-            <label>ลองจิจูด (Longitude):</label>
-            <input type="number" id="spotLng" placeholder="เช่น 100.5383" step="any">
+    <!-- Main Control Panel -->
+    <div id="control-panel" class="glass-panel">
+        <div class="panel-header">
+            <h3>📍 เพิ่ม Wayspot</h3>
+            <button class="btn-icon" onclick="toggleControlContent()" id="btn-toggle-control">🔽</button>
         </div>
         
-        <button class="btn-add btn-coord" id="btnAddByLatLng">📍 เพิ่ม Wayspot ด้วยพิกัดนี้</button>
-
-        <div class="input-group" style="background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-top: 15px;">
-            <label style="color: #555;">ตั้งค่าการแสดงผลแผนที่:</label>
-            <select id="mapLayer" onchange="changeMapLayer()" style="margin-bottom: 10px;">
-                <option value="osm">OpenStreetMap (OSM)</option>
-                <option value="gmap_street">Google Map (เส้นกราฟฟิก)</option>
-                <option value="gmap_sat">Google Map (ภาพถ่ายดาวเทียม)</option>
-            </select>
-            <div style="padding-top: 10px; border-top: 1px dashed #ccc;">
-                <label style="font-weight: normal; font-size: 13px; cursor: pointer; display: flex; align-items: center; margin-bottom: 0;">
-                    <input type="checkbox" id="setting-s2grid" style="width: auto; margin-right: 8px; cursor: pointer;" onchange="updateS2Grid()"> 
-                    🌐 แสดงตาราง S2 Cells (L14, L17)
-                </label>
+        <div id="control-content" style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="input-group">
+                <label>ประเภท Wayspot</label>
+                <select id="spotType">
+                    <option value="pokestop">PokeStop 🔵</option>
+                    <option value="gym">Gym 🔴</option>
+                    <option value="caspot">CA PokeStop 🌸</option>
+                    <option value="cagym">CA Gym 🟣</option>
+                </select>
             </div>
-        </div>
-
-        <div class="filter-container">
-            <label style="color: #555; font-weight: bold; margin-bottom: 8px;">ตั้งค่าการแสดงผล Wayspot:</label>
-            <label><input type="checkbox" id="filter-pokestop" checked onchange="updateVisibility()"> 🔵 PokeStop</label>
-            <label><input type="checkbox" id="filter-gym" checked onchange="updateVisibility()"> 🔴 Gym</label>
-            <label><input type="checkbox" id="filter-caspot" checked onchange="updateVisibility()"> 🌸 CA PokeStop</label>
-            <label><input type="checkbox" id="filter-cagym" checked onchange="updateVisibility()"> 🟣 CA Gym</label>
+            <div class="input-group">
+                <label>ชื่อ</label>
+                <input type="text" id="spotName" placeholder="ศาลพระภูมิ...">
+            </div>
+            <div class="input-group">
+                <label>URL รูปภาพ (ไม่บังคับ)</label>
+                <input type="text" id="spotImage" placeholder="https://...">
+            </div>
             
-            <div class="drag-setting">
-                <label style="color: #d32f2f;"><input type="checkbox" id="setting-draggable" onchange="toggleDraggable()"> ✋ อนุญาตให้ลากเพื่อย้ายตำแหน่ง</label>
+            <div class="input-row">
+                <div class="input-group" style="flex: 1;">
+                    <label>ละติจูด (Lat)</label>
+                    <input type="number" id="spotLat" placeholder="13.7649" step="any">
+                </div>
+                <div class="input-group" style="flex: 1;">
+                    <label>ลองจิจูด (Lng)</label>
+                    <input type="number" id="spotLng" placeholder="100.5383" step="any">
+                </div>
             </div>
-        </div>
-
-        <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
-        
-        <input type="file" id="importKMLInput" accept=".kml" style="display: none;" onchange="importKML(event)">
-        <button class="btn-add btn-import" onclick="document.getElementById('importKMLInput').click()">📤 นำเข้าไฟล์ KML</button>
-        
-        <button class="btn-add btn-export" onclick="exportKML()">📥 ส่งออกไฟล์ KML (Google My Maps)</button>
-        
-        <button class="btn-add btn-clear" onclick="clearAllSpots()">🗑️ ล้างข้อมูลทั้งหมด</button>
-
-        <div class="copyright-section">
-            <div class="version-text">CA Wayspot Tools version 0.9.6 Beta</div>
-            <div class="copyright-text">จัดทำโดยกลุ่ม CA: Community Ambassador Thailand</div>
-        </div>
+            <div class="input-group">
+                <label>รัศมี (เมตร)</label>
+                <input type="number" id="spotRadius" value="40" min="40" max="80">
+            </div>
+            
+            <button class="btn btn-primary" id="btnAddByLatLng">เพิ่มด้วยพิกัด</button>
+            <div style="text-align: center; font-size: 12px; color: var(--text-secondary); margin-top: -5px;">หรือคลิกบนแผนที่เพื่อเพิ่มหมุด</div>
         </div>
     </div>
 
-    <div id="info-panel">
-        <div id="info-panel-header">
-            <h3>📋 รายชื่อ Wayspot ทั้งหมด</h3>
-            <button id="btn-toggle-info" onclick="toggleInfoPanel()">🔼 ย่อ</button>
+    <!-- Info Panel -->
+    <div id="info-panel" class="glass-panel">
+        <div class="panel-header">
+            <h3>รายการทั้งหมด</h3>
+            <button class="btn-icon" onclick="toggleInfoPanel()">❌</button>
         </div>
         <div id="info-content"></div>
     </div>
 
-    <div id="edit-modal-overlay">
-        <div id="edit-modal">
-            <h3>✏️ แก้ไขข้อมูล Wayspot</h3>
-            <div class="input-group">
-                <label>เลือกประเภทของ Wayspot:</label>
-                <select id="editType">
-                    <option value="pokestop">PokeStop</option>
-                    <option value="gym">Gym</option>
-                    <option value="caspot">CA PokeStop</option>
-                    <option value="cagym">CA Gym</option>
+    <!-- Settings Modal -->
+    <div id="settings-modal-overlay" class="modal-overlay">
+        <div class="modal" id="settings-modal">
+            <h2>การตั้งค่า</h2>
+            
+            <div class="input-group" style="margin-bottom: 20px;">
+                <label>ชั้นข้อมูลแผนที่ (Map Layer)</label>
+                <select id="mapLayer" onchange="changeMapLayer()">
+                    <option value="gmap_street">Google Maps (ถนน)</option>
+                    <option value="gmap_sat">Google Maps (ดาวเทียม)</option>
+                    <option value="osm">OpenStreetMap</option>
                 </select>
             </div>
-            <div class="input-group">
-                <label>ชื่อ Wayspot:</label>
-                <input type="text" id="editName">
+
+            <div class="section-title">ฟีเจอร์แผนที่</div>
+            
+            <div class="toggle-row">
+                <span class="toggle-label">🌙 โหมดกลางคืน (Dark Mode)</span>
+                <label class="switch"><input type="checkbox" id="setting-darkmode" onchange="toggleDarkMode()"><span class="slider"></span></label>
             </div>
-            <div class="input-group">
-                <label>URL รูปภาพ (เว้นว่างเพื่อใช้รูปเริ่มต้น):</label>
-                <input type="text" id="editImage">
+            <div class="toggle-row">
+                <span class="toggle-label">🌐 แสดง S2 Cells (L14, L17)</span>
+                <label class="switch"><input type="checkbox" id="setting-s2grid" onchange="updateS2Grid()"><span class="slider"></span></label>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <div class="input-group" style="flex: 1;"><label>Latitude:</label><input type="number" id="editLat" step="any"></div>
-                <div class="input-group" style="flex: 1;"><label>Longitude:</label><input type="number" id="editLng" step="any"></div>
+            <div class="toggle-row" style="display: none;">
+                <span class="toggle-label">✋ อนุญาตให้ลากหมุด</span>
+                <label class="switch"><input type="checkbox" id="setting-draggable" onchange="toggleDraggable()"><span class="slider"></span></label>
             </div>
-            <div class="input-group"><label>รัศมี (40 - 80 เมตร):</label><input type="number" id="editRadius" min="40" max="80"></div>
+
+            <div class="section-title">แสดงผลจุด (Visibility)</div>
+            <div class="toggle-row">
+                <span class="toggle-label">🔵 PokeStop</span>
+                <label class="switch"><input type="checkbox" id="filter-pokestop" checked onchange="updateVisibility()"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+                <span class="toggle-label">🔴 Gym</span>
+                <label class="switch"><input type="checkbox" id="filter-gym" checked onchange="updateVisibility()"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+                <span class="toggle-label">🌸 CA PokeStop</span>
+                <label class="switch"><input type="checkbox" id="filter-caspot" checked onchange="updateVisibility()"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+                <span class="toggle-label">🟣 CA Gym</span>
+                <label class="switch"><input type="checkbox" id="filter-cagym" checked onchange="updateVisibility()"><span class="slider"></span></label>
+            </div>
+
+            <div class="section-title">Cloud Sync (Google Drive)</div>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                <button class="btn btn-primary" onclick="requestDriveAccess('export')" style="background: var(--accent-green);">☁️ บันทึกขึ้น Google Drive</button>
+                <button class="btn btn-secondary" onclick="requestDriveAccess('import')">☁️ โหลดจาก Google Drive</button>
+            </div>
+
+            <div class="section-title">การจัดการแฟ้มข้อมูล (Local)</div>
+            <input type="file" id="importKMLInput" accept=".kml" style="display: none;" onchange="importKML(event)">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn btn-secondary" onclick="document.getElementById('importKMLInput').click()">📥 นำเข้า KML</button>
+                <button class="btn btn-secondary" onclick="exportKML()">📤 ส่งออก KML</button>
+                <button class="btn btn-danger" onclick="clearAllSpots()">🗑️ ล้างข้อมูลทั้งหมด</button>
+            </div>
+
+            <div style="text-align: center; margin-top: 25px; font-size: 11px; color: var(--text-secondary);">
+                CA Wayspot Tools v1.0<br>จัดทำโดย CA: Community Ambassador Thailand
+            </div>
+
             <div class="modal-buttons">
-                <button class="btn-cancel" onclick="closeEditModal()">❌ ยกเลิก</button>
-                <button class="btn-save" onclick="saveEdit()">💾 บันทึก</button>
+                <button class="btn btn-primary" onclick="closeModal('settings-modal-overlay')">เสร็จสิ้น</button>
             </div>
         </div>
     </div>
 
-    <button id="btn-locate">🧭 ตำแหน่งปัจจุบันของฉัน</button>
-    <div id="map"></div>
+    <!-- Edit Modal -->
+    <div id="edit-modal-overlay" class="modal-overlay">
+        <div class="modal" id="edit-modal">
+            <h3>แก้ไขข้อมูล</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="input-group">
+                    <label>ประเภท</label>
+                    <select id="editType">
+                        <option value="pokestop">PokeStop</option><option value="gym">Gym</option><option value="caspot">CA PokeStop</option><option value="cagym">CA Gym</option>
+                    </select>
+                </div>
+                <div class="input-group"><label>ชื่อ</label><input type="text" id="editName"></div>
+                <div class="input-group"><label>URL รูปภาพ</label><input type="text" id="editImage"></div>
+                <div class="input-row">
+                    <div class="input-group" style="flex:1;"><label>Lat</label><input type="number" id="editLat" step="any"></div>
+                    <div class="input-group" style="flex:1;"><label>Lng</label><input type="number" id="editLng" step="any"></div>
+                </div>
+                <div class="input-group"><label>รัศมี (ม.)</label><input type="number" id="editRadius" min="40" max="80"></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeModal('edit-modal-overlay')">ยกเลิก</button>
+                <button class="btn btn-primary" onclick="saveEdit()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welcome Modal -->
+    <div id="welcome-modal-overlay" class="modal-overlay">
+        <div class="modal" id="welcome-modal">
+            <h2 style="font-size: 24px; color: var(--text-main);">สวัสดีครับ 👋</h2>
+            <p style="color: var(--text-secondary); font-size: 15px; line-height: 1.5; text-align: center;">
+                <b>CA Wayspot Tools</b> โฉมใหม่!<br><br>จำลอง กะระยะ และวางแผนการตั้ง CA Wayspot ได้ง่ายขึ้น 
+                รองรับการวาด S2 Cells และไฟล์ KML จาก Google My Maps<br><br>
+                ลองคลิกบนแผนที่เพื่อปักหมุดแรกได้เลยครับ
+            </p>
+            <button class="btn btn-primary" onclick="closeModal('welcome-modal-overlay')">เริ่มต้นใช้งาน</button>
+        </div>
+    </div>
 
     <script>
-        function closeWelcomeModal() {
-            var modal = document.getElementById('welcome-modal-overlay');
-            modal.style.opacity = '0';
-            setTimeout(function() { modal.style.display = 'none'; }, 300);
+        // Google Drive Sync Logic
+        const CLIENT_ID = '185984263865-g9029qge3j0o3tsft9hqasp6dkujf34i.apps.googleusercontent.com';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+        let tokenClient;
+        let accessToken = null;
+        let pendingDriveAction = null;
+
+        function initGSI() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID, scope: SCOPES,
+                callback: (tokenResponse) => {
+                    if (tokenResponse && tokenResponse.access_token) {
+                        accessToken = tokenResponse.access_token;
+                        executeDriveAction();
+                    }
+                },
+            });
         }
 
-        var map = L.map('map', { zoomControl: false }).setView([13.7649, 100.5383], 16);
-        L.control.zoom({ position: 'bottomleft' }).addTo(map);
-        
+        function requestDriveAccess(action) {
+            pendingDriveAction = action;
+            if (accessToken) executeDriveAction();
+            else tokenClient.requestAccessToken({prompt: 'consent'});
+        }
+
+        async function executeDriveAction() {
+            if (pendingDriveAction === 'export') {
+                document.body.style.cursor = 'wait';
+                await uploadToDrive();
+                document.body.style.cursor = 'default';
+            } else if (pendingDriveAction === 'import') {
+                document.body.style.cursor = 'wait';
+                await downloadFromDrive();
+                document.body.style.cursor = 'default';
+            }
+        }
+
+        async function searchBackupFile() {
+            let url = 'https://www.googleapis.com/drive/v3/files?q=name="CA_Wayspot_Backup.json" and trashed=false&spaces=drive';
+            let res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + accessToken } });
+            if (res.ok) {
+                let data = await res.json();
+                if (data.files && data.files.length > 0) return data.files[0].id;
+            } else if(res.status === 401) accessToken = null;
+            return null;
+        }
+
+        async function uploadToDrive() {
+            let currentData = localStorage.getItem('pokemonMapSavedData');
+            if (!currentData || Object.keys(spotsData).length === 0) return alert("ไม่มีข้อมูลที่จะบันทึก");
+            
+            let fileId = await searchBackupFile();
+            let url = fileId ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media` : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`;
+            let method = fileId ? 'PATCH' : 'POST';
+            let headers = new Headers();
+            headers.append('Authorization', 'Bearer ' + accessToken);
+
+            let body;
+            if (fileId) {
+                headers.append('Content-Type', 'application/json'); body = currentData;
+            } else {
+                let boundary = '-------314159CAWAYSPOT';
+                let delimiter = "\r\n--" + boundary + "\r\n";
+                let close_delim = "\r\n--" + boundary + "--";
+                let meta = { name: 'CA_Wayspot_Backup.json', mimeType: 'application/json' };
+                headers.append('Content-Type', `multipart/related; boundary="${boundary}"`);
+                body = delimiter + 'Content-Type: application/json\r\n\r\n' + JSON.stringify(meta) + delimiter + 'Content-Type: application/json\r\n\r\n' + currentData + close_delim;
+            }
+
+            try {
+                let res = await fetch(url, { method: method, headers: headers, body: body });
+                if (res.ok) alert("บันทึกลง Google Drive สำเร็จ! ☁️");
+                else { alert("บันทึกไม่สำเร็จ Error: " + res.status); if(res.status===401) accessToken=null; }
+            } catch (e) { alert("Error: " + e.message); }
+        }
+
+        async function downloadFromDrive() {
+            let fileId = await searchBackupFile();
+            if (!fileId) return alert("ไม่พบไฟล์แบ็กอัพ (CA_Wayspot_Backup.json) ใน Google Drive ของคุณ");
+            
+            let url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+            try {
+                let res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + accessToken } });
+                if (res.ok) {
+                    let data = await res.json();
+                    if (Array.isArray(data)) {
+                        for (let id in spotsData) if(map.hasLayer(spotsData[id].layerGroup)) map.removeLayer(spotsData[id].layerGroup);
+                        spotsData = {}; spotIdCounter = 0;
+                        localStorage.setItem('pokemonMapSavedData', JSON.stringify(data));
+                        loadFromStorage(); updateVisibility(); refreshInfoPanel();
+                        alert("โหลดข้อมูลสำเร็จ! ☁️");
+                        closeModal('settings-modal-overlay');
+                    }
+                } else alert("โหลดข้อมูลไม่สำเร็จ");
+            } catch (e) { alert("Error: " + e.message); }
+        }
+
+        // Dark Mode Logic
+        window.toggleDarkMode = function() {
+            var isDark = document.getElementById('setting-darkmode').checked;
+            if (isDark) document.body.classList.add('dark-mode');
+            else document.body.classList.remove('dark-mode');
+            localStorage.setItem('caWayspotDarkMode', isDark);
+        };
+        // Init dark mode
+        if (localStorage.getItem('caWayspotDarkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            window.addEventListener('load', () => { document.getElementById('setting-darkmode').checked = true; });
+        }
+
+        // Modal Logic
+        function openModal(id) {
+            const overlay = document.getElementById(id);
+            const modal = overlay.querySelector('.modal');
+            overlay.style.display = 'flex';
+            // Trigger reflow
+            void overlay.offsetWidth;
+            overlay.classList.add('active');
+            modal.classList.add('active');
+        }
+
+        function closeModal(id) {
+            const overlay = document.getElementById(id);
+            const modal = overlay.querySelector('.modal');
+            overlay.classList.remove('active');
+            modal.classList.remove('active');
+            setTimeout(() => { overlay.style.display = 'none'; }, 300);
+        }
+
+        // Show welcome by default
+        window.addEventListener('load', () => { setTimeout(() => openModal('welcome-modal-overlay'), 300); });
+
+        // Panels
+        var isControlPanelOpen = true;
+        function toggleControlContent() {
+            var content = document.getElementById('control-content');
+            var btn = document.getElementById('btn-toggle-control');
+            if (isControlPanelOpen) { content.style.display = 'none'; btn.innerText = '🔼'; } 
+            else { content.style.display = 'flex'; btn.innerText = '🔽'; }
+            isControlPanelOpen = !isControlPanelOpen;
+        }
+
+        function toggleInfoPanel() {
+            var panel = document.getElementById('info-panel');
+            if (panel.style.display === 'block') { panel.style.display = 'none'; } 
+            else { panel.style.display = 'block'; refreshInfoPanel(); }
+        }
+
         function escapeHTML(str) {
             if (!str) return '';
             return str.replace(/[&<>'"]/g, function(tag) {
@@ -342,19 +558,20 @@
             });
         }
 
-        var osmLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { 
-            maxZoom: 20, 
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors & © <a href="https://carto.com/attributions">CARTO</a>' 
-        });
-        osmLayer.on('tileerror', function(error, tile) { console.warn('OSM mapping tile error or missing.', error); });
+        // Map Setup
+        var map = L.map('map', { zoomControl: false }).setView([13.7649, 100.5383], 16);
+        L.control.zoom({ position: 'bottomleft' }).addTo(map);
+        
+        var osmLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 20 });
+        osmLayer.on('tileerror', function(error) { console.warn('OSM tile error', error); });
 
-        var gmapStreet = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: 'Map data &copy; <a href="https://maps.google.com/maps/about/terms/" target="_blank">Google</a>' });
-        gmapStreet.on('tileerror', function(error, tile) { console.warn('Google Street mapping tile error or missing.', error); });
+        var gmapStreet = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3']});
+        gmapStreet.on('tileerror', function(error) { console.warn('GMap tile error', error); });
 
-        var gmapSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: 'Imagery &copy; <a href="https://maps.google.com/maps/about/terms/" target="_blank">Google</a>' });
-        gmapSat.on('tileerror', function(error, tile) { console.warn('Google Sat mapping tile error or missing.', error); });
+        var gmapSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3']});
+        gmapSat.on('tileerror', function(error) { console.warn('GSat tile error', error); });
 
-        var currentLayer = osmLayer;
+        var currentLayer = gmapStreet;
         currentLayer.addTo(map);
 
         window.changeMapLayer = function() {
@@ -371,52 +588,42 @@
         window.updateS2Grid = function() {
             var showS2 = document.getElementById('setting-s2grid').checked;
             s2LayerGroup.clearLayers();
-            
             if (!showS2) return;
-            
             var zoom = map.getZoom();
-            if (zoom < 13) return; // ซ่อนเมื่อซูมออกมากไป เพื่อป้องกันเครื่องค้าง
-
-            drawS2Level(14, { color: '#ff7800', weight: 4, fillOpacity: 0, opacity: 0.9, interactive: false });
+            if (zoom < 13) return; // Prevent heavy rendering
+            drawS2Level(14, { color: '#ff9500', weight: 4, fillOpacity: 0, opacity: 0.9, interactive: false });
             if (zoom >= 15) {
-                drawS2Level(17, { color: '#28a745', weight: 2, fillOpacity: 0, opacity: 0.7, interactive: false });
+                drawS2Level(17, { color: '#34c759', weight: 2, fillOpacity: 0, opacity: 0.7, interactive: false });
             }
         };
 
         function drawS2Level(level, styleOptions) {
-            var bounds = map.getBounds().pad(0.1); 
-            var center = map.getCenter();
-            
-            // เริ่มค้นหาตารางจากจุดกึ่งกลาง
-            var startCell = S2.S2Cell.FromLatLng(center, level);
-            var queue = [startCell.toHilbertQuadkey()];
-            var seen = new Set();
-            
-            while (queue.length > 0) {
-                var key = queue.shift();
-                if (seen.has(key)) continue;
-                seen.add(key);
+            try {
+                var bounds = map.getBounds().pad(0.1); 
+                var center = map.getCenter();
+                var startCell = S2.S2Cell.FromLatLng(center, level);
+                var queue = [startCell.toHilbertQuadkey()];
+                var seen = new Set();
                 
-                var cell = S2.S2Cell.FromHilbertQuadKey(key);
-                var corners = cell.getCornerLatLngs();
-                
-                var inBounds = corners.some(p => bounds.contains([p.lat, p.lng]));
-                var cellLatLng = cell.getLatLng();
-                var centerInBounds = bounds.contains([cellLatLng.lat, cellLatLng.lng]);
-                
-                if (inBounds || centerInBounds) {
-                    var latlngs = corners.map(p => [p.lat, p.lng]);
-                    var polygon = L.polygon(latlngs, styleOptions);
-                    s2LayerGroup.addLayer(polygon);
+                while (queue.length > 0) {
+                    var key = queue.shift();
+                    if (seen.has(key)) continue;
+                    seen.add(key);
+                    var cell = S2.S2Cell.FromHilbertQuadKey(key);
+                    var corners = cell.getCornerLatLngs();
+                    var inBounds = corners.some(p => bounds.contains([p.lat, p.lng]));
+                    var centerInBounds = bounds.contains([cell.getLatLng().lat, cell.getLatLng().lng]);
                     
-                    var neighbors = cell.getNeighbors();
-                    neighbors.forEach(n => {
-                        queue.push(n.toHilbertQuadkey());
-                    });
+                    if (inBounds || centerInBounds) {
+                        var latlngs = corners.map(p => [p.lat, p.lng]);
+                        s2LayerGroup.addLayer(L.polygon(latlngs, styleOptions));
+                        cell.getNeighbors().forEach(n => queue.push(n.toHilbertQuadkey()));
+                    }
                 }
+            } catch (e) {
+                console.error("S2 Grid error: ", e);
             }
         }
-
         map.on('moveend', updateS2Grid);
         map.on('zoomend', updateS2Grid);
 
@@ -426,21 +633,15 @@
         var userLocationMarker = null;
 
         window.updateVisibility = function() {
-            var showPokeStop = document.getElementById('filter-pokestop').checked;
-            var showGym = document.getElementById('filter-gym').checked;
-            var showCASpot = document.getElementById('filter-caspot').checked;
-            var showCAGym = document.getElementById('filter-cagym').checked;
-
+            var checks = {
+                'pokestop': document.getElementById('filter-pokestop').checked,
+                'gym': document.getElementById('filter-gym').checked,
+                'caspot': document.getElementById('filter-caspot').checked,
+                'cagym': document.getElementById('filter-cagym').checked
+            };
             for (var id in spotsData) {
                 var spot = spotsData[id];
-                var shouldShow = false;
-                
-                if (spot.type === 'pokestop' && showPokeStop) shouldShow = true;
-                if (spot.type === 'gym' && showGym) shouldShow = true;
-                if (spot.type === 'caspot' && showCASpot) shouldShow = true;
-                if (spot.type === 'cagym' && showCAGym) shouldShow = true;
-
-                if (shouldShow) {
+                if (checks[spot.type]) {
                     if (!map.hasLayer(spot.layerGroup)) map.addLayer(spot.layerGroup);
                 } else {
                     if (map.hasLayer(spot.layerGroup)) map.removeLayer(spot.layerGroup);
@@ -450,16 +651,27 @@
 
         window.toggleDraggable = function() {
             var isDraggable = document.getElementById('setting-draggable').checked;
-            if (isDraggable) {
-                document.getElementById('drag-alert-overlay').style.display = 'flex';
-            }
             for (var id in spotsData) {
+                if (isDraggable) spotsData[id].marker.dragging.enable();
+                else spotsData[id].marker.dragging.disable();
+            }
+            var btnAdd = document.getElementById('fab-add-mode');
+            var btnEdit = document.getElementById('fab-edit-mode');
+            if (btnAdd && btnEdit) {
                 if (isDraggable) {
-                    spotsData[id].marker.dragging.enable();
+                    btnEdit.classList.add('active');
+                    btnAdd.classList.remove('active');
                 } else {
-                    spotsData[id].marker.dragging.disable();
+                    btnAdd.classList.add('active');
+                    btnEdit.classList.remove('active');
                 }
             }
+        };
+
+        window.setMode = function(mode) {
+            var chk = document.getElementById('setting-draggable');
+            chk.checked = (mode === 'edit');
+            window.toggleDraggable();
         };
 
         function saveToStorage() {
@@ -478,13 +690,13 @@
             const savedData = localStorage.getItem('pokemonMapSavedData');
             if (savedData) {
                 const parsedData = JSON.parse(savedData);
-                parsedData.forEach(spotData => {
-                    createSpot(L.latLng(spotData.lat, spotData.lng), spotData, false);
-                });
+                parsedData.forEach(spotData => createSpot(L.latLng(spotData.lat, spotData.lng), spotData, false));
                 if (parsedData.length > 0) map.setView([parsedData[0].lat, parsedData[0].lng], 16);
             }
         }
 
+        // Import KML
+        // Uses previously added duplicate check.
         window.importKML = function(event) {
             var file = event.target.files[0];
             if (!file) return;
@@ -507,9 +719,7 @@
                     if (point) {
                         var coords = point.getElementsByTagName("coordinates")[0]?.textContent.trim().split(',');
                         if (coords && coords.length >= 2) {
-                            var lng = parseFloat(coords[0]);
-                            var lat = parseFloat(coords[1]);
-
+                            var lng = parseFloat(coords[0]), lat = parseFloat(coords[1]);
                             var type = 'pokestop'; 
                             if (desc.includes('CA Gym')) type = 'cagym';
                             else if (desc.includes('Gym')) type = 'gym';
@@ -522,74 +732,60 @@
                             for (var existingId in spotsData) {
                                 var existing = spotsData[existingId];
                                 if (Math.abs(existing.lat - lat) < 0.00001 && Math.abs(existing.lng - lng) < 0.00001) {
-                                    isDuplicate = true;
-                                    break;
+                                    isDuplicate = true; break;
                                 }
                             }
-
                             if (!isDuplicate) {
                                 createSpot(L.latLng(lat, lng), { type: type, name: name, imgUrl: '', radius: radius, lat: lat, lng: lng }, false);
                                 importedCount++;
-                            } else {
-                                duplicateCount++;
-                            }
+                            } else duplicateCount++;
                         }
                     }
                 }
 
                 if (importedCount > 0 || duplicateCount > 0) {
-                    var message = "นำเข้า Wayspot สำเร็จจำนวน " + importedCount + " จุด!";
-                    if (duplicateCount > 0) message += "\n(ข้ามจุดที่ซ้ำซ้อนกันในระบบ " + duplicateCount + " จุด)";
-                    alert(message);
-                    saveToStorage();
+                    var msg = "นำเข้าสำเร็จ " + importedCount + " จุด";
+                    if(duplicateCount>0) msg += "\n(ข้ามข้อมูลซ้ำ " + duplicateCount + " จุด)";
+                    alert(msg);
+                    saveToStorage(); updateVisibility();
                     var lastId = Object.keys(spotsData).pop();
                     if(lastId && importedCount > 0) map.setView([spotsData[lastId].lat, spotsData[lastId].lng], 16);
-                } else {
-                    alert("ไม่พบข้อมูลตำแหน่งที่สามารถอ่านได้ในไฟล์ KML นี้");
-                }
+                } else alert("ไม่พบข้อมูลตำแหน่ง");
                 event.target.value = ''; 
             };
             reader.readAsText(file);
         };
 
         window.exportKML = function() {
-            if (Object.keys(spotsData).length === 0) return alert("ไม่มีข้อมูลตำแหน่ง Wayspot ให้ส่งออก");
-            let kmlContent = `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n  <Document>\n    <name>Pokemon Map Export</name>\n`;
+            if (Object.keys(spotsData).length === 0) return alert("ไม่มีข้อมูล");
+            let kmlContent = `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n  <Document>\n    <name>Map Export</name>\n`;
             for (let id in spotsData) {
                 let spot = spotsData[id];
                 let typeName = getStyleByType(spot.type).typeName;
-                var safeName = escapeHTML(spot.name);
-                kmlContent += `    <Placemark>
-      <name>${safeName}</name>
-      <description>ประเภท: ${typeName} | รัศมี: ${spot.radius} เมตร</description>
-      <Point><coordinates>${spot.lng},${spot.lat},0</coordinates></Point>
-    </Placemark>\n`;
+                kmlContent += `    <Placemark>\n      <name>${escapeHTML(spot.name)}</name>\n      <description>ประเภท: ${typeName} | รัศมี: ${spot.radius} เมตร</description>\n      <Point><coordinates>${spot.lng},${spot.lat},0</coordinates></Point>\n    </Placemark>\n`;
             }
             kmlContent += `  </Document>\n</kml>`;
             let blob = new Blob([kmlContent], { type: "application/vnd.google-earth.kml+xml" });
             let url = URL.createObjectURL(blob);
-            let a = document.createElement("a");
-            a.href = url; a.download = "pokemon_map_points.kml";
+            let a = document.createElement("a"); a.href = url; a.download = "export_points.kml";
             document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
         };
 
         window.clearAllSpots = function() {
-            if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบจุดทั้งหมดบนแผนที่? (ข้อมูลจะหายไปถาวร)")) {
+            if (confirm("คุณต้องการลบข้อมูลทั้งหมดจริงๆ หรือไม่?")) {
                 for (let id in spotsData) {
-                    if(map.hasLayer(spotsData[id].layerGroup)){
-                        map.removeLayer(spotsData[id].layerGroup);
-                    }
+                    if(map.hasLayer(spotsData[id].layerGroup)) map.removeLayer(spotsData[id].layerGroup);
                 }
-                spotsData = {}; spotIdCounter = 0; saveToStorage(); refreshInfoPanel();
+                spotsData = {}; spotIdCounter = 0; saveToStorage(); refreshInfoPanel(); closeModal('settings-modal-overlay');
             }
         };
 
         function getStyleByType(type) {
-            if (type === 'pokestop') return { color: '#007BFF', fillColor: '#007BFF', typeName: 'PokeStop' };
-            if (type === 'gym') return { color: '#DC3545', fillColor: '#007BFF', typeName: 'Gym' };
-            if (type === 'caspot') return { color: '#FF69B4', fillColor: '#007BFF', typeName: 'CA PokeStop' };
-            if (type === 'cagym') return { color: '#9C27B0', fillColor: '#9C27B0', typeName: 'CA Gym' };
-            return { color: '#007BFF', fillColor: '#007BFF', typeName: 'Unknown' };
+            if (type === 'pokestop') return { color: '#007aff', fillColor: '#007aff', typeName: 'PokeStop' };
+            if (type === 'gym') return { color: '#ff3b30', fillColor: '#007aff', typeName: 'Gym' };
+            if (type === 'caspot') return { color: '#ff2d55', fillColor: '#007aff', typeName: 'CA PokeStop' };
+            if (type === 'cagym') return { color: '#af52de', fillColor: '#af52de', typeName: 'CA Gym' };
+            return { color: '#007aff', fillColor: '#007aff', typeName: 'Unknown' };
         }
 
         function getImageUrl(imgUrl, type) {
@@ -601,81 +797,57 @@
         }
 
         function refreshInfoPanel() {
-            var pokestopsHTML = '', gymsHTML = '', caspotsHTML = '', cagymsHTML = '';
-            var countPS = 0, countGym = 0, countCA = 0, countCAGym = 0;
+            var htmlData = { 'pokestop': '', 'gym': '', 'caspot': '', 'cagym': '' };
+            var counts = { 'pokestop': 0, 'gym': 0, 'caspot': 0, 'cagym': 0 };
             
             for (var id in spotsData) {
                 var spot = spotsData[id];
                 var latlngText = `${spot.lat.toFixed(5)}, ${spot.lng.toFixed(5)}`;
-                var safeName = escapeHTML(spot.name);
-                var itemHTML = `<div class="info-item"><b>${safeName}</b><br><span class="info-item-coords">📍 ${latlngText}</span></div>`;
-                
-                if (spot.type === 'pokestop') { pokestopsHTML += itemHTML; countPS++; }
-                else if (spot.type === 'gym') { gymsHTML += itemHTML; countGym++; }
-                else if (spot.type === 'caspot') { caspotsHTML += itemHTML; countCA++; }
-                else if (spot.type === 'cagym') { cagymsHTML += itemHTML; countCAGym++; }
+                htmlData[spot.type] += `<div class="info-item"><b>${escapeHTML(spot.name)}</b><br><span class="info-item-coords">📍 ${latlngText}</span></div>`;
+                counts[spot.type]++;
             }
 
-            var emptyMsg = '<div style="font-size: 12px; color: #999; padding-left: 5px;">(ยังไม่มีข้อมูล)</div>';
-            
             var finalHTML = "";
-            finalHTML += `<div class="info-category"><h4 style="color: #007BFF;">🔵 PokeStop (${countPS})</h4>${pokestopsHTML || emptyMsg}</div>`;
-            finalHTML += `<div class="info-category"><h4 style="color: #DC3545;">🔴 Gym (${countGym})</h4>${gymsHTML || emptyMsg}</div>`;
-            finalHTML += `<div class="info-category"><h4 style="color: #FF69B4;">🌸 CA PokeStop (${countCA})</h4>${caspotsHTML || emptyMsg}</div>`;
-            finalHTML += `<div class="info-category"><h4 style="color: #9C27B0;">🟣 CA Gym (${countCAGym})</h4>${cagymsHTML || emptyMsg}</div>`;
+            var cats = [
+                { id: 'pokestop', name: '🔵 PokeStop', color: '#007aff' },
+                { id: 'gym', name: '🔴 Gym', color: '#ff3b30' },
+                { id: 'caspot', name: '🌸 CA PokeStop', color: '#ff2d55' },
+                { id: 'cagym', name: '🟣 CA Gym', color: '#af52de' }
+            ];
 
-            if(finalHTML === "") finalHTML = '<div style="font-size: 13px; color: #999; text-align: center; padding: 20px 0;">(ยังไม่มีข้อมูล)</div>';
+            cats.forEach(c => {
+                var content = htmlData[c.id] || '<div style="font-size:12px; color:var(--text-secondary);">(ไม่มีข้อมูล)</div>';
+                finalHTML += `<div class="info-category"><h4 style="color:${c.color}; margin-top: 10px;">${c.name} (${counts[c.id]})</h4>${content}</div>`;
+            });
 
             document.getElementById('info-content').innerHTML = finalHTML;
         }
 
-        var isInfoPanelOpen = true;
-        window.toggleInfoPanel = function() {
-            var content = document.getElementById('info-content');
-            var btn = document.getElementById('btn-toggle-info');
-            if (isInfoPanelOpen) { content.style.display = 'none'; btn.innerText = '🔽 เปิด'; } 
-            else { content.style.display = 'block'; btn.innerText = '🔼 ย่อ'; }
-            isInfoPanelOpen = !isInfoPanelOpen;
-        }
-
-        var isControlPanelOpen = true;
-        window.toggleControlPanel = function() {
-            var content = document.getElementById('control-content');
-            var btn = document.getElementById('btn-toggle-control');
-            if (isControlPanelOpen) { content.style.display = 'none'; btn.innerText = '🔽 เปิด'; } 
-            else { content.style.display = 'block'; btn.innerText = '🔼 ย่อ'; }
-            isControlPanelOpen = !isControlPanelOpen;
+        function createCustomIcon(imgUrl, borderColor, type) {
+            return L.divIcon({
+                className: 'custom-icon-wrapper',
+                html: `<img src="${getImageUrl(imgUrl, type)}" class="custom-marker" style="border-color: ${borderColor};" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'">`,
+                iconSize: [36, 36], iconAnchor: [18, 18]
+            });
         }
 
         function updatePopupContent(id) {
             var spot = spotsData[id];
             var styleInfo = getStyleByType(spot.type);
-            var displayImg = getImageUrl(spot.imgUrl, spot.type);
-            var safeName = escapeHTML(spot.name);
 
             var content = `
                 <div style="text-align: center; min-width: 170px;">
-                    <h4 style="margin: 0 0 5px 0;">${safeName}</h4>
-                    <img src="${displayImg}" class="popup-spot-image" style="border-color: ${styleInfo.color};" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'">
-                    <span style="font-size: 12px; color: gray;">ประเภท: <b>${styleInfo.typeName}</b></span><br>
-                    <span style="font-size: 12px; color: gray;">พิกัด: ${spot.lat.toFixed(6)}, ${spot.lng.toFixed(6)}</span><br>
-                    <span style="font-size: 12px; color: gray;">รัศมี: <b>${spot.radius} เมตร</b></span><br>
+                    <h4 style="margin: 0 0 5px 0;">${escapeHTML(spot.name)}</h4>
+                    <img src="${getImageUrl(spot.imgUrl, spot.type)}" class="popup-spot-image" style="border-color: ${styleInfo.color};" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'">
+                    <span style="font-size: 13px; color: var(--text-secondary);">ประเภท: <b>${styleInfo.typeName}</b></span><br>
+                    <span style="font-size: 12px; color: var(--text-secondary);">รัศมี: <b>${spot.radius} เมตร</b></span><br>
                     <div class="popup-buttons">
-                        <button class="popup-btn btn-edit-popup" onclick="openEditModal(${id})">✏️ แก้ไข</button>
-                        <button class="popup-btn btn-del-popup" onclick="removeSpot(${id})">🗑️ ลบ</button>
+                        <button class="popup-btn btn-edit-popup" onclick="window.openEditModal(${id})">แก้ไข</button>
+                        <button class="popup-btn btn-del-popup" onclick="window.removeSpot(${id})">ลบ</button>
                     </div>
                 </div>
             `;
             spot.marker.bindPopup(content);
-        }
-
-        function createCustomIcon(imgUrl, borderColor, type) {
-            var safeImg = getImageUrl(imgUrl, type);
-            return L.divIcon({
-                className: 'custom-icon-wrapper',
-                html: `<img src="${safeImg}" class="custom-marker" style="border-color: ${borderColor};" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'">`,
-                iconSize: [46, 46], iconAnchor: [23, 23]
-            });
         }
 
         function createSpot(latlng, savedData = null, isFromClick = false) {
@@ -689,13 +861,9 @@
 
             var styleInfo = getStyleByType(type);
             var circle = L.circle(latlng, { color: styleInfo.color, weight: 2, fillColor: styleInfo.fillColor, fillOpacity: 0.10, radius: radius });
-            var customIcon = createCustomIcon(imgUrl, styleInfo.color, type);
-            
-            var isDraggable = document.getElementById('setting-draggable').checked;
-            
             var marker = L.marker(latlng, {
-                icon: customIcon,
-                draggable: isDraggable
+                icon: createCustomIcon(imgUrl, styleInfo.color, type),
+                draggable: document.getElementById('setting-draggable').checked
             });
             
             var layerGroup = L.layerGroup([circle, marker]);
@@ -707,81 +875,49 @@
                 layerGroup: layerGroup, marker: marker, circle: circle
             };
 
-            marker.on('drag', function(e) {
-                circle.setLatLng(e.latlng);
-            });
-
+            marker.on('drag', function(e) { circle.setLatLng(e.latlng); });
             marker.on('dragend', function(e) {
                 var newPos = e.target.getLatLng();
-                spotsData[currentId].lat = newPos.lat;
-                spotsData[currentId].lng = newPos.lng;
+                spotsData[currentId].lat = newPos.lat; spotsData[currentId].lng = newPos.lng;
                 circle.setLatLng(newPos);
-                updatePopupContent(currentId);
-                refreshInfoPanel();
-                saveToStorage();
+                updatePopupContent(currentId); refreshInfoPanel(); saveToStorage();
             });
 
             updatePopupContent(currentId);
-            
-            var isVisible = document.getElementById('filter-' + type).checked;
-            if (isVisible) {
-                layerGroup.addTo(map);
-            }
-            
+            if (document.getElementById('filter-' + type).checked) layerGroup.addTo(map);
             refreshInfoPanel();
             if (!savedData) saveToStorage();
         }
 
-        // --- เงื่อนไขการคลิกบนแผนที่ ---
         map.on('click', function(e) { 
-            var isDraggable = document.getElementById('setting-draggable').checked;
-            // ถ้า "อนุญาตให้ลาก" (Checked) -> ไม่ทำอะไรเลย (ไม่ให้สร้างจุด)
-            if (isDraggable) {
-                return; 
-            }
-            
-            // ถ้า "ไม่อนุญาตให้ลาก" (Unchecked) -> สร้างจุดได้ตามปกติ
-            document.getElementById('spotLat').value = '';
-            document.getElementById('spotLng').value = '';
+            if (document.getElementById('setting-draggable').checked) return; 
+            document.getElementById('spotLat').value = ''; document.getElementById('spotLng').value = '';
             createSpot(e.latlng, null, true); 
         });
 
         document.getElementById('btnAddByLatLng').addEventListener('click', function() {
-            var latStr = document.getElementById('spotLat').value;
-            var lngStr = document.getElementById('spotLng').value;
-            if (!latStr || !lngStr) { alert('กรุณากรอกพิกัด Latitude และ Longitude ให้ครบถ้วนด้วยจ้า'); return; }
-            
-            var lat = parseFloat(latStr);
-            var lng = parseFloat(lngStr);
-            if (isNaN(lat) || isNaN(lng)) return alert('พิกัดไม่ถูกต้อง กรุณากรอกเป็นตัวเลขครับ');
-            
+            var lat = parseFloat(document.getElementById('spotLat').value);
+            var lng = parseFloat(document.getElementById('spotLng').value);
+            if (isNaN(lat) || isNaN(lng)) return alert('กรุณากรอกพิกัด Latitude และ Longitude ให้ครบและถูกต้อง');
             var newLatLng = L.latLng(lat, lng);
             createSpot(newLatLng, null, false);
             map.flyTo(newLatLng, 17);
         });
 
         window.openEditModal = function(id) {
-            var spot = spotsData[id];
-            currentEditId = id;
+            var spot = spotsData[id]; currentEditId = id;
             document.getElementById('editType').value = spot.type;
             document.getElementById('editName').value = spot.name;
             document.getElementById('editImage').value = spot.imgUrl || '';
             document.getElementById('editLat').value = spot.lat;
             document.getElementById('editLng').value = spot.lng;
             document.getElementById('editRadius').value = spot.radius;
-            map.closePopup();
-            document.getElementById('edit-modal-overlay').style.display = 'flex';
-        };
-
-        window.closeEditModal = function() {
-            document.getElementById('edit-modal-overlay').style.display = 'none';
-            currentEditId = null;
+            map.closePopup(); openModal('edit-modal-overlay');
         };
 
         window.saveEdit = function() {
             if (currentEditId === null) return;
-            var id = currentEditId;
-            var spot = spotsData[id];
+            var spot = spotsData[currentEditId];
             var newLat = parseFloat(document.getElementById('editLat').value);
             var newLng = parseFloat(document.getElementById('editLng').value);
             var newRadius = parseInt(document.getElementById('editRadius').value);
@@ -792,50 +928,38 @@
             spot.type = document.getElementById('editType').value;
             spot.name = document.getElementById('editName').value || 'ไม่มีชื่อ';
             spot.imgUrl = document.getElementById('editImage').value;
-            spot.lat = newLat;
-            spot.lng = newLng;
-            spot.radius = newRadius;
+            spot.lat = newLat; spot.lng = newLng; spot.radius = newRadius;
 
             var newLatLng = L.latLng(newLat, newLng);
             var styleInfo = getStyleByType(spot.type);
 
-            spot.circle.setLatLng(newLatLng);
-            spot.circle.setRadius(newRadius);
+            spot.circle.setLatLng(newLatLng); spot.circle.setRadius(newRadius);
             spot.circle.setStyle({ color: styleInfo.color, fillColor: styleInfo.fillColor });
             spot.marker.setLatLng(newLatLng);
             spot.marker.setIcon(createCustomIcon(spot.imgUrl, styleInfo.color, spot.type));
 
-            updatePopupContent(id);
-            closeEditModal();
+            updatePopupContent(currentEditId); closeModal('edit-modal-overlay');
             map.flyTo(newLatLng, map.getZoom());
-            
-            updateVisibility(); 
-            
-            saveToStorage(); 
+            updateVisibility(); saveToStorage(); refreshInfoPanel();
         };
 
         window.removeSpot = function(id) {
             if (spotsData[id]) {
-                if(map.hasLayer(spotsData[id].layerGroup)){
-                    map.removeLayer(spotsData[id].layerGroup);
-                }
-                delete spotsData[id];
-                refreshInfoPanel();
-                saveToStorage(); 
+                if(map.hasLayer(spotsData[id].layerGroup)) map.removeLayer(spotsData[id].layerGroup);
+                delete spotsData[id]; refreshInfoPanel(); saveToStorage(); 
             }
         };
 
         document.getElementById('btn-locate').addEventListener('click', function() { map.locate({setView: true, maxZoom: 17}); });
         map.on('locationfound', function(e) {
             if (userLocationMarker) map.removeLayer(userLocationMarker);
-            userLocationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: "#007BFF", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.8 }).addTo(map);
+            userLocationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: "#007aff", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.8 }).addTo(map);
             userLocationMarker.bindPopup("คุณอยู่ที่นี่").openPopup();
         });
         map.on('locationerror', function(e) { alert("ไม่สามารถเข้าถึงตำแหน่งของคุณได้"); });
 
         loadFromStorage();
         updateVisibility();
-
     </script>
 </body>
 </html>
