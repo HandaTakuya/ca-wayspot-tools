@@ -75,9 +75,15 @@
             filter: invert(1) hue-rotate(180deg) brightness(95%) contrast(0.9);
         }
 
+        html,
         body {
             margin: 0;
             padding: 0;
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            /* Fix page sliding */
             font-family: var(--font-family);
             color: var(--text-main);
             background: var(--body-bg);
@@ -85,8 +91,11 @@
         }
 
         #map {
-            width: 100vw;
-            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             z-index: 1;
         }
 
@@ -568,25 +577,26 @@
         @media (max-width: 768px) {
             #control-panel {
                 top: auto;
-                bottom: 20px;
+                bottom: max(20px, env(safe-area-inset-bottom));
                 left: 15px;
                 right: 15px;
                 width: auto;
                 padding: 15px;
-                max-height: 40vh;
+                max-height: 40dvh;
             }
 
             .fab-container {
-                bottom: calc(40vh + 30px);
+                bottom: auto;
+                top: max(20px, env(safe-area-inset-top));
                 right: 15px;
             }
 
             #info-panel {
-                bottom: calc(40vh + 30px);
+                bottom: max(20px, env(safe-area-inset-bottom));
                 right: 15px;
                 left: 15px;
                 width: auto;
-                max-height: 40vh;
+                max-height: 50dvh;
                 transform-origin: bottom center;
             }
 
@@ -739,7 +749,7 @@
             </div>
 
             <div style="text-align: center; margin-top: 25px; font-size: 11px; color: var(--text-secondary);">
-                CA Wayspot Tools v1.2<br>จัดทำโดย CA: Community Ambassador Thailand
+                CA Wayspot Tools v1.2.1<br>จัดทำโดย CA: Community Ambassador Thailand
             </div>
 
             <div class="modal-buttons">
