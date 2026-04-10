@@ -1,4 +1,4 @@
-// i18n Localization Dictionary v1.7.6
+// i18n Localization Dictionary v1.7.7
 const i18n = {
     th: {
         tooltipAddWayspot: "เพิ่ม Wayspot",
@@ -474,22 +474,30 @@ window.CAWayspotApp = (function () {
         map.on('zoomend', updateS2Grid);
 
         let longPressTimer;
-        map.on('mousedown', function (e) {
+        const handleStart = (e) => {
             const dragToggle = document.getElementById('setting-draggable');
             const isDraggable = dragToggle ? dragToggle.checked : (window.isDraggableMode || false);
             if (isDraggable) return;
 
+            if (longPressTimer) clearTimeout(longPressTimer);
             longPressTimer = window.setTimeout(function () {
                 document.getElementById('spotLat').value = '';
                 document.getElementById('spotLng').value = '';
                 createSpot(e.latlng, null, true);
-            }, 1000); // 1 second
-        });
+            }, 400); // 0.4 seconds
+        };
 
-        map.on('mouseup dragstart zoomstart', function () {
+        map.on('mousedown touchstart', handleStart);
+
+        map.on('mouseup touchend dragstart zoomstart movestart', function () {
             if (longPressTimer) {
                 clearTimeout(longPressTimer);
             }
+        });
+
+        // Disable default context menu on map for cleaner mobile experience
+        map.on('contextmenu', (e) => {
+            L.DomEvent.preventDefault(e);
         });
 
         map.on('locationfound', function (e) {
