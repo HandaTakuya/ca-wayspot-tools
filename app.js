@@ -1,4 +1,4 @@
-// i18n Localization Dictionary
+// i18n Localization Dictionary v1.7.5
 const i18n = {
     th: {
         tooltipAddWayspot: "เพิ่ม Wayspot",
