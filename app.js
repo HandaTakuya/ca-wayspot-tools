@@ -1785,7 +1785,7 @@ window.CAWayspotApp = (function () {
         const defaultToken = "pk.eyJ1IjoieXVsamFuZzAxIiwiYSI6ImNqd2lwaDEzZTA3a3A0YnA2bTB3amw3bGQifQ.xP7t0DvEJTi97webcHYftg";
         const savedToken = localStorage.getItem('caWayspotMapboxToken');
         const savedStyle = localStorage.getItem('caWayspotMapboxStyle');
-        const savedMapLayer = localStorage.getItem('caWayspotMapLayer') || 'mapbox'; // Pre-set to mapbox for the user
+        const savedMapLayer = localStorage.getItem('caWayspotMapLayer') || 'gmap_street'; // Pre-set to Google Maps Street for the user
         
         document.getElementById('mapboxToken').value = savedToken || defaultToken;
         if (savedStyle) document.getElementById('mapboxStyleId').value = savedStyle;
