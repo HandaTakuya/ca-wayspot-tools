@@ -1,4 +1,4 @@
-// i18n Localization Dictionary v1.7.7
+// i18n Localization Dictionary v1.7.9
 const i18n = {
     th: {
         tooltipAddWayspot: "เพิ่ม Wayspot",
@@ -20,7 +20,7 @@ const i18n = {
         lngLabel: "ลองจิจูด (Lng)",
         radiusLabel: "รัศมี (เมตร)",
         btnAddByCoords: "เพิ่มด้วยพิกัด",
-        addByMapHint: "หรือคลิกค้าง 1 วินาทีบนแผนที่เพื่อเพิ่มหมุด",
+        addByMapHint: "หรือคลิก 2 ครั้งในตำแหน่งทีต้องการเพื่อเพิ่มหมุด",
         allWayspotsTitle: "รายการทั้งหมด",
         settingsTitle: "การตั้งค่า",
         mapLayerLabel: "การแสดงผลแผนที่",
@@ -66,7 +66,7 @@ const i18n = {
         menuTutorial: "📘 การใช้งานเบื้องต้น",
         tutorialTitle: "การใช้งานเบื้องต้น",
         tutorialSlide1Title: "📍 การเพิ่มตำแหน่ง",
-        tutorialSlide1Content: "คลิกค้างไว้บนแผนที่ 1 วินาทีเพื่อปักหมุด หรือกรอกพิกัดโดยตรงเพื่อความแม่นยำ!",
+        tutorialSlide1Content: "คลิก 2 ครั้งในตำแหน่งทีต้องการเพื่อเพิ่มหมุด หรือกรอกพิกัดโดยตรงเพื่อความแม่นยำ!",
         tutorialSlide2Title: "✏️ การแก้ไขและย้อนกลับ",
         tutorialSlide2Content: "สลับเข้าโหมดแก้ไขเพื่อลากย้ายหมุด และใช้ปุ่มย้อนกลับ (↩️) หรือ Cmd+Z เพื่อคืนค่ากรณีทำผิดพลาด",
         tutorialSlide3Title: "🌐 เครื่องมือวางแผน",
@@ -120,7 +120,7 @@ const i18n = {
         lngLabel: "Longitude",
         radiusLabel: "Radius (meters)",
         btnAddByCoords: "Add by Coordinates",
-        addByMapHint: "Or long press 1s on the map to add a pin",
+        addByMapHint: "Or double click on map to add pin",
         allWayspotsTitle: "All Wayspots",
         settingsTitle: "Settings",
         mapLayerLabel: "Map Layer",
@@ -166,7 +166,7 @@ const i18n = {
         menuTutorial: "📘 Getting Started",
         tutorialTitle: "Getting Started",
         tutorialSlide1Title: "📍 Adding Wayspots",
-        tutorialSlide1Content: "Long press on the map for 1s to add a pin, or enter coordinates directly for precision!",
+        tutorialSlide1Content: "Double click on map to add pin or enter coordinates directly for precision!",
         tutorialSlide2Title: "✏️ Editing & Undo",
         tutorialSlide2Content: "Switch to Edit mode to drag markers, and use the Undo (↩️) button or Cmd+Z to revert mistakes.",
         tutorialSlide3Title: "🌐 Planning Tools",
@@ -444,7 +444,7 @@ window.CAWayspotApp = (function () {
     var userLocationMarker = null;
 
     function initMap() {
-        map = L.map('map', { zoomControl: false }).setView([13.7649, 100.5383], 16);
+        map = L.map('map', { zoomControl: false, doubleClickZoom: false }).setView([13.7649, 100.5383], 16);
         L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
         osmLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 20 });
@@ -498,6 +498,11 @@ window.CAWayspotApp = (function () {
         // Disable default context menu on map for cleaner mobile experience
         map.on('contextmenu', (e) => {
             L.DomEvent.preventDefault(e);
+        });
+
+        // Double Click/Tap for placement (Recommended for mobile)
+        map.on('dblclick', (e) => {
+            createSpot(e.latlng, null, true);
         });
 
         map.on('locationfound', function (e) {
