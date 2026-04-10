@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/s2-geometry@1.2.10/src/s2geometry.js"></script>
-    <script src="https://accounts.google.com/gsi/client" id="gsi-script" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" id="gsi-script" onload="if(window.initGSI) window.initGSI()" async defer></script>
 
     <link rel="stylesheet" href="style.css" />
 </head>
@@ -174,27 +174,23 @@
                         </div>
 
                         <div class="section-title" data-i18n="customColorsTitle"
-                            style="margin-top: 15px; border-top: 1px solid var(--border-glass); padding-top: 15px;">
+                            style="margin-top: 15px; padding-top: 15px;">
                             กำหนดสี Wayspot</div>
                         <div class="toggle-row">
                             <span class="toggle-label">PokéStop</span>
-                            <input type="color" id="color-pokestop"
-                                style="width: 30px; height: 25px; border: none; background: none; cursor: pointer;">
+                            <input type="color" id="color-pokestop" class="color-picker-circle">
                         </div>
                         <div class="toggle-row">
                             <span class="toggle-label">Gym</span>
-                            <input type="color" id="color-gym"
-                                style="width: 30px; height: 25px; border: none; background: none; cursor: pointer;">
+                            <input type="color" id="color-gym" class="color-picker-circle">
                         </div>
                         <div class="toggle-row">
                             <span class="toggle-label">CA PokéStop</span>
-                            <input type="color" id="color-caspot"
-                                style="width: 30px; height: 25px; border: none; background: none; cursor: pointer;">
+                            <input type="color" id="color-caspot" class="color-picker-circle">
                         </div>
                         <div class="toggle-row">
                             <span class="toggle-label">CA Gym</span>
-                            <input type="color" id="color-cagym"
-                                style="width: 30px; height: 25px; border: none; background: none; cursor: pointer;">
+                            <input type="color" id="color-cagym" class="color-picker-circle">
                         </div>
                         <button class="btn btn-secondary" id="btn-reset-colors"
                             data-i18n="btnResetColors">คืนค่าดั่งเดิม</button>
@@ -212,7 +208,7 @@
                         </div>
 
                         <div class="section-title" data-i18n="forceRadiusTitle"
-                            style="margin-top: 15px; border-top: 1px solid var(--border-glass); padding-top: 15px;">
+                            style="margin-top: 15px; padding-top: 15px;">
                             บังคับเปลี่ยนรัศมี Wayspot</div>
                         <div class="input-row" style="gap: 5px;">
                             <input type="number" id="globalRadiusInput" data-i18n-placeholder="radiusPlaceholder"
@@ -240,8 +236,6 @@
                                 Google Drive</button>
                             <button class="btn btn-secondary" id="btn-sync-import" data-i18n="loadFromDrive">☁️
                                 โหลดจาก Google Drive</button>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
                             <button class="btn btn-secondary" id="btn-local-import" data-i18n="importKML">📥 นำเข้า
                                 KML</button>
                             <input type="file" id="importKMLInput" accept=".kml" style="display: none;">
@@ -273,8 +267,15 @@
                 </div>
             </div>
 
+            <div class="toggle-row" id="btn-open-tutorial"
+                style="cursor: pointer; margin-top: 5px;">
+                <span class="toggle-label" style="color: var(--accent-blue);" data-i18n="menuTutorial">📘
+                    การใช้งานเบื้องต้น</span>
+                <span class="icon" style="transform: none !important;">➔</span>
+            </div>
+
             <div style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-top: 30px;">
-                CA Wayspot Tools v1.6.0<br>
+                CA Wayspot Tools v1.7.5<br>
                 <span data-i18n="credits">จัดทำโดย CA: Community Ambassador Thailand</span>
             </div>
 
@@ -329,6 +330,29 @@
                 ลองคลิกบนแผนที่เพื่อปักหมุดแรกได้เลยครับ
             </p>
             <button class="btn btn-primary" id="btn-start-welcome" data-i18n="btnStart">เริ่มต้นใช้งาน</button>
+        </div>
+    </div>
+
+    <div id="tutorial-modal-overlay" class="modal-overlay">
+        <div class="modal">
+            <h2 id="tutorial-header-title" data-i18n="tutorialTitle">การใช้งานเบื้องต้น</h2>
+            <div id="tutorial-slides-container" style="min-height: 220px; margin-bottom: 20px; padding: 10px 0;">
+                <div id="tutorial-slide-content">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+            <div class="tutorial-dots"
+                style="display: flex; justify-content: center; gap: 8px; margin-bottom: 25px;" id="tutorial-indicators">
+                <span class="dot active"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+            <div class="modal-buttons" style="gap: 12px;">
+                <button class="btn btn-secondary" id="btn-tutorial-back" data-i18n="btnBack">ย้อนกลับ</button>
+                <button class="btn btn-primary" id="btn-tutorial-next" data-i18n="btnNext">ถัดไป</button>
+            </div>
         </div>
     </div>
 

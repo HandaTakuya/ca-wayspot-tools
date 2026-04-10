@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wayspot-cache-v1.6.0';
+const CACHE_NAME = 'wayspot-cache-v1.7.5';
 const urlsToCache = [
   './index.html',
   './manifest.json',
