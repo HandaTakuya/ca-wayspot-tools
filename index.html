@@ -23,588 +23,9 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/s2-geometry@1.2.10/src/s2geometry.js"></script>
-    <script src="https://accounts.google.com/gsi/client" onload="initGSI()" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" id="gsi-script" async defer></script>
 
-    <style>
-        :root {
-            --bg-glass: rgba(255, 255, 255, 0.85);
-            --bg-glass-dark: rgba(240, 240, 245, 0.85);
-            --border-glass: rgba(0, 0, 0, 0.1);
-            --text-main: #1d1d1f;
-            --text-secondary: #86868b;
-            --accent-blue: #007aff;
-            --accent-red: #ff3b30;
-            --accent-green: #34c759;
-            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.08);
-            --border-radius-lg: 18px;
-            --border-radius-md: 12px;
-            --font-family: "Noto Sans Thai", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            --body-bg: #f5f5f7;
-            --input-bg: rgba(255, 255, 255, 0.8);
-            --btn-secondary: rgba(0, 0, 0, 0.05);
-            --btn-secondary-hover: rgba(0, 0, 0, 0.1);
-            --modal-overlay: rgba(0, 0, 0, 0.3);
-            --popup-bg: rgba(255, 255, 255, 0.9);
-            --info-item: rgba(255, 255, 255, 0.6);
-            --marker-border: white;
-            --btn-popup: #f2f2f7;
-        }
-
-        body.dark-mode {
-            --bg-glass: rgba(30, 30, 32, 0.85);
-            --bg-glass-dark: rgba(44, 44, 46, 0.85);
-            --border-glass: rgba(255, 255, 255, 0.15);
-            --text-main: #f5f5f7;
-            --text-secondary: #a1a1a6;
-            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.5);
-            --body-bg: #000000;
-            --input-bg: rgba(60, 60, 62, 0.8);
-            --btn-secondary: rgba(255, 255, 255, 0.1);
-            --btn-secondary-hover: rgba(255, 255, 255, 0.15);
-            --modal-overlay: rgba(0, 0, 0, 0.6);
-            --popup-bg: rgba(44, 44, 46, 0.9);
-            --info-item: rgba(255, 255, 255, 0.1);
-            --marker-border: #1e1e1e;
-            --btn-popup: #3a3a3c;
-        }
-
-        body.dark-mode .leaflet-layer,
-        body.dark-mode .leaflet-control-zoom-in,
-        body.dark-mode .leaflet-control-zoom-out,
-        body.dark-mode .leaflet-control-attribution {
-            filter: invert(1) hue-rotate(180deg) brightness(95%) contrast(0.9);
-        }
-
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            height: 100dvh;
-            overflow: hidden;
-            /* Fix page sliding */
-            font-family: var(--font-family);
-            color: var(--text-main);
-            background: var(--body-bg);
-            -webkit-font-smoothing: antialiased;
-        }
-
-        #map {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-
-        /* Glass Panel Styling */
-        .glass-panel {
-            background: var(--bg-glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border-glass);
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-soft);
-        }
-
-        #control-panel {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-            padding: 20px;
-            width: 300px;
-            max-height: 90vh;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-
-        .panel-header h3 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .btn-icon {
-            background: var(--btn-secondary);
-            border: none;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: background 0.2s;
-            font-size: 16px;
-        }
-
-        .btn-icon:hover {
-            background: var(--btn-secondary-hover);
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .input-row {
-            display: flex;
-            gap: 10px;
-        }
-
-        .input-group label {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
-
-        input[type="text"],
-        input[type="number"],
-        select {
-            font-family: var(--font-family);
-            font-size: 14px;
-            color: var(--text-main);
-            width: 100%;
-            padding: 10px 12px;
-            height: 42px;
-            border: 1px solid var(--border-glass);
-            border-radius: var(--border-radius-md);
-            box-sizing: border-box;
-            background: var(--input-bg);
-            outline: none;
-            transition: border 0.3s, box-shadow 0.3s;
-        }
-
-        select {
-            -webkit-appearance: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2386868b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 15px center;
-            padding-right: 35px;
-        }
-
-        input:focus,
-        select:focus {
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
-        }
-
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: var(--border-radius-md);
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 15px;
-            transition: all 0.2s;
-            font-family: var(--font-family);
-            text-align: center;
-        }
-
-        .btn-primary {
-            background: var(--accent-blue);
-            color: white;
-        }
-
-        .btn-primary:active {
-            transform: scale(0.98);
-            background: #0066d6;
-        }
-
-        .btn-secondary {
-            background: var(--btn-secondary);
-            color: var(--text-main);
-        }
-
-        .btn-secondary:hover {
-            background: var(--btn-secondary-hover);
-        }
-
-        .btn-danger {
-            background: rgba(255, 59, 48, 0.1);
-            color: var(--accent-red);
-        }
-
-        .btn-danger:hover {
-            background: rgba(255, 59, 48, 0.2);
-        }
-
-        /* FABs */
-        .fab-container {
-            position: absolute;
-            right: 20px;
-            bottom: 30px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .fab {
-            position: relative;
-            width: 50px;
-            height: 50px;
-            border-radius: 25px;
-            border: 1px solid var(--border-glass);
-            background: var(--bg-glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            cursor: pointer;
-            transition: transform 0.2s;
-            color: var(--accent-blue);
-        }
-
-        .fab[data-tooltip]::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            right: 115%;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.75);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 500;
-            font-family: var(--font-family);
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s, transform 0.2s;
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-        }
-
-        .fab:hover {
-            transform: scale(1.05);
-            background: white;
-        }
-
-        .fab:hover[data-tooltip]::after {
-            opacity: 1;
-            transform: translateY(-50%) translateX(-4px);
-        }
-
-        .fab.active {
-            background: var(--accent-blue);
-            color: white;
-            border-color: var(--accent-blue);
-        }
-
-        .fab.active:hover {
-            background: #0066d6;
-        }
-
-        .fab:hover[data-tooltip]::after {
-            opacity: 1;
-            transform: translateY(-50%) translateX(-4px);
-        }
-
-        /* Info Panel */
-        #info-panel {
-            position: absolute;
-            bottom: 30px;
-            right: 80px;
-            z-index: 1000;
-            padding: 20px;
-            width: 300px;
-            max-height: 50vh;
-            overflow-y: auto;
-            display: none;
-            transform-origin: bottom right;
-            animation: scaleIn 0.2s ease-out;
-        }
-
-        .info-category {
-            margin-top: 15px;
-        }
-
-        .info-category h4 {
-            margin: 0 0 10px 0;
-            font-size: 14px;
-            border-bottom: 1px solid var(--border-glass);
-            padding-bottom: 5px;
-        }
-
-        .info-item {
-            font-size: 13px;
-            padding: 8px;
-            background: var(--info-item);
-            border-radius: 8px;
-            margin-bottom: 6px;
-        }
-
-        .info-item-coords {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-            display: block;
-        }
-
-        /* Modals */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: var(--modal-overlay);
-            z-index: 3000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .modal {
-            background: var(--bg-glass);
-            border-radius: 24px;
-            padding: 30px;
-            width: 90%;
-            max-width: 360px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            transform: scale(0.9);
-            transition: transform 0.3s ease-out;
-            max-height: 80dvh;
-            overflow-y: auto;
-            border: 1px solid var(--border-glass);
-            padding-bottom: max(30px, env(safe-area-inset-bottom));
-        }
-
-        .modal.active {
-            transform: scale(1);
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-        }
-
-        .modal h2,
-        .modal h3 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 25px;
-        }
-
-        /* iOS Toggle Switch */
-        .toggle-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .toggle-row:last-child {
-            border-bottom: none;
-        }
-
-        .toggle-label {
-            font-size: 15px;
-            font-weight: 500;
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #e5e5ea;
-            transition: .3s;
-            border-radius: 24px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 2px;
-            bottom: 2px;
-            background-color: white;
-            transition: .3s;
-            border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        input:checked+.slider {
-            background-color: var(--accent-green);
-        }
-
-        input:checked+.slider:before {
-            transform: translateX(20px);
-        }
-
-        /* Leaflet Overrides */
-        .leaflet-popup-content-wrapper {
-            border-radius: 16px;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid var(--border-glass);
-            backdrop-filter: blur(10px);
-            background: var(--popup-bg);
-            color: var(--text-main);
-        }
-
-        .leaflet-popup-tip {
-            background: var(--popup-bg);
-        }
-
-        .custom-marker {
-            width: 36px;
-            height: 36px;
-            box-sizing: border-box;
-            border-radius: 50%;
-            object-fit: cover;
-            background-color: var(--marker-border);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            border-style: solid;
-            border-width: 3px;
-        }
-
-        .leaflet-drag-target .custom-marker {
-            transform: scale(1.1);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-            opacity: 0.9;
-        }
-
-        .popup-buttons {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            margin-top: 15px;
-        }
-
-        .popup-btn {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            width: 100%;
-            transition: opacity 0.2s;
-        }
-
-        .popup-btn:active {
-            opacity: 0.7;
-        }
-
-        .btn-edit-popup {
-            background: var(--btn-popup);
-            color: var(--accent-blue);
-        }
-
-        .btn-del-popup {
-            background: var(--btn-popup);
-            color: var(--accent-red);
-        }
-
-        .popup-spot-image {
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin: 5px auto 10px;
-            display: block;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .section-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin: 20px 0 10px;
-        }
-
-        @keyframes scaleIn {
-            from {
-                transform: scale(0.9);
-                opacity: 0;
-            }
-
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        @media (max-width: 768px) {
-            #control-panel {
-                top: auto;
-                bottom: max(20px, env(safe-area-inset-bottom));
-                left: 15px;
-                right: 15px;
-                width: auto;
-                padding: 15px;
-                max-height: 40dvh;
-            }
-
-            .fab-container {
-                bottom: auto;
-                top: max(20px, env(safe-area-inset-top));
-                right: 15px;
-            }
-
-            #info-panel {
-                bottom: max(20px, env(safe-area-inset-bottom));
-                right: 15px;
-                left: 15px;
-                width: auto;
-                max-height: 50dvh;
-                transform-origin: bottom center;
-            }
-
-            .leaflet-control-zoom {
-                display: none !important;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
@@ -614,23 +35,24 @@
 
     <!-- Floating Action Buttons -->
     <div class="fab-container">
-        <button class="fab active" id="fab-add-mode" onclick="setMode('add')" data-tooltip-i18n="tooltipAddWayspot"
-            data-tooltip="เพิ่ม Wayspot">📍</button>
-        <button class="fab" id="fab-edit-mode" onclick="setMode('edit')" data-tooltip-i18n="tooltipEditPosition"
+        <button class="fab active" id="fab-add-mode" data-tooltip-i18n="tooltipAddWayspot"
+            data-tooltip="เพิ่ม Wayspot">➕</button>
+        <button class="fab" id="fab-edit-mode" data-tooltip-i18n="tooltipEditPosition"
             data-tooltip="แก้ไขตำแหน่ง">✏️</button>
-        <button class="fab" onclick="toggleInfoPanel()" data-tooltip-i18n="tooltipWayspotList"
+        <button class="fab" id="fab-undo" data-tooltip-i18n="tooltipUndo" data-tooltip="ย้อนกลับ">↩️</button>
+        <button class="fab" id="fab-info-mode" data-tooltip-i18n="tooltipWayspotList"
             data-tooltip="รายการ Wayspot">📋</button>
-        <button class="fab" onclick="openModal('settings-modal-overlay')" data-tooltip-i18n="tooltipSettings"
+        <button class="fab" id="fab-settings-mode" data-tooltip-i18n="tooltipSettings"
             data-tooltip="การตั้งค่า">⚙️</button>
         <button class="fab" id="btn-locate" data-tooltip-i18n="tooltipMyLocation"
-            data-tooltip="ตำแหน่งของฉัน">🧭</button>
+            data-tooltip="ตำแหน่งของฉัน">📍</button>
     </div>
 
     <!-- Main Control Panel -->
     <div id="control-panel" class="glass-panel">
         <div class="panel-header">
-            <h3 data-i18n="addWayspotTitle">📍 เพิ่ม Wayspot</h3>
-            <button class="btn-icon" onclick="toggleControlContent()" id="btn-toggle-control">🔽</button>
+            <h3 data-i18n="addWayspotTitle">➕ เพิ่ม Wayspot</h3>
+            <button class="btn-icon" id="btn-toggle-control">🔽</button>
         </div>
 
         <div id="control-content" style="display: flex; flex-direction: column; gap: 12px;">
@@ -670,7 +92,7 @@
             <button class="btn btn-primary" id="btnAddByLatLng" data-i18n="btnAddByCoords">เพิ่มด้วยพิกัด</button>
             <div style="text-align: center; font-size: 12px; color: var(--text-secondary); margin-top: -5px;"
                 data-i18n="addByMapHint">
-                หรือคลิกบนแผนที่เพื่อเพิ่มหมุด</div>
+                หรือคลิกค้าง 1 วินาทีบนแผนที่เพื่อเพิ่มหมุด</div>
         </div>
     </div>
 
@@ -678,124 +100,186 @@
     <div id="info-panel" class="glass-panel">
         <div class="panel-header">
             <h3 data-i18n="allWayspotsTitle">รายการทั้งหมด</h3>
-            <button class="btn-icon" onclick="toggleInfoPanel()">❌</button>
+            <button class="btn-icon" id="btn-close-info">❌</button>
         </div>
         <div id="info-content"></div>
     </div>
 
     <!-- Settings Modal -->
     <div id="settings-modal-overlay" class="modal-overlay">
-        <div class="modal" id="settings-modal">
-            <h2 data-i18n="settingsTitle">การตั้งค่า</h2>
+        <div class="modal" id="settings-modal" style="position: relative;">
+            <button id="btn-close-settings-top" class="btn-icon"
+                style="position: absolute; right: 20px; top: 20px;">❌</button>
+            <h2 data-i18n="settingsTitle" style="margin-top: 10px; margin-bottom: 25px;">การตั้งค่า</h2>
 
-            <div class="input-group" style="margin-bottom: 20px;">
-                <label data-i18n="mapLayerLabel">ชั้นข้อมูลแผนที่ (Map Layer)</label>
-                <select id="mapLayer" onchange="changeMapLayer()">
-                    <option value="gmap_street" data-i18n="optGmapStreet">Google Maps (ถนน)</option>
-                    <option value="gmap_sat" data-i18n="optGmapSat">Google Maps (ดาวเทียม)</option>
-                    <option value="osm" data-i18n="optOsm">OpenStreetMap</option>
-                    <option value="cartodb_dark" data-i18n="optCartoDark">CartoDB DarkMatter</option>
-                    <option value="bing" data-i18n="optBing">Bing Maps (ดาวเทียม)</option>
-                </select>
-            </div>
-
-            <div class="section-title" data-i18n="mapFeatureTitle">ฟีเจอร์แผนที่</div>
-
-            <div class="toggle-row">
-                <span class="toggle-label" data-i18n="darkMode">🌙 โหมดกลางคืน (Dark Mode)</span>
-                <label class="switch"><input type="checkbox" id="setting-darkmode" onchange="toggleDarkMode()"><span
-                        class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-                <span class="toggle-label" data-i18n="s2Grid">🌐 แสดง S2 Cells (L14, L17)</span>
-                <label class="switch"><input type="checkbox" id="setting-s2grid" onchange="updateS2Grid()"><span
-                        class="slider"></span></label>
-            </div>
-            <div class="toggle-row" style="display: none;">
-                <span class="toggle-label" data-i18n="draggable">✋ อนุญาตให้ลากหมุด</span>
-                <label class="switch"><input type="checkbox" id="setting-draggable" onchange="toggleDraggable()"><span
-                        class="slider"></span></label>
-            </div>
-
-            <div class="section-title" data-i18n="visibilityTitle">แสดงผลจุด (Visibility)</div>
-            <div class="toggle-row">
-                <span class="toggle-label">🔵 PokeStop</span>
-                <label class="switch"><input type="checkbox" id="filter-pokestop" checked
-                        onchange="updateVisibility()"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-                <span class="toggle-label">🔴 Gym</span>
-                <label class="switch"><input type="checkbox" id="filter-gym" checked onchange="updateVisibility()"><span
-                        class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-                <span class="toggle-label">🌸 CA PokeStop</span>
-                <label class="switch"><input type="checkbox" id="filter-caspot" checked
-                        onchange="updateVisibility()"><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-                <span class="toggle-label">🟣 CA Gym</span>
-                <label class="switch"><input type="checkbox" id="filter-cagym" checked
-                        onchange="updateVisibility()"><span class="slider"></span></label>
+            <!-- Group 1: Map & Themes (Open by default) -->
+            <div class="accordion-item active" id="acc-map">
+                <button class="accordion-header">
+                    <span data-i18n="accMapThemes">🗺️ แผนที่และธีม</span>
+                    <span class="icon">▼</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="accordion-inner">
+                        <div class="input-group" style="margin-bottom: 15px;">
+                            <label data-i18n="mapLayerLabel">ชั้นข้อมูลแผนที่ (Map Layer)</label>
+                            <select id="mapLayer">
+                                <option value="gmap_street" data-i18n="optGmapStreet">Google Maps (ถนน)</option>
+                                <option value="gmap_sat" data-i18n="optGmapSat">Google Maps (ดาวเทียม)</option>
+                                <option value="osm" data-i18n="optOsm">OpenStreetMap</option>
+                                <option value="cartodb_dark" data-i18n="optCartoDark">CartoDB DarkMatter</option>
+                                <option value="bing" data-i18n="optBing">Bing Maps (ดาวเทียม)</option>
+                            </select>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label" data-i18n="darkMode">🌙 โหมดกลางคืน (Dark Mode)</span>
+                            <label class="switch"><input type="checkbox" id="setting-darkmode"><span
+                                    class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label" data-i18n="s2Grid">🌐 แสดง S2 Cells (L14, L17)</span>
+                            <label class="switch"><input type="checkbox" id="setting-s2grid"><span
+                                    class="slider"></span></label>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="input-row" style="margin-top: 15px; margin-bottom: 10px; align-items: center;">
-                <span class="toggle-label" data-i18n="iconSizeLabel" style="flex: 1;">ปรับขนาดรูป Wayspot</span>
-                <input type="number" id="setting-icon-size" value="36" min="20" max="40"
-                    style="width: 70px; text-align: center; padding: 5px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);"
-                    onchange="updateIconSize()">
-            </div>
-            <div class="toggle-row" style="margin-top: 5px; margin-bottom: 20px;">
-                <span class="toggle-label" data-i18n="showRadiusLabel">แสดงวงรัศมีของ Wayspot</span>
-                <label class="switch"><input type="checkbox" id="setting-show-radius" checked
-                        onchange="toggleRadiusVisibility()"><span class="slider"></span></label>
+            <!-- Group 2: Wayspot Appearance -->
+            <div class="accordion-item" id="acc-styles">
+                <button class="accordion-header">
+                    <span data-i18n="accWayspotStyles">🎨 การแสดงผลจุด</span>
+                    <span class="icon">▼</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="accordion-inner">
+                        <div class="toggle-row">
+                            <span class="toggle-label">PokeStop</span>
+                            <label class="switch"><input type="checkbox" id="filter-pokestop" checked><span
+                                    class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">Gym</span>
+                            <label class="switch"><input type="checkbox" id="filter-gym" checked><span
+                                    class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">CA PokeStop</span>
+                            <label class="switch"><input type="checkbox" id="filter-caspot" checked><span
+                                    class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">CA Gym</span>
+                            <label class="switch"><input type="checkbox" id="filter-cagym" checked><span
+                                    class="slider"></span></label>
+                        </div>
+
+                        <div class="section-title" data-i18n="customColorsTitle"
+                            style="margin-top: 15px; border-top: 1px solid var(--border-glass); padding-top: 15px;">
+                            กำหนดสี Wayspot</div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">PokéStop</span>
+                            <input type="color" id="color-pokestop"
+                                style="width: 30px; height: 25px; border: none; background: none; cursor: pointer;">
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">Gym</span>
+                            <input type="color" id="color-gym"
+                                style="width: 30px; height: 25px; border: none; background: none; cursor: pointer;">
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">CA PokéStop</span>
+                            <input type="color" id="color-caspot"
+                                style="width: 30px; height: 25px; border: none; background: none; cursor: pointer;">
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">CA Gym</span>
+                            <input type="color" id="color-cagym"
+                                style="width: 30px; height: 25px; border: none; background: none; cursor: pointer;">
+                        </div>
+                        <button class="btn btn-secondary" id="btn-reset-colors"
+                            data-i18n="btnResetColors">คืนค่าดั่งเดิม</button>
+
+                        <div class="input-row" style="margin-top: 15px; align-items: center;">
+                            <span class="toggle-label" data-i18n="iconSizeLabel" style="flex: 1;">ปรับขนาดรูป
+                                Wayspot</span>
+                            <input type="number" id="setting-icon-size" value="36" min="20" max="40"
+                                style="width: 60px; height: 34px; text-align: center;">
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label" data-i18n="showRadiusLabel">แสดงวงรัศมีของ Wayspot</span>
+                            <label class="switch"><input type="checkbox" id="setting-show-radius" checked><span
+                                    class="slider"></span></label>
+                        </div>
+
+                        <div class="section-title" data-i18n="forceRadiusTitle"
+                            style="margin-top: 15px; border-top: 1px solid var(--border-glass); padding-top: 15px;">
+                            บังคับเปลี่ยนรัศมี Wayspot</div>
+                        <div class="input-row" style="gap: 5px;">
+                            <input type="number" id="globalRadiusInput" data-i18n-placeholder="radiusPlaceholder"
+                                placeholder="ระบุระยะ (เช่น 20 หรือ 40)" min="1" max="500"
+                                style="flex: 1; height: 38px;">
+                            <button class="btn btn-secondary" id="btn-force-radius" data-i18n="forceRadiusBtn"
+                                style="width: auto; padding: 0 10px; height: 38px; font-size: 13px;">เปลี่ยนระยะรัศมีทั้งหมด</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="section-title" data-i18n="forceRadiusTitle">บังคับเปลี่ยนรัศมี Wayspot</div>
-            <div class="input-row" style="margin-bottom: 20px;">
-                <input type="number" id="globalRadiusInput" data-i18n-placeholder="radiusPlaceholder"
-                    placeholder="ระบุระยะ (เช่น 20 หรือ 40)" min="1" max="500" style="flex: 1;">
-                <button class="btn btn-secondary" onclick="forceChangeRadius()"
-                    style="width: auto; padding: 10px 15px; font-size: 13px;"
-                    data-i18n="forceRadiusBtn">เปลี่ยนระยะรัศมีทั้งหมด</button>
+
+
+            <!-- Group 4: Data & Cloud -->
+            <div class="accordion-item" id="acc-data">
+                <button class="accordion-header">
+                    <span data-i18n="accSyncData">☁️ การจัดการข้อมูล Wayspot</span>
+                    <span class="icon">▼</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="accordion-inner">
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                            <button class="btn btn-secondary" id="btn-sync-export" data-i18n="saveToDrive">☁️ บันทึกขึ้น
+                                Google Drive</button>
+                            <button class="btn btn-secondary" id="btn-sync-import" data-i18n="loadFromDrive">☁️
+                                โหลดจาก Google Drive</button>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                            <button class="btn btn-secondary" id="btn-local-import" data-i18n="importKML">📥 นำเข้า
+                                KML</button>
+                            <input type="file" id="importKMLInput" accept=".kml" style="display: none;">
+                            <button class="btn btn-secondary" id="btn-local-export" data-i18n="exportKML">📤 ส่งออก
+                                KML</button>
+                            <button class="btn btn-danger" id="btn-local-clear" data-i18n="clearAll">🗑️
+                                ล้างข้อมูลทั้งหมด</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="section-title" data-i18n="cloudSyncTitle">Cloud Sync (Google Drive)</div>
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-                <button class="btn btn-primary" onclick="requestDriveAccess('export')"
-                    style="background: var(--accent-green);" data-i18n="saveToDrive">☁️ บันทึกขึ้น Google Drive</button>
-                <button class="btn btn-secondary" onclick="requestDriveAccess('import')" data-i18n="loadFromDrive">☁️
-                    โหลดจาก Google
-                    Drive</button>
+            <!-- Group 5: App Info -->
+            <div class="accordion-item" id="acc-about">
+                <button class="accordion-header">
+                    <span data-i18n="accAboutApp">🌐 เลือกภาษา</span>
+                    <span class="icon">▼</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="accordion-inner">
+                        <div class="input-group" style="margin-bottom: 20px;">
+                            <label data-i18n="langTitle">ภาษา (Language)</label>
+                            <select id="setting-language">
+                                <option value="th">ภาษาไทย (Thai)</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="section-title" data-i18n="localDataTitle">การจัดการแฟ้มข้อมูล (Local)</div>
-            <input type="file" id="importKMLInput" accept=".kml" style="display: none;" onchange="importKML(event)">
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button class="btn btn-secondary" onclick="document.getElementById('importKMLInput').click()"
-                    data-i18n="importKML">📥 นำเข้า
-                    KML</button>
-                <button class="btn btn-secondary" onclick="exportKML()" data-i18n="exportKML">📤 ส่งออก KML</button>
-                <button class="btn btn-danger" onclick="clearAllSpots()" data-i18n="clearAll">🗑️
-                    ล้างข้อมูลทั้งหมด</button>
+            <div style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-top: 30px;">
+                CA Wayspot Tools v1.6.0<br>
+                <span data-i18n="credits">จัดทำโดย CA: Community Ambassador Thailand</span>
             </div>
 
-            <div class="section-title" data-i18n="langTitle">ภาษา (Language)</div>
-            <div class="input-group" style="margin-bottom: 20px;">
-                <select id="setting-language" onchange="changeLanguage()">
-                    <option value="th">🇹🇭 ไทย</option>
-                    <option value="en">🇬🇧 English</option>
-                </select>
-            </div>
-
-            <div style="text-align: center; margin-top: 25px; font-size: 11px; color: var(--text-secondary);"
-                id="credits-text">
-                CA Wayspot Tools v1.5.2<br><span data-i18n="credits">จัดทำโดย CA: Community Ambassador Thailand</span>
-            </div>
-
-            <div class="modal-buttons">
-                <button class="btn btn-primary" onclick="closeModal('settings-modal-overlay')"
-                    data-i18n="btnDone">เสร็จสิ้น</button>
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button class="btn btn-primary" id="btn-close-settings-done" data-i18n="btnDone">เสร็จสิ้น</button>
             </div>
         </div>
     </div>
@@ -828,9 +312,8 @@
                         id="editRadius" min="40" max="80"></div>
             </div>
             <div class="modal-buttons">
-                <button class="btn btn-secondary" onclick="closeModal('edit-modal-overlay')"
-                    data-i18n="btnCancel">ยกเลิก</button>
-                <button class="btn btn-primary" onclick="saveEdit()" data-i18n="btnSave">บันทึก</button>
+                <button class="btn btn-secondary" id="btn-close-edit" data-i18n="btnCancel">ยกเลิก</button>
+                <button class="btn btn-primary" id="btn-save-edit" data-i18n="btnSave">บันทึก</button>
             </div>
         </div>
     </div>
@@ -845,851 +328,11 @@
                 รองรับการวาด S2 Cells และไฟล์ KML จาก Google My Maps<br><br>
                 ลองคลิกบนแผนที่เพื่อปักหมุดแรกได้เลยครับ
             </p>
-            <button class="btn btn-primary" onclick="closeModal('welcome-modal-overlay')"
-                data-i18n="btnStart">เริ่มต้นใช้งาน</button>
+            <button class="btn btn-primary" id="btn-start-welcome" data-i18n="btnStart">เริ่มต้นใช้งาน</button>
         </div>
     </div>
 
-    <script>
-        // i18n Localization Dictionary
-        const i18n = {
-            th: {
-                tooltipAddWayspot: "เพิ่ม Wayspot",
-                tooltipEditPosition: "แก้ไขตำแหน่ง",
-                tooltipWayspotList: "รายการ Wayspot",
-                tooltipSettings: "การตั้งค่า",
-                tooltipMyLocation: "ตำแหน่งของฉัน",
-                addWayspotTitle: "📍 เพิ่ม Wayspot",
-                wayspotTypeLabel: "ประเภท Wayspot",
-                optPokestop: "PokéStop",
-                optGym: "Gym",
-                optCaPokestop: "CA PokéStop",
-                optCaGym: "CA Gym",
-                nameLabel: "ชื่อ",
-                namePlaceholder: "ศาลพระภูมิ...",
-                imgUrlLabel: "URL รูปภาพ (ไม่บังคับ)",
-                latLabel: "ละติจูด (Lat)",
-                lngLabel: "ลองจิจูด (Lng)",
-                radiusLabel: "รัศมี (เมตร)",
-                btnAddByCoords: "เพิ่มด้วยพิกัด",
-                addByMapHint: "หรือคลิกบนแผนที่เพื่อเพิ่มหมุด",
-                allWayspotsTitle: "รายการทั้งหมด",
-                settingsTitle: "การตั้งค่า",
-                mapLayerLabel: "การแสดงผลแผนที่",
-                optGmapStreet: "Google Maps (ถนน)",
-                optGmapSat: "Google Maps (ดาวเทียม)",
-                optOsm: "OpenStreetMap",
-                optCartoDark: "CartoDB DarkMatter",
-                optBing: "Bing Maps (ดาวเทียม)",
-                mapFeatureTitle: "ฟีเจอร์แผนที่",
-                darkMode: "🌙 โหมดกลางคืน",
-                s2Grid: "🌐 แสดง S2 Cells (L14, L17)",
-                draggable: "✋ อนุญาตให้ลากหมุด",
-                iconSizeLabel: "ปรับขนาดรูป Wayspot",
-                showRadiusLabel: "แสดงวงรัศมีของ Wayspot",
-                visibilityTitle: "การแสดงผล Wayspot",
-                forceRadiusTitle: "บังคับเปลี่ยนรัศมี Wayspot",
-                radiusPlaceholder: "ระบุระยะ (เช่น 20 หรือ 40)",
-                forceRadiusBtn: "เปลี่ยนระยะรัศมีทั้งหมด",
-                cloudSyncTitle: "Cloud Sync (Google Drive)",
-                saveToDrive: "☁️ บันทึกขึ้น Google Drive",
-                loadFromDrive: "☁️ โหลดจาก Google Drive",
-                localDataTitle: "การจัดการแฟ้มข้อมูล (Local)",
-                importKML: "📥 นำเข้า KML",
-                exportKML: "📤 ส่งออก KML",
-                clearAll: "🗑️ ล้างข้อมูลทั้งหมด",
-                langTitle: "ภาษา (Language)",
-                credits: "จัดทำโดย CA: Community Ambassador Thailand",
-                btnDone: "เสร็จสิ้น",
-                editTitle: "แก้ไขข้อมูล",
-                editTypeLabel: "ประเภท",
-                btnCancel: "ยกเลิก",
-                btnSave: "บันทึก",
-                welcomeTitle: "สวัสดีครับ 👋",
-                welcomeText: "<b>CA Wayspot Tools</b> โฉมใหม่!<br><br>จำลอง กะระยะ และวางแผนการตั้ง CA Wayspot ได้ง่ายขึ้น รองรับการวาด S2 Cells และไฟล์ KML จาก Google My Maps<br><br>ลองคลิกบนแผนที่เพื่อปักหมุดแรกได้เลยครับ",
-                btnStart: "เริ่มต้นใช้งาน",
-                noDataToSave: "ไม่มีข้อมูลที่จะบันทึก",
-                saveSuccess: "บันทึกลง Google Drive สำเร็จ! ☁️",
-                saveFailed: "บันทึกไม่สำเร็จ Error: ",
-                backupNotFound: "ไม่พบไฟล์แบ็กอัพใน Google Drive ของคุณ",
-                loadSuccess: "โหลดข้อมูลสำเร็จ! ☁️",
-                loadFailed: "กู้คืนไม่สำเร็จ: ",
-                importSuccessCount: "นำเข้าสำเร็จ {count} จุด\n(ข้ามข้อมูลซ้ำ {dup} จุด)",
-                noLocationFound: "ไม่พบข้อมูลตำแหน่ง",
-                invalidLatLong: "กรุณากรอกพิกัด Latitude และ Longitude ให้ครบและถูกต้อง",
-                deleteConfirmMark: "ลบ Wayspot นี้ออก?",
-                invalidRadius: "กรุณากรอกตัวเลขระยะรัศมีให้ถูกต้อง",
-                confirmRadiusChange: "ต้องการเปลี่ยนรัศมีของตำแหน่งทั้งหมดเป็น {radius} เมตร ใช่หรือไม่?",
-                radiusChangeSuccess: "เปลี่ยนระยะรัศมีทั้งหมด {count} จุดสำเร็จ!",
-                clearAllConfirm: "คุณต้องการลบข้อมูลทั้งหมดจริงๆ หรือไม่?",
-                unnamedAlert: "ไม่มีชื่อ",
-                countLabel: "จำนวน:",
-                infoCoords: "พิกัด:",
-                btnEdit: "แก้ไข",
-                btnDelete: "ลบ",
-                editWayspot: "แก้ไข Wayspot"
-            },
-            en: {
-                tooltipAddWayspot: "Add Wayspot",
-                tooltipEditPosition: "Edit Position",
-                tooltipWayspotList: "Wayspot List",
-                tooltipSettings: "Settings",
-                tooltipMyLocation: "My Location",
-                addWayspotTitle: "📍 Add Wayspot",
-                wayspotTypeLabel: "Wayspot Type",
-                optPokestop: "PokéStop",
-                optGym: "Gym",
-                optCaPokestop: "CA PokéStop",
-                optCaGym: "CA Gym",
-                nameLabel: "Name",
-                namePlaceholder: "Shrine...",
-                imgUrlLabel: "Image URL (Optional)",
-                latLabel: "Latitude",
-                lngLabel: "Longitude",
-                radiusLabel: "Radius (meters)",
-                btnAddByCoords: "Add by Coordinates",
-                addByMapHint: "Or click on the map to add a pin",
-                allWayspotsTitle: "All Wayspots",
-                settingsTitle: "Settings",
-                mapLayerLabel: "Map Layer",
-                optGmapStreet: "Google Maps (Street)",
-                optGmapSat: "Google Maps (Satellite)",
-                optOsm: "OpenStreetMap",
-                optCartoDark: "CartoDB DarkMatter",
-                optBing: "Bing Maps (Satellite)",
-                mapFeatureTitle: "Map Features",
-                darkMode: "🌙 Dark Mode",
-                s2Grid: "🌐 Show S2 Cells (L14, L17)",
-                draggable: "✋ Allow Draggable Wayspot",
-                iconSizeLabel: "Adjust Wayspot Icon Size",
-                showRadiusLabel: "Show Wayspot Radius",
-                visibilityTitle: "Wayspot Visibility",
-                forceRadiusTitle: "Force Change Radius",
-                radiusPlaceholder: "Enter distance (e.g., 20 or 40)",
-                forceRadiusBtn: "Change All Radiuses",
-                cloudSyncTitle: "Cloud Sync (Google Drive)",
-                saveToDrive: "☁️ Save to Google Drive",
-                loadFromDrive: "☁️ Load from Google Drive",
-                localDataTitle: "Data Management (Local)",
-                importKML: "📥 Import KML",
-                exportKML: "📤 Export KML",
-                clearAll: "🗑️ Clear All Data",
-                langTitle: "Language",
-                credits: "Made by CA: Community Ambassador Thailand",
-                btnDone: "Done",
-                editTitle: "Edit Wayspot",
-                editTypeLabel: "Type",
-                btnCancel: "Cancel",
-                btnSave: "Save",
-                welcomeTitle: "Sawasdee! 👋",
-                welcomeText: "Welcome to <b>CA Wayspot Tools</b>!<br><br>Easily simulate, measure, and plan CA Wayspots. Built in support for S2 Cells and KML files from Google My Maps.<br><br>Click anywhere on the map to place your first pin.",
-                btnStart: "Get Started",
-                noDataToSave: "No data to save",
-                saveSuccess: "Successfully saved to Google Drive! ☁️",
-                saveFailed: "Failed to save. Error: ",
-                backupNotFound: "No backup file found in your Google Drive.",
-                loadSuccess: "Data loaded successfully! ☁️",
-                loadFailed: "Failed to restore: ",
-                importSuccessCount: "Successfully imported {count} pins\n(Skipped {dup} duplicates)",
-                noLocationFound: "Location data not found",
-                invalidLatLong: "Please enter valid Latitude and Longitude.",
-                deleteConfirmMark: "Delete this Wayspot?",
-                invalidRadius: "Please enter a valid radius number.",
-                confirmRadiusChange: "Are you sure you want to change the radius of all Wayspots to {radius} meters?",
-                radiusChangeSuccess: "Successfully changed radius for {count} Wayspots!",
-                clearAllConfirm: "Are you sure you want to clear all data?",
-                unnamedAlert: "Unnamed",
-                countLabel: "Total:",
-                infoCoords: "Coords:",
-                btnEdit: "Edit",
-                btnDelete: "Delete",
-                editWayspot: "Edit Wayspot"
-            }
-        };
-
-        let currentLang = localStorage.getItem('appLang') || 'th';
-
-        function t(key, params = {}) {
-            let str = i18n[currentLang][key] || key;
-            for (let p in params) {
-                str = str.replace(`{${p}}`, params[p]);
-            }
-            return str;
-        }
-
-        function applyTranslations() {
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                el.innerHTML = t(el.getAttribute('data-i18n'));
-            });
-            document.querySelectorAll('[data-tooltip-i18n]').forEach(el => {
-                el.setAttribute('data-tooltip', t(el.getAttribute('data-tooltip-i18n')));
-            });
-            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
-            });
-
-            let langSelect = document.getElementById('setting-language');
-            if (langSelect) langSelect.value = currentLang;
-        }
-
-        function changeLanguage() {
-            currentLang = document.getElementById('setting-language').value;
-            localStorage.setItem('appLang', currentLang);
-            applyTranslations();
-            refreshInfoPanel();
-            if (window.updateAllPopupContents) window.updateAllPopupContents();
-        }
-
-        window.addEventListener('DOMContentLoaded', applyTranslations);
-        // Service Worker Registration for PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Reg Failed', err));
-            });
-        }
-
-        // Google Drive Sync Logic
-        const CLIENT_ID = '185984263865-g9029qge3j0o3tsft9hqasp6dkujf34i.apps.googleusercontent.com';
-        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-        let tokenClient;
-        let accessToken = null;
-        let pendingDriveAction = null;
-
-        function initGSI() {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID, scope: SCOPES,
-                callback: (tokenResponse) => {
-                    if (tokenResponse && tokenResponse.access_token) {
-                        accessToken = tokenResponse.access_token;
-                        executeDriveAction();
-                    }
-                },
-            });
-        }
-
-        function requestDriveAccess(action) {
-            pendingDriveAction = action;
-            if (accessToken) executeDriveAction();
-            else tokenClient.requestAccessToken({ prompt: 'consent' });
-        }
-
-        async function executeDriveAction() {
-            if (pendingDriveAction === 'export') {
-                document.body.style.cursor = 'wait';
-                await uploadToDrive();
-                document.body.style.cursor = 'default';
-            } else if (pendingDriveAction === 'import') {
-                document.body.style.cursor = 'wait';
-                await downloadFromDrive();
-                document.body.style.cursor = 'default';
-            }
-        }
-
-        async function searchBackupFile() {
-            let url = 'https://www.googleapis.com/drive/v3/files?q=name="CA_Wayspot_Backup.json" and trashed=false&spaces=drive';
-            let res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + accessToken } });
-            if (res.ok) {
-                let data = await res.json();
-                if (data.files && data.files.length > 0) return data.files[0].id;
-            } else if (res.status === 401) accessToken = null;
-            return null;
-        }
-
-        async function uploadToDrive() {
-            let currentData = localStorage.getItem('pokemonMapSavedData');
-            if (!currentData || Object.keys(spotsData).length === 0) return alert(t('noDataToSave'));
-
-            let fileId = await searchBackupFile();
-            let url = fileId ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media` : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`;
-            let method = fileId ? 'PATCH' : 'POST';
-            let headers = new Headers();
-            headers.append('Authorization', 'Bearer ' + accessToken);
-
-            let body;
-            if (fileId) {
-                headers.append('Content-Type', 'application/json'); body = currentData;
-            } else {
-                let boundary = '-------314159CAWAYSPOT';
-                let delimiter = "\r\n--" + boundary + "\r\n";
-                let close_delim = "\r\n--" + boundary + "--";
-                let meta = { name: 'CA_Wayspot_Backup.json', mimeType: 'application/json' };
-                headers.append('Content-Type', `multipart/related; boundary="${boundary}"`);
-                body = delimiter + 'Content-Type: application/json\r\n\r\n' + JSON.stringify(meta) + delimiter + 'Content-Type: application/json\r\n\r\n' + currentData + close_delim;
-            }
-
-            try {
-                let res = await fetch(url, { method: method, headers: headers, body: body });
-                if (res.ok) alert(t('saveSuccess'));
-                else { alert(t('saveFailed') + res.status); if (res.status === 401) accessToken = null; }
-            } catch (e) { alert("Error: " + e.message); }
-        }
-
-        async function downloadFromDrive() {
-            let fileId = await searchBackupFile();
-            if (!fileId) return alert(t('backupNotFound'));
-
-            let url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
-            try {
-                let res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + accessToken } });
-                if (res.ok) {
-                    let data = await res.json();
-                    if (Array.isArray(data)) {
-                        for (let id in spotsData) if (map.hasLayer(spotsData[id].layerGroup)) map.removeLayer(spotsData[id].layerGroup);
-                        spotsData = {}; spotIdCounter = 0;
-                        localStorage.setItem('pokemonMapSavedData', JSON.stringify(data));
-                        loadFromStorage(); updateVisibility(); refreshInfoPanel();
-                        alert(t('loadSuccess'));
-                        closeModal('settings-modal-overlay');
-                    }
-                } else alert(t('loadFailed') + res.status);
-            } catch (e) { alert("Error: " + e.message); }
-        }
-
-        // Dark Mode Logic
-        window.toggleDarkMode = function () {
-            var isDark = document.getElementById('setting-darkmode').checked;
-            if (isDark) document.body.classList.add('dark-mode');
-            else document.body.classList.remove('dark-mode');
-            localStorage.setItem('caWayspotDarkMode', isDark);
-        };
-        // Init dark mode
-        if (localStorage.getItem('caWayspotDarkMode') === 'true') {
-            document.body.classList.add('dark-mode');
-            window.addEventListener('load', () => { document.getElementById('setting-darkmode').checked = true; });
-        }
-
-        // Modal Logic
-        function openModal(id) {
-            const overlay = document.getElementById(id);
-            const modal = overlay.querySelector('.modal');
-            overlay.style.display = 'flex';
-            // Trigger reflow
-            void overlay.offsetWidth;
-            overlay.classList.add('active');
-            modal.classList.add('active');
-        }
-
-        function closeModal(id) {
-            const overlay = document.getElementById(id);
-            const modal = overlay.querySelector('.modal');
-            overlay.classList.remove('active');
-            modal.classList.remove('active');
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                modal.scrollTop = 0;
-            }, 300);
-        }
-
-        // Show welcome by default (only on first visit)
-        window.addEventListener('load', () => {
-            if (!localStorage.getItem('caWayspotWelcomeShown')) {
-                setTimeout(() => openModal('welcome-modal-overlay'), 300);
-                localStorage.setItem('caWayspotWelcomeShown', 'true');
-            }
-        });
-
-        // Panels
-        var isControlPanelOpen = true;
-        function toggleControlContent() {
-            var content = document.getElementById('control-content');
-            var btn = document.getElementById('btn-toggle-control');
-            if (isControlPanelOpen) { content.style.display = 'none'; btn.innerText = '🔼'; }
-            else { content.style.display = 'flex'; btn.innerText = '🔽'; }
-            isControlPanelOpen = !isControlPanelOpen;
-        }
-
-        function toggleInfoPanel() {
-            var panel = document.getElementById('info-panel');
-            if (panel.style.display === 'block') { panel.style.display = 'none'; }
-            else { panel.style.display = 'block'; refreshInfoPanel(); }
-        }
-
-        function escapeHTML(str) {
-            if (!str) return '';
-            return str.replace(/[&<>'"]/g, function (tag) {
-                var charsToReplace = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' };
-                return charsToReplace[tag] || tag;
-            });
-        }
-
-        // Map Setup
-        var map = L.map('map', { zoomControl: false }).setView([13.7649, 100.5383], 16);
-        L.control.zoom({ position: 'bottomleft' }).addTo(map);
-
-        var osmLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 20 });
-        osmLayer.on('tileerror', function (error) { console.warn('OSM tile error', error); });
-
-        var gmapStreet = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'] });
-        gmapStreet.on('tileerror', function (error) { console.warn('GMap tile error', error); });
-
-        var gmapSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'] });
-        gmapSat.on('tileerror', function (error) { console.warn('GSat tile error', error); });
-
-        var cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 });
-        cartoDark.on('tileerror', function (error) { console.warn('Carto dark tile error', error); });
-
-        L.TileLayer.Bing = L.TileLayer.extend({
-            getTileUrl: function (coords) {
-                var quadkey = '';
-                for (var i = coords.z; i > 0; i--) {
-                    var digit = 0, mask = 1 << (i - 1);
-                    if ((coords.x & mask) !== 0) digit += 1;
-                    if ((coords.y & mask) !== 0) digit += 2;
-                    quadkey += digit;
-                }
-                return this._url.replace('{q}', quadkey);
-            }
-        });
-        var bingSat = new L.TileLayer.Bing('https://t0.tiles.virtualearth.net/tiles/a{q}.jpeg?g=129', { maxZoom: 19, attribution: 'Bing Maps' });
-
-        var currentLayer = gmapStreet;
-        currentLayer.addTo(map);
-
-        window.changeMapLayer = function () {
-            var selected = document.getElementById('mapLayer').value;
-            map.removeLayer(currentLayer);
-            if (selected === 'osm') currentLayer = osmLayer;
-            else if (selected === 'cartodb_dark') currentLayer = cartoDark;
-            else if (selected === 'bing') currentLayer = bingSat;
-            else if (selected === 'gmap_street') currentLayer = gmapStreet;
-            else if (selected === 'gmap_sat') currentLayer = gmapSat;
-            currentLayer.addTo(map);
-        };
-
-        var s2LayerGroup = L.layerGroup().addTo(map);
-
-        window.updateS2Grid = function () {
-            var showS2 = document.getElementById('setting-s2grid').checked;
-            s2LayerGroup.clearLayers();
-            if (!showS2) return;
-            var zoom = map.getZoom();
-            if (zoom < 13) return; // Prevent heavy rendering
-            drawS2Level(14, { color: '#ff9500', weight: 4, fillOpacity: 0, opacity: 0.9, interactive: false });
-            if (zoom >= 15) {
-                drawS2Level(17, { color: '#34c759', weight: 2, fillOpacity: 0, opacity: 0.7, interactive: false });
-            }
-        };
-
-        function drawS2Level(level, styleOptions) {
-            try {
-                var bounds = map.getBounds().pad(0.1);
-                var center = map.getCenter();
-                var startCell = S2.S2Cell.FromLatLng(center, level);
-                var queue = [startCell.toHilbertQuadkey()];
-                var seen = new Set();
-
-                while (queue.length > 0) {
-                    var key = queue.shift();
-                    if (seen.has(key)) continue;
-                    seen.add(key);
-                    var cell = S2.S2Cell.FromHilbertQuadKey(key);
-                    var corners = cell.getCornerLatLngs();
-                    var inBounds = corners.some(p => bounds.contains([p.lat, p.lng]));
-                    var centerInBounds = bounds.contains([cell.getLatLng().lat, cell.getLatLng().lng]);
-
-                    if (inBounds || centerInBounds) {
-                        var latlngs = corners.map(p => [p.lat, p.lng]);
-                        s2LayerGroup.addLayer(L.polygon(latlngs, styleOptions));
-                        cell.getNeighbors().forEach(n => queue.push(n.toHilbertQuadkey()));
-                    }
-                }
-            } catch (e) {
-                console.error("S2 Grid error: ", e);
-            }
-        }
-        map.on('moveend', updateS2Grid);
-        map.on('zoomend', updateS2Grid);
-
-        var spotsData = {};
-        var spotIdCounter = 0;
-        var currentEditId = null;
-        var userLocationMarker = null;
-
-        window.updateVisibility = function () {
-            var checks = {
-                'pokestop': document.getElementById('filter-pokestop').checked,
-                'gym': document.getElementById('filter-gym').checked,
-                'caspot': document.getElementById('filter-caspot').checked,
-                'cagym': document.getElementById('filter-cagym').checked
-            };
-            for (var id in spotsData) {
-                var spot = spotsData[id];
-                if (checks[spot.type]) {
-                    if (!map.hasLayer(spot.layerGroup)) map.addLayer(spot.layerGroup);
-                } else {
-                    if (map.hasLayer(spot.layerGroup)) map.removeLayer(spot.layerGroup);
-                }
-            }
-        };
-
-        window.toggleDraggable = function () {
-            var isDraggable = document.getElementById('setting-draggable').checked;
-            for (var id in spotsData) {
-                if (isDraggable) spotsData[id].marker.dragging.enable();
-                else spotsData[id].marker.dragging.disable();
-            }
-            var btnAdd = document.getElementById('fab-add-mode');
-            var btnEdit = document.getElementById('fab-edit-mode');
-            if (btnAdd && btnEdit) {
-                if (isDraggable) {
-                    btnEdit.classList.add('active');
-                    btnAdd.classList.remove('active');
-                } else {
-                    btnAdd.classList.add('active');
-                    btnEdit.classList.remove('active');
-                }
-            }
-        };
-
-        window.setMode = function (mode) {
-            var chk = document.getElementById('setting-draggable');
-            chk.checked = (mode === 'edit');
-            window.toggleDraggable();
-        };
-
-        function saveToStorage() {
-            const dataToSave = [];
-            for (let id in spotsData) {
-                let spot = spotsData[id];
-                dataToSave.push({
-                    type: spot.type, name: spot.name, imgUrl: spot.imgUrl,
-                    lat: spot.lat, lng: spot.lng, radius: spot.radius
-                });
-            }
-            localStorage.setItem('pokemonMapSavedData', JSON.stringify(dataToSave));
-        }
-
-        function loadFromStorage() {
-            const savedData = localStorage.getItem('pokemonMapSavedData');
-            if (savedData) {
-                const parsedData = JSON.parse(savedData);
-                parsedData.forEach(spotData => createSpot(L.latLng(spotData.lat, spotData.lng), spotData, false));
-                if (parsedData.length > 0) map.setView([parsedData[0].lat, parsedData[0].lng], 16);
-            }
-        }
-
-        // Import KML
-        // Uses previously added duplicate check.
-        window.importKML = function (event) {
-            var file = event.target.files[0];
-            if (!file) return;
-
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                var text = e.target.result;
-                var parser = new DOMParser();
-                var xmlDoc = parser.parseFromString(text, "text/xml");
-                var placemarks = xmlDoc.getElementsByTagName("Placemark");
-                var importedCount = 0;
-                var duplicateCount = 0;
-
-                for (var i = 0; i < placemarks.length; i++) {
-                    var pm = placemarks[i];
-                    var name = pm.getElementsByTagName("name")[0]?.textContent || "ไม่มีชื่อ";
-                    var desc = pm.getElementsByTagName("description")[0]?.textContent || "";
-                    var point = pm.getElementsByTagName("Point")[0];
-
-                    if (point) {
-                        var coords = point.getElementsByTagName("coordinates")[0]?.textContent.trim().split(',');
-                        if (coords && coords.length >= 2) {
-                            var lng = parseFloat(coords[0]), lat = parseFloat(coords[1]);
-                            var type = 'pokestop';
-                            if (desc.includes('CA Gym')) type = 'cagym';
-                            else if (desc.includes('Gym')) type = 'gym';
-                            else if (desc.includes('CA PokeStop') || desc.includes('CA Spot')) type = 'caspot';
-
-                            var radiusMatch = desc.match(/รัศมี:\s*(\d+)/);
-                            var radius = radiusMatch ? parseInt(radiusMatch[1]) : 40;
-
-                            var isDuplicate = false;
-                            for (var existingId in spotsData) {
-                                var existing = spotsData[existingId];
-                                if (Math.abs(existing.lat - lat) < 0.00001 && Math.abs(existing.lng - lng) < 0.00001) {
-                                    isDuplicate = true; break;
-                                }
-                            }
-                            if (!isDuplicate) {
-                                createSpot(L.latLng(lat, lng), { type: type, name: name, imgUrl: '', radius: radius, lat: lat, lng: lng }, false);
-                                importedCount++;
-                            } else duplicateCount++;
-                        }
-                    }
-                }
-
-                if (importedCount > 0 || duplicateCount > 0) {
-                    alert(t('importSuccessCount', { count: importedCount, dup: duplicateCount }));
-                    saveToStorage(); updateVisibility();
-                    var lastId = Object.keys(spotsData).pop();
-                    if (lastId && importedCount > 0) map.setView([spotsData[lastId].lat, spotsData[lastId].lng], 16);
-                } else alert(t('noLocationFound'));
-                event.target.value = '';
-            };
-            reader.readAsText(file);
-        };
-
-        window.exportKML = function () {
-            if (Object.keys(spotsData).length === 0) return alert(t('noDataToSave'));
-            let kmlContent = `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n  <Document>\n    <name>Map Export</name>\n`;
-            for (let id in spotsData) {
-                let spot = spotsData[id];
-                let typeName = getStyleByType(spot.type).typeName;
-                kmlContent += `    <Placemark>\n      <name>${escapeHTML(spot.name)}</name>\n      <description>ประเภท: ${typeName} | รัศมี: ${spot.radius} เมตร</description>\n      <Point><coordinates>${spot.lng},${spot.lat},0</coordinates></Point>\n    </Placemark>\n`;
-            }
-            kmlContent += `  </Document>\n</kml>`;
-            let blob = new Blob([kmlContent], { type: "application/vnd.google-earth.kml+xml" });
-            let url = URL.createObjectURL(blob);
-            let a = document.createElement("a"); a.href = url; a.download = "export_points.kml";
-            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-        };
-
-        window.clearAllSpots = function () {
-            if (confirm(t('clearAllConfirm'))) {
-                for (let id in spotsData) {
-                    if (map.hasLayer(spotsData[id].layerGroup)) map.removeLayer(spotsData[id].layerGroup);
-                }
-                spotsData = {}; spotIdCounter = 0; saveToStorage(); refreshInfoPanel(); closeModal('settings-modal-overlay');
-            }
-        };
-
-        function getStyleByType(type) {
-            if (type === 'pokestop') return { color: '#007aff', fillColor: '#007aff', typeName: 'PokeStop' };
-            if (type === 'gym') return { color: '#ff3b30', fillColor: '#007aff', typeName: 'Gym' };
-            if (type === 'caspot') return { color: '#ff2d55', fillColor: '#007aff', typeName: 'CA PokeStop' };
-            if (type === 'cagym') return { color: '#af52de', fillColor: '#af52de', typeName: 'CA Gym' };
-            return { color: '#007aff', fillColor: '#007aff', typeName: 'Unknown' };
-        }
-
-        function getImageUrl(imgUrl, type) {
-            let defaultImg = 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png';
-            if (type === 'pokestop' || type === 'gym') defaultImg = 'https://lh3.googleusercontent.com/fs2mYM4r9Qq93ejdOP_2lwefRNLVa9tqmJW7XXwqNhMCMXNKwoJoFuMboBpXwnKUf7fJGImbajM9mHAOMlndt5A-Ts9Qh9f_t6YoaQ6u=s0';
-            else if (type === 'caspot') defaultImg = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQcm3QbkubsZfLk4kiEHCdzIe3nezdt3yU4dA&s';
-            else if (type === 'cagym') defaultImg = 'https://lh3.googleusercontent.com/p-LbBPtPAKKNNZFMYy84f35FFaEpZBSEfPKx0xK9t48a_SJwaeBEBGOzrPOu0vtcKnnWSe9FpVyt25Rh8PoKldVKlOm9B5iTweq8Ox8=s0';
-            return imgUrl || defaultImg;
-        }
-
-        function refreshInfoPanel() {
-            var htmlData = { 'pokestop': '', 'gym': '', 'caspot': '', 'cagym': '' };
-            var counts = { 'pokestop': 0, 'gym': 0, 'caspot': 0, 'cagym': 0 };
-
-            for (var id in spotsData) {
-                var spot = spotsData[id];
-                var latlngText = `${spot.lat.toFixed(5)}, ${spot.lng.toFixed(5)}`;
-                htmlData[spot.type] += `<div class="info-item"><b>${escapeHTML(spot.name)}</b><br><span class="info-item-coords">📍 ${t('infoCoords')} ${latlngText}</span></div>`;
-                counts[spot.type]++;
-            }
-
-            var finalHTML = "";
-            var cats = [
-                { id: 'pokestop', name: t('optPokestop'), color: '#007aff' },
-                { id: 'gym', name: t('optGym'), color: '#ff3b30' },
-                { id: 'caspot', name: t('optCaPokestop'), color: '#ff2d55' },
-                { id: 'cagym', name: t('optCaGym'), color: '#af52de' }
-            ];
-
-            cats.forEach(c => {
-                var content = htmlData[c.id] || `<div style="font-size:12px; color:var(--text-secondary);">-</div>`;
-                finalHTML += `<div class="info-category"><h4 style="color:${c.color}; margin-top: 10px;">${c.name.split(' ')[0]} ${c.name.split(' ')[1] ? c.name.split(' ')[1] : ''} (${t('countLabel')} ${counts[c.id]})</h4>${content}</div>`;
-            });
-
-            document.getElementById('info-content').innerHTML = finalHTML;
-        }
-
-        function createCustomIcon(imgUrl, borderColor, type) {
-            let iconSize = parseInt(document.getElementById('setting-icon-size').value) || 36;
-            return L.divIcon({
-                className: 'custom-icon-wrapper',
-                html: `<img src="${getImageUrl(imgUrl, type)}" class="custom-marker" style="border-color: ${borderColor}; width: ${iconSize}px; height: ${iconSize}px;" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'">`,
-                iconSize: [iconSize, iconSize], iconAnchor: [iconSize / 2, iconSize / 2]
-            });
-        }
-
-        function updatePopupContent(id) {
-            var spot = spotsData[id];
-            var styleInfo = getStyleByType(spot.type);
-
-            var content = `
-                <div style="text-align: center; min-width: 170px;">
-                    <h4 style="margin: 0 0 5px 0;">${escapeHTML(spot.name)}</h4>
-                    <img src="${getImageUrl(spot.imgUrl, spot.type)}" class="popup-spot-image" style="border-color: ${styleInfo.color};" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'">
-                    <span style="font-size: 13px; color: var(--text-secondary);">${t('wayspotTypeLabel')}: <b>${t('opt' + spot.type.charAt(0).toUpperCase() + spot.type.slice(1).replace('pokestop', 'Pokestop').replace('caspot', 'CaPokestop').replace('gym', 'Gym').replace('cagym', 'CaGym')).replace(/ [🔵🔴🌸🟣]/, '')}</b></span><br>
-                    <span style="font-size: 12px; color: var(--text-secondary);">${t('radiusLabel').replace(' (เมตร)', '').replace(' (meters)', '')}: <b>${spot.radius} m</b></span><br>
-                    <div class="popup-buttons">
-                        <button class="popup-btn btn-edit-popup" onclick="window.openEditModal(${id})">${t('btnEdit')}</button>
-                        <button class="popup-btn btn-del-popup" onclick="window.removeSpot(${id})">${t('btnDelete')}</button>
-                    </div>
-                </div>
-            `;
-            spot.marker.bindPopup(content);
-        }
-
-        window.updateAllPopupContents = function () {
-            for (let id in spotsData) updatePopupContent(id);
-        }
-
-        function createSpot(latlng, savedData = null, isFromClick = false) {
-            var type = savedData ? savedData.type : (isFromClick ? 'pokestop' : document.getElementById('spotType').value);
-            var name = savedData ? savedData.name : (document.getElementById('spotName').value || t('unnamedAlert'));
-            var imgUrl = savedData ? savedData.imgUrl : document.getElementById('spotImage').value;
-            var radius = savedData ? savedData.radius : parseInt(document.getElementById('spotRadius').value);
-
-            radius = Math.max(40, Math.min(80, isNaN(radius) ? 40 : radius));
-            if (!savedData) document.getElementById('spotRadius').value = radius;
-
-            var styleInfo = getStyleByType(type);
-            var showRadius = document.getElementById('setting-show-radius') ? document.getElementById('setting-show-radius').checked : true;
-            var circle = L.circle(latlng, { color: styleInfo.color, weight: 2, fillColor: styleInfo.fillColor, fillOpacity: showRadius ? 0.10 : 0, opacity: showRadius ? 1 : 0, radius: radius });
-            var marker = L.marker(latlng, {
-                icon: createCustomIcon(imgUrl, styleInfo.color, type),
-                draggable: document.getElementById('setting-draggable').checked
-            });
-
-            var layerGroup = L.layerGroup([circle, marker]);
-            var currentId = spotIdCounter++;
-
-            spotsData[currentId] = {
-                id: currentId, type: type, name: name, imgUrl: imgUrl,
-                radius: radius, lat: latlng.lat, lng: latlng.lng,
-                layerGroup: layerGroup, marker: marker, circle: circle
-            };
-
-            marker.on('drag', function (e) { circle.setLatLng(e.latlng); });
-            marker.on('dragend', function (e) {
-                var newPos = e.target.getLatLng();
-                spotsData[currentId].lat = newPos.lat; spotsData[currentId].lng = newPos.lng;
-                circle.setLatLng(newPos);
-                updatePopupContent(currentId); refreshInfoPanel(); saveToStorage();
-            });
-
-            updatePopupContent(currentId);
-            if (document.getElementById('filter-' + type).checked) layerGroup.addTo(map);
-            refreshInfoPanel();
-            if (!savedData) saveToStorage();
-        }
-
-        map.on('click', function (e) {
-            if (document.getElementById('setting-draggable').checked) return;
-            document.getElementById('spotLat').value = ''; document.getElementById('spotLng').value = '';
-            createSpot(e.latlng, null, true);
-        });
-
-        document.getElementById('btnAddByLatLng').addEventListener('click', function () {
-            var lat = parseFloat(document.getElementById('spotLat').value);
-            var lng = parseFloat(document.getElementById('spotLng').value);
-            if (isNaN(lat) || isNaN(lng)) return alert(t('invalidLatLong'));
-            var newLatLng = L.latLng(lat, lng);
-            createSpot(newLatLng, null, false);
-            map.flyTo(newLatLng, 17);
-
-            // Clear form
-            document.getElementById('spotName').value = '';
-            document.getElementById('spotImage').value = '';
-            document.getElementById('spotLat').value = '';
-            document.getElementById('spotLng').value = '';
-            document.getElementById('spotType').value = 'pokestop';
-        });
-
-        window.openEditModal = function (id) {
-            var spot = spotsData[id]; currentEditId = id;
-            document.getElementById('editType').value = spot.type;
-            document.getElementById('editName').value = spot.name;
-            document.getElementById('editImage').value = spot.imgUrl || '';
-            document.getElementById('editLat').value = spot.lat;
-            document.getElementById('editLng').value = spot.lng;
-            document.getElementById('editRadius').value = spot.radius;
-            map.closePopup(); openModal('edit-modal-overlay');
-        };
-
-        window.saveEdit = function () {
-            if (currentEditId === null) return;
-            var spot = spotsData[currentEditId];
-            var newLat = parseFloat(document.getElementById('editLat').value);
-            var newLng = parseFloat(document.getElementById('editLng').value);
-            var newRadius = parseInt(document.getElementById('editRadius').value);
-
-            if (isNaN(newLat) || isNaN(newLng)) return alert(t('invalidLatLong'));
-            newRadius = Math.max(40, Math.min(80, isNaN(newRadius) ? 40 : newRadius));
-
-            spot.type = document.getElementById('editType').value;
-            spot.name = document.getElementById('editName').value || t('unnamedAlert');
-            spot.imgUrl = document.getElementById('editImage').value;
-            spot.lat = newLat; spot.lng = newLng; spot.radius = newRadius;
-
-            var newLatLng = L.latLng(newLat, newLng);
-            var styleInfo = getStyleByType(spot.type);
-
-            spot.circle.setLatLng(newLatLng); spot.circle.setRadius(newRadius);
-            spot.circle.setStyle({ color: styleInfo.color, fillColor: styleInfo.fillColor });
-            spot.marker.setLatLng(newLatLng);
-            spot.marker.setIcon(createCustomIcon(spot.imgUrl, styleInfo.color, spot.type));
-
-            updatePopupContent(currentEditId); closeModal('edit-modal-overlay');
-            map.flyTo(newLatLng, map.getZoom());
-            updateVisibility(); saveToStorage(); refreshInfoPanel();
-        };
-        window.forceChangeRadius = function () {
-            var newRadius = parseInt(document.getElementById('globalRadiusInput').value);
-            if (isNaN(newRadius) || newRadius <= 0) return alert(t('invalidRadius'));
-            if (confirm(t('confirmRadiusChange', { radius: newRadius }))) {
-                let count = 0;
-                for (let id in spotsData) {
-                    spotsData[id].radius = newRadius;
-                    if (spotsData[id].circle) spotsData[id].circle.setRadius(newRadius);
-                    count++;
-                }
-                saveToStorage();
-                alert(t('radiusChangeSuccess', { count: count }));
-                document.getElementById('globalRadiusInput').value = '';
-            }
-        };
-
-        window.removeSpot = function (id) {
-            if (spotsData[id] && confirm(t('deleteConfirmMark'))) {
-                if (map.hasLayer(spotsData[id].layerGroup)) map.removeLayer(spotsData[id].layerGroup);
-                delete spotsData[id]; refreshInfoPanel(); saveToStorage();
-            }
-        };
-
-        document.getElementById('btn-locate').addEventListener('click', function () { map.locate({ setView: true, maxZoom: 17 }); });
-        map.on('locationfound', function (e) {
-            if (userLocationMarker) map.removeLayer(userLocationMarker);
-            userLocationMarker = L.circleMarker(e.latlng, { radius: 8, fillColor: "#007aff", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.8 }).addTo(map);
-            userLocationMarker.bindPopup(currentLang === 'th' ? "คุณอยู่ที่นี่" : "You are here").openPopup();
-        });
-        map.on('locationerror', function (e) { alert(currentLang === 'th' ? "ไม่สามารถเข้าถึงตำแหน่งของคุณได้" : "Cannot access your location."); });
-
-        window.updateIconSize = function () {
-            let iconSize = parseInt(document.getElementById('setting-icon-size').value) || 36;
-            if (iconSize < 20) iconSize = 20;
-            if (iconSize > 40) iconSize = 40;
-            document.getElementById('setting-icon-size').value = iconSize;
-            localStorage.setItem('caWayspotIconSize', iconSize);
-            for (let id in spotsData) {
-                let spot = spotsData[id];
-                let styleInfo = getStyleByType(spot.type);
-                spot.marker.setIcon(createCustomIcon(spot.imgUrl, styleInfo.color, spot.type));
-            }
-        };
-
-        window.toggleRadiusVisibility = function () {
-            let showRadius = document.getElementById('setting-show-radius').checked;
-            localStorage.setItem('caWayspotShowRadius', showRadius);
-            for (let id in spotsData) {
-                if (spotsData[id].circle) {
-                    spotsData[id].circle.setStyle({ fillOpacity: showRadius ? 0.10 : 0, opacity: showRadius ? 1 : 0 });
-                }
-            }
-        };
-
-        if (localStorage.getItem('caWayspotIconSize')) {
-            document.getElementById('setting-icon-size').value = localStorage.getItem('caWayspotIconSize');
-        }
-        if (localStorage.getItem('caWayspotShowRadius') !== null) {
-            document.getElementById('setting-show-radius').checked = (localStorage.getItem('caWayspotShowRadius') === 'true');
-        }
-
-        loadFromStorage();
-        updateVisibility();
-    </script>
+    <script src="app.js"></script>
 </body>
 
 </html>

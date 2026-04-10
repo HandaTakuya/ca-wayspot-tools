@@ -1,7 +1,9 @@
-const CACHE_NAME = 'wayspot-cache-v1';
+const CACHE_NAME = 'wayspot-cache-v1.6.0';
 const urlsToCache = [
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './style.css',
+  './app.js'
 ];
 
 self.addEventListener('install', event => {
