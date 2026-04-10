@@ -1,10 +1,10 @@
-// i18n Localization Dictionary v1.7.9
+// i18n Localization Dictionary v1.8.0
 const i18n = {
     th: {
         tooltipAddWayspot: "เพิ่ม Wayspot",
         tooltipEditPosition: "แก้ไขตำแหน่ง",
         tooltipWayspotList: "รายการ Wayspot",
-        tooltipUndo: "ย้อนกลับ (Cmd+Z)",
+        tooltipUndo: "ย้อนกลับ (Cmd+Z/Ctrl+Z)",
         tooltipSettings: "การตั้งค่า",
         tooltipMyLocation: "ตำแหน่งของฉัน",
         addWayspotTitle: "➕ เพิ่ม Wayspot",
@@ -68,7 +68,7 @@ const i18n = {
         tutorialSlide1Title: "📍 การเพิ่มตำแหน่ง",
         tutorialSlide1Content: "คลิก 2 ครั้งในตำแหน่งทีต้องการเพื่อเพิ่มหมุด หรือกรอกพิกัดโดยตรงเพื่อความแม่นยำ!",
         tutorialSlide2Title: "✏️ การแก้ไขและย้อนกลับ",
-        tutorialSlide2Content: "สลับเข้าโหมดแก้ไขเพื่อลากย้ายหมุด และใช้ปุ่มย้อนกลับ (↩️) หรือ Cmd+Z เพื่อคืนค่ากรณีทำผิดพลาด",
+        tutorialSlide2Content: "สลับเข้าโหมดแก้ไขเพื่อลากย้ายหมุด และใช้ปุ่มย้อนกลับ (↩️) หรือ Cmd+Z/Ctrl+Z เพื่อคืนค่ากรณีทำผิดพลาด",
         tutorialSlide3Title: "🌐 เครื่องมือวางแผน",
         tutorialSlide3Content: "เปิด S2 Cells (L14/L17) และวงรัศมี 40 เมตร เพื่อตรวจสอบการเกิดของเสาและการทับซ้อน",
         tutorialSlide4Title: "🎨 ปรับแต่งหน้าตา",
@@ -104,7 +104,7 @@ const i18n = {
         tooltipAddWayspot: "Add Wayspot",
         tooltipEditPosition: "Edit Position",
         tooltipWayspotList: "Wayspot List",
-        tooltipUndo: "Undo (Cmd+Z)",
+        tooltipUndo: "Undo (Cmd+Z/Ctrl+Z)",
         tooltipSettings: "Settings",
         tooltipMyLocation: "My Location",
         addWayspotTitle: "➕ Add Wayspot",
@@ -120,7 +120,7 @@ const i18n = {
         lngLabel: "Longitude",
         radiusLabel: "Radius (meters)",
         btnAddByCoords: "Add by Coordinates",
-        addByMapHint: "Or double click on map to add pin",
+        addByMapHint: "Or double click on map to add Wayspot",
         allWayspotsTitle: "All Wayspots",
         settingsTitle: "Settings",
         mapLayerLabel: "Map Layer",
@@ -166,9 +166,9 @@ const i18n = {
         menuTutorial: "📘 Getting Started",
         tutorialTitle: "Getting Started",
         tutorialSlide1Title: "📍 Adding Wayspots",
-        tutorialSlide1Content: "Double click on map to add pin or enter coordinates directly for precision!",
+        tutorialSlide1Content: "Double click on map to add Wayspot or enter coordinates directly for precision!",
         tutorialSlide2Title: "✏️ Editing & Undo",
-        tutorialSlide2Content: "Switch to Edit mode to drag markers, and use the Undo (↩️) button or Cmd+Z to revert mistakes.",
+        tutorialSlide2Content: "Switch to Edit mode to drag markers, and use the Undo (↩️) button or Cmd+Z/Ctrl+Z to revert mistakes.",
         tutorialSlide3Title: "🌐 Planning Tools",
         tutorialSlide3Content: "Enable S2 Cells (L14/L17) and 40m Radius to verify spawn points and spacing.",
         tutorialSlide4Title: "🎨 Appearance",
@@ -473,36 +473,28 @@ window.CAWayspotApp = (function () {
         map.on('moveend', updateS2Grid);
         map.on('zoomend', updateS2Grid);
 
-        let longPressTimer;
-        const handleStart = (e) => {
+        // Custom Double-Tap/Double-Click Detector for robust cross-platform experience
+        let lastClickTime = 0;
+        map.on('click', function (e) {
             const dragToggle = document.getElementById('setting-draggable');
             const isDraggable = dragToggle ? dragToggle.checked : (window.isDraggableMode || false);
             if (isDraggable) return;
 
-            if (longPressTimer) clearTimeout(longPressTimer);
-            longPressTimer = window.setTimeout(function () {
+            const now = Date.now();
+            if (now - lastClickTime < 350) {
+                // Double tap/click detected
                 document.getElementById('spotLat').value = '';
                 document.getElementById('spotLng').value = '';
                 createSpot(e.latlng, null, true);
-            }, 400); // 0.4 seconds
-        };
-
-        map.on('mousedown touchstart', handleStart);
-
-        map.on('mouseup touchend dragstart zoomstart movestart', function () {
-            if (longPressTimer) {
-                clearTimeout(longPressTimer);
+                lastClickTime = 0; // Reset to prevent triple-click triggers
+            } else {
+                lastClickTime = now;
             }
         });
 
         // Disable default context menu on map for cleaner mobile experience
         map.on('contextmenu', (e) => {
             L.DomEvent.preventDefault(e);
-        });
-
-        // Double Click/Tap for placement (Recommended for mobile)
-        map.on('dblclick', (e) => {
-            createSpot(e.latlng, null, true);
         });
 
         map.on('locationfound', function (e) {
@@ -1173,7 +1165,7 @@ window.CAWayspotApp = (function () {
         safeListen('mapLayer', 'change', changeMapLayer);
         safeListen('setting-darkmode', 'change', toggleDarkMode);
         safeListen('setting-s2grid', 'change', updateS2Grid);
-        
+
         const dragToggle = document.getElementById('setting-draggable');
         if (dragToggle) {
             dragToggle.addEventListener('change', toggleDraggable);

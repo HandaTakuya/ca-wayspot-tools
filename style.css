@@ -80,6 +80,8 @@
             -ms-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            /* Optimization for custom tap detection */
+            touch-action: pan-x pan-y;
         }
 
         /* Allow Selection in UI Elements */
