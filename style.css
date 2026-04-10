@@ -1,26 +1,190 @@
-:root {
-            --bg-glass: rgba(255, 255, 255, 0.85);
-            --bg-glass-dark: rgba(240, 240, 245, 0.85);
-            --border-glass: rgba(0, 0, 0, 0.1);
-            --text-main: #1d1d1f;
-            --text-secondary: #86868b;
-            --accent-blue: #007aff;
-            --accent-red: #ff3b30;
-            --accent-green: #34c759;
-            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.08);
-            --border-radius-lg: 18px;
-            --border-radius-md: 12px;
-            --font-family: "Noto Sans Thai", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            --body-bg: #f5f5f7;
-            --input-bg: rgba(255, 255, 255, 0.8);
-            --btn-secondary: rgba(0, 0, 0, 0.05);
-            --btn-secondary-hover: rgba(0, 0, 0, 0.1);
-            --modal-overlay: rgba(0, 0, 0, 0.3);
-            --popup-bg: rgba(255, 255, 255, 0.9);
-            --info-item: rgba(255, 255, 255, 0.6);
-            --marker-border: white;
-            --btn-popup: #f2f2f7;
-        }
+    :root {
+        --bg-glass: rgba(255, 255, 255, 0.85);
+        --bg-glass-dark: rgba(240, 240, 245, 0.85);
+        --border-glass: rgba(0, 0, 0, 0.1);
+        --text-main: #1d1d1f;
+        --text-secondary: #86868b;
+        --accent-primary: #007aff;
+        --accent-red: #ff3b30;
+        --accent-green: #34c759;
+        --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.08);
+        --border-radius-lg: 18px;
+        --border-radius-md: 12px;
+        --font-family: "Noto Sans Thai", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --body-bg: #f5f5f7;
+        --input-bg: rgba(255, 255, 255, 0.8);
+        --btn-secondary: rgba(0, 0, 0, 0.05);
+        --btn-secondary-hover: rgba(0, 0, 0, 0.1);
+        --modal-overlay: rgba(0, 0, 0, 0.3);
+        --popup-bg: rgba(255, 255, 255, 0.9);
+        --info-item: rgba(255, 255, 255, 0.6);
+        --marker-border: white;
+        --btn-popup: #f2f2f7;
+    }
+
+    /* Pokemon GO Theme overrides */
+    body[data-theme="pokemongo"] {
+        --accent-primary: #00c2b3;
+        --body-bg: linear-gradient(135deg, #e3f9e5 0%, #a1eacb 100%);
+        --bg-glass: rgba(255, 255, 255, 0.95);
+        --border-radius-lg: 28px;
+        --border-radius-md: 30px;
+    }
+    
+    body[data-theme="pokemongo"].dark-mode {
+        --body-bg: linear-gradient(135deg, #0d1b13 0%, #05140e 100%);
+        --bg-glass: rgba(30, 30, 32, 0.9);
+        --accent-primary: #00d4c5;
+        --border-radius-lg: 28px;
+        --border-radius-md: 30px;
+    }
+
+    /* Pokemon GO Gradient Styles */
+    body[data-theme="pokemongo"] .btn-primary,
+    body[data-theme="pokemongo"] .fab.active,
+    body[data-theme="pokemongo"] .switch input:checked + .slider {
+        background: linear-gradient(to right, #a2dc94, #24cbac) !important;
+        border: none;
+    }
+
+    body[data-theme="pokemongo"] .btn-primary:active,
+    body[data-theme="pokemongo"] .fab.active:active {
+        opacity: 0.8;
+        transform: scale(0.98);
+    }
+
+    /* Liquid Glass Theme */
+    body[data-theme="ios26"] {
+        --accent-primary: linear-gradient(135deg, #ff0080, #7928ca, #0070f3);
+        --body-bg: radial-gradient(circle at top left, #a0c4ff, #ffc8dd 50%, #bde0fe 100%);
+        --bg-glass: rgba(255, 255, 255, 0.72);
+        --border-glass: rgba(255, 255, 255, 0.4);
+        --border-radius-lg: 35px;
+        --border-radius-md: 40px;
+        --text-main: #000;
+        --text-secondary: rgba(0, 0, 0, 0.6);
+    }
+
+    body[data-theme="ios26"].dark-mode {
+        --body-bg: radial-gradient(circle at top right, #1a1a2e, #16213e 50%, #0f3460 100%);
+        --bg-glass: rgba(0, 0, 0, 0.2);
+        --border-glass: rgba(255, 255, 255, 0.1);
+        --text-main: #fff;
+        --text-secondary: rgba(255, 255, 255, 0.6);
+    }
+
+    body[data-theme="ios26"] .glass-panel,
+    body[data-theme="ios26"] .modal {
+        backdrop-filter: blur(34px) saturate(180%);
+        -webkit-backdrop-filter: blur(34px) saturate(180%);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.05);
+    }
+
+    body[data-theme="ios26"] .btn-primary,
+    body[data-theme="ios26"] .fab.active,
+    body[data-theme="ios26"] .switch input:checked + .slider {
+        background: var(--accent-primary) !important;
+        border: none;
+        color: white;
+    }
+
+    body[data-theme="ios26"] .btn-primary:active,
+    body[data-theme="ios26"] .fab.active:active {
+        transform: scale(0.96);
+        filter: brightness(1.1);
+    }
+
+    /* Leaflet Popup overrides for Liquid Glass Theme */
+    body[data-theme="ios26"] .leaflet-popup-content-wrapper,
+    body[data-theme="ios26"] .leaflet-popup-tip {
+        background: var(--bg-glass) !important;
+        color: var(--text-main) !important;
+        backdrop-filter: blur(34px) saturate(180%);
+        -webkit-backdrop-filter: blur(34px) saturate(180%);
+        border: 1px solid var(--border-glass);
+        border-radius: var(--border-radius-lg);
+    }
+
+    body[data-theme="ios26"] .leaflet-popup-content {
+        margin: 15px;
+    }
+
+    body[data-theme="ios26"] .leaflet-popup-close-button {
+        color: var(--text-main) !important;
+    }
+
+    /* Leaflet Popup overrides for Pokemon GO Theme */
+    body[data-theme="pokemongo"] .btn-edit-popup {
+        background: linear-gradient(to right, #a2dc94, #24cbac) !important;
+        color: white !important;
+        border-radius: 50px !important;
+        border: none !important;
+        font-weight: bold;
+    }
+
+    body[data-theme="pokemongo"] .btn-del-popup {
+        background: #f4b3bd !important;
+        color: #f25f5f !important;
+        border-radius: 50px !important;
+        border: none !important;
+        font-weight: bold;
+    }
+
+    body[data-theme="pokemongo"] .leaflet-popup-content-wrapper {
+        border-radius: 20px;
+    }
+
+    /* Dark Theme (Deep Carbon) */
+    body[data-theme="darktheme"] {
+        --accent-primary: #ffffff;
+        --body-bg: #050505;
+        --bg-glass: rgba(18, 18, 18, 0.95);
+        --bg-glass-dark: rgba(25, 25, 25, 0.95);
+        --border-glass: rgba(255, 255, 255, 0.08);
+        --text-main: #f0f0f0;
+        --text-secondary: #999999;
+        --border-radius-lg: 18px;
+        --border-radius-md: 12px;
+        --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.6);
+        --input-bg: rgba(30, 30, 30, 0.8);
+        --btn-secondary: rgba(255, 255, 255, 0.05);
+        --info-item: rgba(255, 255, 255, 0.05);
+        --btn-popup: rgba(255, 255, 255, 0.1);
+        --marker-border: #1a1a1a;
+    }
+
+    body[data-theme="darktheme"] .btn-primary {
+        background: #f0f0f0 !important;
+        color: #000000 !important;
+    }
+
+    body[data-theme="darktheme"] .fab.active {
+        background: #f0f0f0 !important;
+        color: #000000 !important;
+    }
+
+    body[data-theme="darktheme"] .theme-btn.active {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border-color: #ffffff !important;
+    }
+
+    /* Leaflet Popup overrides for Dark Theme */
+    body[data-theme="darktheme"] .leaflet-popup-content-wrapper,
+    body[data-theme="darktheme"] .leaflet-popup-tip {
+        background: var(--bg-glass) !important;
+        color: var(--text-main) !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid var(--border-glass);
+    }
+
+    body[data-theme="darktheme"] .leaflet-popup-content {
+        margin: 15px;
+    }
+
+    body[data-theme="darktheme"] .leaflet-popup-close-button {
+        color: var(--text-secondary) !important;
+    }
 
         body.dark-mode {
             --bg-glass: rgba(30, 30, 32, 0.85);
@@ -198,7 +362,7 @@
 
         input:focus,
         select:focus {
-            border-color: var(--accent-blue);
+            border-color: var(--accent-primary);
             box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
         }
 
@@ -216,7 +380,7 @@
         }
 
         .btn-primary {
-            background: var(--accent-blue);
+            background: var(--accent-primary);
             color: white;
         }
 
@@ -237,6 +401,16 @@
         .btn-danger {
             background: rgba(255, 59, 48, 0.1);
             color: var(--accent-red);
+        }
+
+        #btn-sync-export {
+            background-color: #d1f7d1 !important;
+            color: #2b5d2b !important;
+        }
+
+        #btn-sync-import {
+            background-color: #9addf7 !important;
+            color: #1a4d5e !important;
         }
 
         .btn-danger:hover {
@@ -260,7 +434,7 @@
             height: 55px;
             border-radius: 50%;
             border: 1px solid var(--border-glass);
-            background: var(--bg-glass);
+            background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
@@ -272,7 +446,7 @@
             padding: 0;
             line-height: 1;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            color: var(--accent-blue);
+            color: var(--accent-primary);
         }
 
         .fab[data-tooltip]::after {
@@ -307,10 +481,21 @@
             transform: translateY(-50%) translateX(-4px);
         }
 
+        /* Theme Buttons Active State */
+        .theme-btn.active {
+            border: 2px solid var(--accent-primary) !important;
+            background: rgba(0, 122, 255, 0.1) !important;
+        }
+        
+        body[data-theme="pokemongo"] .theme-btn.active,
+        body[data-theme="ios26"] .theme-btn.active {
+            background: rgba(0, 194, 179, 0.1) !important;
+        }
+
         .fab.active {
-            background: var(--accent-blue);
+            background: var(--accent-primary);
             color: white;
-            border-color: var(--accent-blue);
+            border-color: var(--accent-primary);
         }
 
         .fab.active:hover {
@@ -383,17 +568,19 @@
 
         .modal {
             background: var(--bg-glass);
-            border-radius: 24px;
-            padding: 30px;
+            border-radius: var(--border-radius-lg);
+            padding: 20px;
             width: 90%;
-            max-width: 360px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            max-width: 380px;
+            box-shadow: var(--shadow-soft);
             transform: scale(0.9);
             transition: transform 0.3s ease-out;
-            max-height: 80dvh;
+            max-height: 85dvh;
             overflow-y: auto;
             border: 1px solid var(--border-glass);
-            padding-bottom: max(30px, env(safe-area-inset-bottom));
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
         }
 
         .modal.active {
@@ -540,7 +727,7 @@
 
         .btn-edit-popup {
             background: var(--btn-popup);
-            color: var(--accent-blue);
+            color: var(--accent-primary);
         }
 
         .btn-del-popup {
@@ -654,7 +841,7 @@
             font-size: 18px;
             font-weight: 700;
             margin-bottom: 12px;
-            color: var(--accent-blue);
+            color: var(--accent-primary);
             text-align: center;
         }
 
@@ -688,7 +875,7 @@
         }
 
         .dot.active {
-            background: var(--accent-blue);
+            background: var(--accent-primary);
             transform: scale(1.3);
             box-shadow: 0 0 8px rgba(0, 122, 255, 0.4);
         }

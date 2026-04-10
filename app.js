@@ -7,6 +7,7 @@ const i18n = {
         tooltipUndo: "ย้อนกลับ (Cmd+Z/Ctrl+Z)",
         tooltipSettings: "การตั้งค่า",
         tooltipMyLocation: "ตำแหน่งของฉัน",
+        tooltipCapture: "📸 บันทึกภาพแผนที่",
         addWayspotTitle: "➕ เพิ่ม Wayspot",
         wayspotTypeLabel: "ประเภท Wayspot",
         optPokestop: "PokéStop",
@@ -29,6 +30,9 @@ const i18n = {
         optOsm: "OpenStreetMap",
         optCartoDark: "CartoDB DarkMatter",
         optBing: "Bing Maps (ดาวเทียม)",
+        optMapbox: "Pokemon GO Map",
+        mapboxTokenLabel: "Mapbox Access Token",
+        mapboxStyleLabel: "Mapbox Style URL",
         mapFeatureTitle: "ฟีเจอร์แผนที่",
         darkMode: "🌙 โหมดกลางคืน",
         s2Grid: "🌐 แสดง S2 Cells (L14, L17)",
@@ -45,6 +49,8 @@ const i18n = {
         localDataTitle: "การจัดการแฟ้มข้อมูล (Local)",
         importKML: "📥 นำเข้า KML",
         exportKML: "📤 ส่งออก KML",
+        importJSON: "📥 นำเข้า JSON",
+        exportJSON: "📤 ส่งออก JSON",
         clearAll: "🗑️ ล้างข้อมูลทั้งหมด",
         langTitle: "ภาษา (Language)",
         customColorsTitle: "กำหนดสี Wayspot",
@@ -56,6 +62,17 @@ const i18n = {
         accAboutApp: "🌐 เลือกภาษา",
         credits: "จัดทำโดย CA: Community Ambassador Thailand",
         btnDone: "เสร็จสิ้น",
+        searchPlaceholder: "ค้นหาชื่อ Wayspot...",
+        accProjects: "📂 จัดการโปรเจค",
+        btnNewProject: "➕ สร้างโครงการใหม่",
+        defaultProjectName: "โปรเจกต์เริ่มต้น",
+        projectNameLabel: "ชื่อโครงการ",
+        newProjectPrompt: "กรุณาระบุชื่อโครงการใหม่:",
+        renameProjectPrompt: "แก้ไขชื่อโครงการ:",
+        deleteProjectConfirm: "คุณต้องการลบโครงการ '{name}' ใช่หรือไม่? (ข้อมูลในโครงการนี้จะถูกลบทั้งหมด)",
+        backupOptionsTitle: "เลือกการสำรองข้อมูล",
+        backupActiveOnly: "สำรองเฉพาะโปรเจกต์ปัจจุบัน",
+        backupAllProjects: "สำรองทุกโปรเจกต์",
         editTitle: "แก้ไขข้อมูล",
         editTypeLabel: "ประเภท",
         btnCancel: "ยกเลิก",
@@ -98,7 +115,13 @@ const i18n = {
         btnEdit: "แก้ไข",
         btnDelete: "ลบ",
         editWayspot: "แก้ไข Wayspot",
-        errorLocation: "ไม่สามารถเข้าถึงตำแหน่งของคุณได้ โปรดลองอีกครั้งในภายหลัง"
+        errorLocation: "ไม่สามารถเข้าถึงตำแหน่งของคุณได้ โปรดลองอีกครั้งในภายหลัง",
+        importError: "เกิดข้อผิดพลาดในการโหลดไฟล์ข้อมูล พยายามตรวจสอบรูปแบบไฟล์อีกครั้ง",
+        themeLabel: "ธีมของ UI",
+        themeDefault: "Theme พื้นฐาน",
+        themePokemon: "Pokemon GO Theme",
+        themeIos26: "ธีม Liquid Glass",
+        themeDark: "Dark Theme"
     },
     en: {
         tooltipAddWayspot: "Add Wayspot",
@@ -107,6 +130,7 @@ const i18n = {
         tooltipUndo: "Undo (Cmd+Z/Ctrl+Z)",
         tooltipSettings: "Settings",
         tooltipMyLocation: "My Location",
+        tooltipCapture: "📸 Capture Map",
         addWayspotTitle: "➕ Add Wayspot",
         wayspotTypeLabel: "Wayspot Type",
         optPokestop: "PokéStop",
@@ -129,6 +153,9 @@ const i18n = {
         optOsm: "OpenStreetMap",
         optCartoDark: "CartoDB DarkMatter",
         optBing: "Bing Maps (Satellite)",
+        optMapbox: "Pokemon GO Map",
+        mapboxTokenLabel: "Mapbox Access Token",
+        mapboxStyleLabel: "Mapbox Style URL",
         mapFeatureTitle: "Map Features",
         darkMode: "🌙 Dark Mode",
         s2Grid: "🌐 Show S2 Cells (L14, L17)",
@@ -145,8 +172,15 @@ const i18n = {
         localDataTitle: "Data Management (Local)",
         importKML: "📥 Import KML",
         exportKML: "📤 Export KML",
+        importJSON: "📥 Import JSON",
+        exportJSON: "📤 Export JSON",
         clearAll: "🗑️ Clear All Data",
         langTitle: "Language",
+        themeLabel: "UI Theme",
+        themeDefault: "Default Theme",
+        themePokemon: "Pokemon GO Theme",
+        themeIos26: "Liquid Glass Theme",
+        themeDark: "Dark Theme",
         customColorsTitle: "Custom Wayspot Colors",
         btnResetColors: "Restore Defaults",
         accMapThemes: "🗺️ Map & Themes",
@@ -156,6 +190,17 @@ const i18n = {
         accAboutApp: "🌐 Language Selection",
         credits: "Made by CA: Community Ambassador Thailand",
         btnDone: "Done",
+        searchPlaceholder: "Search Wayspot name...",
+        accProjects: "📂 Projects Management",
+        btnNewProject: "➕ Create New Project",
+        defaultProjectName: "Default Project",
+        projectNameLabel: "Project Name",
+        newProjectPrompt: "Please enter new project name:",
+        renameProjectPrompt: "Rename project:",
+        deleteProjectConfirm: "Are you sure you want to delete project '{name}'? (All data in this project will be deleted)",
+        backupOptionsTitle: "Select Backup Option",
+        backupActiveOnly: "Backup Active Project Only",
+        backupAllProjects: "Backup All Projects",
         editTitle: "Edit Wayspot",
         editTypeLabel: "Type",
         btnCancel: "Cancel",
@@ -198,9 +243,13 @@ const i18n = {
         btnEdit: "Edit",
         btnDelete: "Delete",
         editWayspot: "Edit Wayspot",
-        errorLocation: "Cannot access your location. Please try again later."
+        errorLocation: "Cannot access your location. Please try again later.",
+        importError: "An error occurred while loading the data. Please check the file format."
     }
 };
+
+let projects = [];
+let activeProjectId = null;
 
 window.CAWayspotApp = (function () {
     let currentLang = localStorage.getItem('appLang') || 'th';
@@ -285,9 +334,7 @@ window.CAWayspotApp = (function () {
 
     async function executeDriveAction() {
         if (pendingDriveAction === 'export') {
-            document.body.style.cursor = 'wait';
-            await uploadToDrive();
-            document.body.style.cursor = 'default';
+            showBackupOptions('drive');
         } else if (pendingDriveAction === 'import') {
             document.body.style.cursor = 'wait';
             await downloadFromDrive();
@@ -295,8 +342,8 @@ window.CAWayspotApp = (function () {
         }
     }
 
-    async function searchBackupFile() {
-        let url = 'https://www.googleapis.com/drive/v3/files?q=name="CA_Wayspot_Backup.json" and trashed=false&spaces=drive';
+    async function searchBackupFile(filename) {
+        let url = `https://www.googleapis.com/drive/v3/files?q=name="${filename}" and trashed=false&spaces=drive`;
         let res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + accessToken } });
         if (res.ok) {
             let data = await res.json();
@@ -305,11 +352,16 @@ window.CAWayspotApp = (function () {
         return null;
     }
 
-    async function uploadToDrive() {
-        let currentData = localStorage.getItem('pokemonMapSavedData');
-        if (!currentData || Object.keys(spotsData).length === 0) return alert(t('noDataToSave'));
+    async function uploadToDrive(customData, filename) {
+        if (!customData) {
+            // Default behavior if called without args (though now it shouldn't be)
+            saveToStorage();
+            customData = JSON.stringify(projects);
+            filename = 'CA_Wayspot_All_Backup.json';
+        }
 
-        let fileId = await searchBackupFile();
+        document.body.style.cursor = 'wait';
+        let fileId = await searchBackupFile(filename);
         let url = fileId ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media` : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`;
         let method = fileId ? 'PATCH' : 'POST';
         let headers = new Headers();
@@ -317,14 +369,14 @@ window.CAWayspotApp = (function () {
 
         let body;
         if (fileId) {
-            headers.append('Content-Type', 'application/json'); body = currentData;
+            headers.append('Content-Type', 'application/json'); body = customData;
         } else {
             let boundary = '-------314159CAWAYSPOT';
             let delimiter = "\r\n--" + boundary + "\r\n";
             let close_delim = "\r\n--" + boundary + "--";
-            let meta = { name: 'CA_Wayspot_Backup.json', mimeType: 'application/json' };
+            let meta = { name: filename, mimeType: 'application/json' };
             headers.append('Content-Type', `multipart/related; boundary="${boundary}"`);
-            body = delimiter + 'Content-Type: application/json\r\n\r\n' + JSON.stringify(meta) + delimiter + 'Content-Type: application/json\r\n\r\n' + currentData + close_delim;
+            body = delimiter + 'Content-Type: application/json\r\n\r\n' + JSON.stringify(meta) + delimiter + 'Content-Type: application/json\r\n\r\n' + customData + close_delim;
         }
 
         try {
@@ -332,10 +384,14 @@ window.CAWayspotApp = (function () {
             if (res.ok) alert(t('saveSuccess'));
             else { alert(t('saveFailed') + res.status); if (res.status === 401) accessToken = null; }
         } catch (e) { alert("Error: " + e.message); }
+        document.body.style.cursor = 'default';
     }
-
     async function downloadFromDrive() {
-        let fileId = await searchBackupFile();
+        // Search for multiple possible files
+        let fileId = await searchBackupFile('CA_Wayspot_All_Backup.json') || 
+                     await searchBackupFile('CA_Wayspot_Project_Backup.json') || 
+                     await searchBackupFile('CA_Wayspot_Backup.json');
+                     
         if (!fileId) return alert(t('backupNotFound'));
 
         let url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
@@ -344,15 +400,76 @@ window.CAWayspotApp = (function () {
             if (res.ok) {
                 let data = await res.json();
                 if (Array.isArray(data)) {
-                    for (let id in spotsData) if (map.hasLayer(spotsData[id].layerGroup)) map.removeLayer(spotsData[id].layerGroup);
-                    spotsData = {};
-                    localStorage.setItem('pokemonMapSavedData', JSON.stringify(data));
-                    loadFromStorage(); updateVisibility(); refreshInfoPanel();
+                    // Check if it's the new multi-project format or old single-project format
+                    if (data.length > 0 && data[0].hasOwnProperty('data') && data[0].hasOwnProperty('name')) {
+                        // Multi-project format
+                        projects = data;
+                        activeProjectId = projects[0].id;
+                        localStorage.setItem('caWayspotProjects', JSON.stringify(projects));
+                        localStorage.setItem('caWayspotActiveProjectId', activeProjectId);
+                    } else {
+                        // Single-project format (active project only or old backup)
+                        // For now, we treat this as the active project's data
+                        const activeProject = projects.find(p => p.id === activeProjectId);
+                        if (activeProject) {
+                            activeProject.data = data;
+                        } else {
+                            // Fallback if no active project
+                            const defaultId = crypto.randomUUID();
+                            projects = [{ id: defaultId, name: t('defaultProjectName'), data: data }];
+                            activeProjectId = defaultId;
+                        }
+                        localStorage.setItem('caWayspotProjects', JSON.stringify(projects));
+                        localStorage.setItem('caWayspotActiveProjectId', activeProjectId);
+                    }
+                    loadFromStorage(); 
+                    updateVisibility(); 
+                    refreshInfoPanel();
                     alert(t('loadSuccess'));
                     closeModal('settings-modal-overlay');
                 }
             } else alert(t('loadFailed') + res.status);
         } catch (e) { alert("Error: " + e.message); }
+    }
+
+    // Backup Selection Logic
+    let currentBackupTarget = 'json'; // 'json' or 'drive'
+
+    function showBackupOptions(target) {
+        currentBackupTarget = target;
+        openModal('backup-modal-overlay');
+    }
+
+    async function handleBackupSelection(option) {
+        closeModal('backup-modal-overlay');
+        let dataToBackup;
+        
+        if (option === 'active') {
+            saveToStorage(); // Ensure current project is updated
+            const activeProject = projects.find(p => p.id === activeProjectId);
+            dataToBackup = JSON.stringify(activeProject.data);
+        } else {
+            saveToStorage(); // Update current project first
+            dataToBackup = JSON.stringify(projects);
+        }
+        
+        if (currentBackupTarget === 'json') {
+            downloadJSON(dataToBackup, option === 'all' ? 'all_projects_backup' : 'project_backup');
+        } else {
+            await uploadToDrive(dataToBackup, option === 'all' ? 'CA_Wayspot_All_Backup.json' : 'CA_Wayspot_Project_Backup.json');
+        }
+    }
+
+    function downloadJSON(data, filename) {
+        let blob = new Blob([data], { type: "application/json" });
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement("a");
+        a.href = url;
+        a.download = `${filename}_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     function toggleDarkMode() {
@@ -436,7 +553,7 @@ window.CAWayspotApp = (function () {
 
     // Map Setup
     var map;
-    var osmLayer, gmapStreet, gmapSat, cartoDark, bingSat;
+    var osmLayer, gmapStreet, gmapSat, cartoDark, bingSat, mapboxCustomLayer;
     var currentLayer;
     var s2LayerGroup;
     var spotsData = {};
@@ -509,13 +626,48 @@ window.CAWayspotApp = (function () {
 
     function changeMapLayer() {
         var selected = document.getElementById('mapLayer').value;
+        // Mapbox settings are now hidden permanently as they are embedded
+        
         map.removeLayer(currentLayer);
-        if (selected === 'osm') currentLayer = osmLayer;
-        else if (selected === 'cartodb_dark') currentLayer = cartoDark;
-        else if (selected === 'bing') currentLayer = bingSat;
-        else if (selected === 'gmap_street') currentLayer = gmapStreet;
-        else if (selected === 'gmap_sat') currentLayer = gmapSat;
-        currentLayer.addTo(map);
+        
+        if (selected === 'mapbox') {
+            updateMapboxLayer();
+            currentLayer = mapboxCustomLayer;
+        } else {
+            if (selected === 'osm') currentLayer = osmLayer;
+            else if (selected === 'cartodb_dark') currentLayer = cartoDark;
+            else if (selected === 'bing') currentLayer = bingSat;
+            else if (selected === 'gmap_street') currentLayer = gmapStreet;
+            else if (selected === 'gmap_sat') currentLayer = gmapSat;
+        }
+        
+        if (currentLayer) currentLayer.addTo(map);
+        localStorage.setItem('caWayspotMapLayer', selected);
+    }
+
+    function updateMapboxLayer() {
+        var token = document.getElementById('mapboxToken').value;
+        var styleUrl = document.getElementById('mapboxStyleId').value;
+        
+        // Extract username and styleId from mapbox://styles/username/styleid
+        var match = styleUrl.match(/mapbox:\/\/styles\/([^/]+)\/([^/]+)/);
+        if (match && token) {
+            var user = match[1];
+            var styleId = match[2];
+            var url = 'https://api.mapbox.com/styles/v1/' + user + '/' + styleId + '/tiles/256/{z}/{x}/{y}?access_token=' + token;
+            
+            if (mapboxCustomLayer) map.removeLayer(mapboxCustomLayer);
+            mapboxCustomLayer = L.tileLayer(url, {
+                maxZoom: 20,
+                attribution: '© Mapbox',
+                className: 'no-invert'
+            });
+            
+            localStorage.setItem('caWayspotMapboxToken', token);
+            localStorage.setItem('caWayspotMapboxStyle', styleUrl);
+        } else if (!token && document.getElementById('mapLayer').value === 'mapbox') {
+            alert(currentLang === 'th' ? "โปรดกรอก Mapbox Access Token" : "Please enter Mapbox Access Token");
+        }
     }
 
     function updateS2Grid() {
@@ -613,15 +765,171 @@ window.CAWayspotApp = (function () {
                 lat: spot.lat, lng: spot.lng, radius: spot.radius
             });
         }
-        localStorage.setItem('pokemonMapSavedData', JSON.stringify(dataToSave));
+        
+        // Update current project's data
+        let pIndex = projects.findIndex(p => p.id === activeProjectId);
+        if (pIndex !== -1) {
+            projects[pIndex].data = dataToSave;
+        }
+
+        localStorage.setItem('caWayspotProjects', JSON.stringify(projects));
+        localStorage.setItem('caWayspotActiveProjectId', activeProjectId);
     }
 
     function loadFromStorage() {
-        const savedData = localStorage.getItem('pokemonMapSavedData');
-        if (savedData) {
-            const parsedData = JSON.parse(savedData);
-            parsedData.forEach(spotData => createSpot(L.latLng(spotData.lat, spotData.lng), spotData, false));
-            if (parsedData.length > 0) map.setView([parsedData[0].lat, parsedData[0].lng], 16);
+        initProjects();
+        
+        // Clear existing map layers first
+        for (let id in spotsData) {
+            if (map.hasLayer(spotsData[id].layerGroup)) map.removeLayer(spotsData[id].layerGroup);
+        }
+        spotsData = {};
+
+        let activeProject = projects.find(p => p.id === activeProjectId);
+        if (activeProject && activeProject.data) {
+            activeProject.data.forEach(spotData => createSpot(L.latLng(spotData.lat, spotData.lng), spotData, false));
+            // if (activeProject.data.length > 0) map.setView([activeProject.data[0].lat, activeProject.data[0].lng], 16);
+        }
+        refreshProjectListUI();
+    }
+
+    function initProjects() {
+        const savedProjects = localStorage.getItem('caWayspotProjects');
+        const savedActiveId = localStorage.getItem('caWayspotActiveProjectId');
+        const oldData = localStorage.getItem('pokemonMapSavedData');
+
+        if (savedProjects) {
+            projects = JSON.parse(savedProjects);
+            activeProjectId = savedActiveId || (projects.length > 0 ? projects[0].id : null);
+        } else if (oldData) {
+            // Migration from old single-project format
+            const parsedOldData = JSON.parse(oldData);
+            const defaultId = crypto.randomUUID();
+            projects = [{
+                id: defaultId,
+                name: t('defaultProjectName'),
+                data: parsedOldData
+            }];
+            activeProjectId = defaultId;
+            localStorage.setItem('caWayspotProjects', JSON.stringify(projects));
+            localStorage.setItem('caWayspotActiveProjectId', activeProjectId);
+            // Optionally remove old data
+            // localStorage.removeItem('pokemonMapSavedData');
+        } else {
+            // New user, create empty default project
+            const defaultId = crypto.randomUUID();
+            projects = [{
+                id: defaultId,
+                name: t('defaultProjectName'),
+                data: []
+            }];
+            activeProjectId = defaultId;
+            localStorage.setItem('caWayspotProjects', JSON.stringify(projects));
+            localStorage.setItem('caWayspotActiveProjectId', activeProjectId);
+        }
+    }
+
+    function refreshProjectListUI() {
+        const container = document.getElementById('project-list-container');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        projects.forEach(p => {
+            const isActive = p.id === activeProjectId;
+            const item = document.createElement('div');
+            item.className = `project-item ${isActive ? 'active' : ''}`;
+            item.style = `
+                display: flex; align-items: center; gap: 10px; padding: 10px; 
+                background: ${isActive ? 'var(--accent-blue-light)' : 'rgba(0,0,0,0.03)'}; 
+                border-radius: 10px; cursor: pointer; transition: all 0.2s;
+            `;
+            
+            item.innerHTML = `
+                <span style="flex: 1; font-weight: ${isActive ? '600' : '400'}; color: ${isActive ? 'var(--accent-blue)' : 'var(--text-main)'};">
+                    ${isActive ? '📍 ' : ''}${escapeHTML(p.name)} (${p.data.length})
+                </span>
+                <button class="btn-icon btn-rename-project" style="font-size: 14px; opacity: 0.6;" data-id="${p.id}">✏️</button>
+                <button class="btn-icon btn-delete-project" style="font-size: 14px; opacity: 0.6;" data-id="${p.id}">🗑️</button>
+            `;
+            
+            item.addEventListener('click', (e) => {
+                if (e.target.closest('.btn-icon')) return;
+                switchProject(p.id);
+            });
+            
+            item.querySelector('.btn-rename-project').addEventListener('click', (e) => {
+                e.stopPropagation();
+                renameProject(p.id);
+            });
+            
+            item.querySelector('.btn-delete-project').addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteProject(p.id);
+            });
+            
+            container.appendChild(item);
+        });
+    }
+
+    function switchProject(id) {
+        if (id === activeProjectId) return;
+        saveToStorage(); // Save current project before switching
+        activeProjectId = id;
+        localStorage.setItem('caWayspotActiveProjectId', activeProjectId);
+        loadFromStorage();
+        // Close sections if necessary
+        // updateVisibility(); refreshInfoPanel();
+    }
+
+    function createNewProject() {
+        const name = prompt(t('newProjectPrompt'));
+        if (!name) return;
+        
+        const newId = crypto.randomUUID();
+        projects.push({
+            id: newId,
+            name: name,
+            data: []
+        });
+        saveToStorage();
+        switchProject(newId);
+    }
+
+    function renameProject(id) {
+        const project = projects.find(p => p.id === id);
+        if (!project) return;
+        const newName = prompt(t('renameProjectPrompt'), project.name);
+        if (newName && newName !== project.name) {
+            project.name = newName;
+            saveToStorage();
+            refreshProjectListUI();
+        }
+    }
+
+    function deleteProject(id) {
+        if (projects.length <= 1) return alert("ไม่สามารถลบโครงการสุดท้ายได้");
+        const project = projects.find(p => p.id === id);
+        if (!project) return;
+        
+        if (confirm(t('deleteProjectConfirm', { name: project.name }))) {
+            const isDeletingActive = (activeProjectId === id);
+            
+            // Remove the project from the list
+            projects = projects.filter(p => p.id !== id);
+            
+            if (isDeletingActive) {
+                // If we deleted the active one, we need to pick a new one
+                activeProjectId = projects[0].id;
+                // Save the new state directly to localStorage without calling our standard saveToStorage()
+                // because saveToStorage() would save the current map (deleted data) to the new active project.
+                localStorage.setItem('caWayspotProjects', JSON.stringify(projects));
+                localStorage.setItem('caWayspotActiveProjectId', activeProjectId);
+                loadFromStorage(); // This will clear the map and load the new active project's data
+            } else {
+                // Deleting a non-active project is simple
+                saveToStorage(); 
+                refreshProjectListUI();
+            }
         }
     }
 
@@ -697,6 +1005,97 @@ window.CAWayspotApp = (function () {
         document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     }
 
+    function importJSON(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            try {
+                var data = JSON.parse(e.target.result);
+                if (!Array.isArray(data)) {
+                    alert("รูปแบบไฟล์ไม่ถูกต้อง (ต้องเป็น Array)");
+                    return;
+                }
+
+                // Check if it's the new multi-project format
+                if (data.length > 0 && data[0].hasOwnProperty('data') && data[0].hasOwnProperty('name')) {
+                    if (confirm("ตรวจพบข้อมูลแบบหลายโครงการ คุณต้องการแทนที่ข้อมูลทั้งหมดในเครื่องด้วยข้อมูลนี้ใช่หรือไม่?")) {
+                        projects = data;
+                        activeProjectId = projects[0].id;
+                        localStorage.setItem('caWayspotProjects', JSON.stringify(projects));
+                        localStorage.setItem('caWayspotActiveProjectId', activeProjectId);
+                        loadFromStorage();
+                        alert(t('loadSuccess'));
+                        return;
+                    }
+                }
+
+                // Default merging behavior for single project or old format
+                var importedCount = 0;
+                var duplicateCount = 0;
+
+                data.forEach(spotData => {
+                    var lat = parseFloat(spotData.lat);
+                    var lng = parseFloat(spotData.lng);
+                    
+                    if (isNaN(lat) || isNaN(lng)) return;
+
+                    var isDuplicate = false;
+                    for (var existingId in spotsData) {
+                        var existing = spotsData[existingId];
+                        if (Math.abs(existing.lat - lat) < 0.00001 && Math.abs(existing.lng - lng) < 0.00001) {
+                            isDuplicate = true;
+                            break;
+                        }
+                    }
+
+                    if (!isDuplicate) {
+                        createSpot(L.latLng(lat, lng), {
+                            id: spotData.id || crypto.randomUUID(),
+                            type: spotData.type || 'pokestop',
+                            name: spotData.name || t('unnamedAlert'),
+                            imgUrl: spotData.imgUrl || '',
+                            radius: parseInt(spotData.radius) || 40,
+                            lat: lat,
+                            lng: lng
+                        }, false);
+                        importedCount++;
+                    } else {
+                        duplicateCount++;
+                    }
+                });
+
+                if (importedCount > 0 || duplicateCount > 0) {
+                    alert(t('importSuccessCount', { count: importedCount, dup: duplicateCount }));
+                    saveToStorage();
+                    updateVisibility();
+                    var lastId = Object.keys(spotsData).pop();
+                    if (lastId && importedCount > 0) map.setView([spotsData[lastId].lat, spotsData[lastId].lng], 16);
+                }
+            } catch (err) {
+                alert(t('importError') + ": " + err.message);
+            }
+            event.target.value = '';
+        };
+        reader.readAsText(file);
+    }
+
+    function exportJSON() {
+        let currentData = localStorage.getItem('pokemonMapSavedData');
+        if (!currentData || Object.keys(spotsData).length === 0) return alert(t('noDataToSave'));
+        
+        let blob = new Blob([currentData], { type: "application/json" });
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement("a");
+        a.href = url;
+        a.download = "wayspot_backup_" + new Date().toISOString().slice(0, 10) + ".json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
     function clearAllSpots() {
         if (confirm(t('clearAllConfirm'))) {
             for (let id in spotsData) {
@@ -706,6 +1105,29 @@ window.CAWayspotApp = (function () {
             saveToStorage(); refreshInfoPanel(); closeModal('settings-modal-overlay');
         }
     }
+
+    // Theme Management
+    let currentTheme = localStorage.getItem('caWayspotTheme') || 'default';
+    
+    function setTheme(themeName) {
+        currentTheme = themeName;
+        document.body.setAttribute('data-theme', themeName);
+        localStorage.setItem('caWayspotTheme', themeName);
+        updateThemeUI();
+    }
+
+    function updateThemeUI() {
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            if (btn.getAttribute('data-theme') === currentTheme) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    // Initialize theme on load
+    setTheme(currentTheme);
 
     const defaultColors = {
         'pokestop': '#007aff',
@@ -752,14 +1174,80 @@ window.CAWayspotApp = (function () {
         return imgUrl || defaultImg;
     }
 
-    function refreshInfoPanel() {
+    function jumpToSpot(id) {
+        const spot = spotsData[id];
+        if (spot) {
+            map.flyTo([spot.lat, spot.lng], map.getZoom(), { animate: true, duration: 1.0 });
+            setTimeout(() => {
+                spot.marker.openPopup();
+                if (window.innerWidth < 768) {
+                    document.getElementById('info-panel').style.display = 'none';
+                }
+            }, 600);
+        }
+    }
+
+    async function captureMap() {
+        const mapElement = document.getElementById('map');
+        const btnCapture = document.getElementById('btn-capture');
+        
+        // UI elements to hide
+        const fab = document.querySelector('.fab-container');
+        const controls = document.querySelectorAll('.leaflet-control-zoom, .leaflet-control-attribution');
+        const panels = document.querySelectorAll('.glass-panel');
+        
+        // Store original display states
+        const originalFabDisplay = fab.style.display;
+        const originalControlDisplays = Array.from(controls).map(c => c.style.display);
+        const originalPanelDisplays = Array.from(panels).map(p => p.style.display);
+        
+        btnCapture.innerText = '⌛';
+        fab.style.display = 'none';
+        controls.forEach(c => c.style.display = 'none');
+        panels.forEach(p => p.style.display = 'none');
+
+        try {
+            // Use html-to-image to capture the map
+            const dataUrl = await htmlToImage.toPng(mapElement, {
+                backgroundColor: '#ffffff',
+                cacheBust: true,
+            });
+            
+            const link = document.createElement('a');
+            link.download = `wayspot_snapshot_${new Date().toISOString().slice(0, 10)}.png`;
+            link.href = dataUrl;
+            link.click();
+        } catch (error) {
+            console.error('oops, something went wrong!', error);
+            alert('ไม่สามารถบันทึกภาพได้ โปรดลองอีกครั้ง');
+        } finally {
+            // Restore UI
+            fab.style.display = originalFabDisplay || 'flex';
+            controls.forEach((c, i) => c.style.display = originalControlDisplays[i]);
+            panels.forEach((p, i) => p.style.display = originalPanelDisplays[i]);
+            btnCapture.innerText = '📸';
+        }
+    }
+
+    function refreshInfoPanel(filterText = '') {
         var htmlData = { 'pokestop': '', 'gym': '', 'caspot': '', 'cagym': '' };
         var counts = { 'pokestop': 0, 'gym': 0, 'caspot': 0, 'cagym': 0 };
 
+        filterText = filterText.toLowerCase();
+
         for (var id in spotsData) {
             var spot = spotsData[id];
+            if (filterText && !spot.name.toLowerCase().includes(filterText)) continue;
+
             var latlngText = `${spot.lat.toFixed(5)}, ${spot.lng.toFixed(5)}`;
-            htmlData[spot.type] += `<div class="info-item"><b>${escapeHTML(spot.name)}</b><br><span class="info-item-coords">📍 ${t('infoCoords')} ${latlngText}</span></div>`;
+            htmlData[spot.type] += `
+                <div class="info-item" onclick="window.CAWayspotApp.jumpToSpot('${id}')" style="cursor: pointer;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <b>${escapeHTML(spot.name)}</b>
+                        <span style="font-size: 10px; color: var(--text-secondary);">${spot.radius}m</span>
+                    </div>
+                    <span class="info-item-coords">📍 ${t('infoCoords')} ${latlngText}</span>
+                </div>`;
             counts[spot.type]++;
         }
 
@@ -1163,6 +1651,8 @@ window.CAWayspotApp = (function () {
         safeListen('btn-close-settings-done', 'click', () => closeModal('settings-modal-overlay'));
 
         safeListen('mapLayer', 'change', changeMapLayer);
+        safeListen('mapboxToken', 'input', updateMapboxLayer);
+        safeListen('mapboxStyleId', 'input', updateMapboxLayer);
         safeListen('setting-darkmode', 'change', toggleDarkMode);
         safeListen('setting-s2grid', 'change', updateS2Grid);
 
@@ -1206,9 +1696,30 @@ window.CAWayspotApp = (function () {
         safeListen('btn-sync-export', 'click', () => requestDriveAccess('export'));
         safeListen('btn-sync-import', 'click', () => requestDriveAccess('import'));
 
+        safeListen('btn-backup-active', 'click', () => handleBackupSelection('active'));
+        safeListen('btn-backup-all', 'click', () => handleBackupSelection('all'));
+        safeListen('btn-close-backup', 'click', () => closeModal('backup-modal-overlay'));
+
         safeListen('btn-local-import', 'click', () => document.getElementById('importKMLInput').click());
         safeListen('importKMLInput', 'change', importKML);
         safeListen('btn-local-export', 'click', exportKML);
+        
+        safeListen('btn-json-import', 'click', () => document.getElementById('importJSONInput').click());
+        safeListen('importJSONInput', 'change', importJSON);
+        safeListen('btn-json-export', 'click', () => showBackupOptions('json'));
+
+        safeListen('btn-capture', 'click', captureMap);
+        safeListen('btn-new-project', 'click', createNewProject);
+
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.addEventListener('click', () => setTheme(btn.getAttribute('data-theme')));
+        });
+        
+        const searchInput = document.getElementById('info-search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => refreshInfoPanel(e.target.value));
+        }
+
         safeListen('btn-local-clear', 'click', clearAllSpots);
 
         safeListen('setting-language', 'change', changeLanguage);
@@ -1268,14 +1779,37 @@ window.CAWayspotApp = (function () {
         }
 
         // Initial Loads
+        initProjects();
+        
+        // Load Mapbox Settings
+        const defaultToken = "pk.eyJ1IjoieXVsamFuZzAxIiwiYSI6ImNqd2lwaDEzZTA3a3A0YnA2bTB3amw3bGQifQ.xP7t0DvEJTi97webcHYftg";
+        const savedToken = localStorage.getItem('caWayspotMapboxToken');
+        const savedStyle = localStorage.getItem('caWayspotMapboxStyle');
+        const savedMapLayer = localStorage.getItem('caWayspotMapLayer') || 'mapbox'; // Pre-set to mapbox for the user
+        
+        document.getElementById('mapboxToken').value = savedToken || defaultToken;
+        if (savedStyle) document.getElementById('mapboxStyleId').value = savedStyle;
+        
+        const mapLayerSelect = document.getElementById('mapLayer');
+        if (mapLayerSelect) {
+            mapLayerSelect.value = savedMapLayer;
+            changeMapLayer();
+        }
+        
         loadFromStorage();
         updateVisibility();
+        
+        // Ensure Mapbox settings show up if selected
+        if (document.getElementById('mapLayer').value === 'mapbox') {
+            document.getElementById('mapbox-settings').style.display = 'block';
+        }
     });
 
     // Return exposed api for inline popups
     return {
         openEditModal,
-        removeSpot
+        removeSpot,
+        jumpToSpot
     };
 
 })();

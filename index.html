@@ -25,6 +25,7 @@
     <script src="https://unpkg.com/s2-geometry@1.2.10/src/s2geometry.js"></script>
     <script src="https://accounts.google.com/gsi/client" id="gsi-script" onload="if(window.initGSI) window.initGSI()"
         async defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
 
     <link rel="stylesheet" href="style.css" />
 </head>
@@ -43,6 +44,8 @@
         <button class="fab" id="fab-undo" data-tooltip-i18n="tooltipUndo" data-tooltip="ย้อนกลับ">↩️</button>
         <button class="fab" id="fab-info-mode" data-tooltip-i18n="tooltipWayspotList"
             data-tooltip="รายการ Wayspot">📋</button>
+        <button class="fab" id="btn-capture" data-tooltip-i18n="tooltipCapture"
+            data-tooltip="📸 บันทึกภาพแผนที่">📸</button>
         <button class="fab" id="fab-settings-mode" data-tooltip-i18n="tooltipSettings"
             data-tooltip="การตั้งค่า">⚙️</button>
         <button class="fab" id="btn-locate" data-tooltip-i18n="tooltipMyLocation"
@@ -103,6 +106,14 @@
             <h3 data-i18n="allWayspotsTitle">รายการทั้งหมด</h3>
             <button class="btn-icon" id="btn-close-info">❌</button>
         </div>
+        <div class="input-group" style="padding: 10px 15px; border-bottom: 1px solid var(--border-color);">
+            <div style="position: relative; display: flex; align-items: center;">
+                <span style="position: absolute; left: 10px; font-size: 14px; opacity: 0.6;">🔍</span>
+                <input type="text" id="info-search-input" data-i18n-placeholder="searchPlaceholder" 
+                    placeholder="ค้นหาชื่อ..." 
+                    style="width: 100%; padding: 8px 10px 8px 30px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.05);">
+            </div>
+        </div>
         <div id="info-content"></div>
     </div>
 
@@ -128,8 +139,41 @@
                                 <option value="gmap_sat" data-i18n="optGmapSat">Google Maps (ดาวเทียม)</option>
                                 <option value="osm" data-i18n="optOsm">OpenStreetMap</option>
                                 <option value="cartodb_dark" data-i18n="optCartoDark">CartoDB DarkMatter</option>
-                                <option value="bing" data-i18n="optBing">Bing Maps (ดาวเทียม)</option>
+                                <option value="bing" data-i18n="optBing">Bing Maps (Satellite)</option>
+                                <option value="mapbox" data-i18n="optMapbox">Pokemon GO Map</option>
                             </select>
+                        </div>
+                        <!-- Mapbox settings hidden as requested -->
+                        <div id="mapbox-settings" style="display: none; margin-bottom: 5px;">
+                            <div class="input-group" style="margin-bottom: 5px;">
+                                <label data-i18n="mapboxTokenLabel">Mapbox Access Token</label>
+                                <input type="text" id="mapboxToken" value="pk.eyJ1IjoieXVsamFuZzAxIiwiYSI6ImNqd2lwaDEzZTA3a3A0YnA2bTB3amw3bGQifQ.xP7t0DvEJTi97webcHYftg" placeholder="pk.eyJ1... (Token)">
+                            </div>
+                            <div class="input-group">
+                                <label data-i18n="mapboxStyleLabel">Mapbox Style URL</label>
+                                <input type="text" id="mapboxStyleId" value="mapbox://styles/yuljang01/cjwiphjwn10lj1cp0nye6wtec">
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 5px;">
+                            <label data-i18n="themeLabel">ธีมของ UI</label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px;">
+                                <button class="btn btn-secondary theme-btn" data-theme="default" style="width: 100%; padding: 6px; font-size: 11px; height: auto;">
+                                    <span style="font-size: 16px; display: block; margin-bottom: 2px;">🔵</span>
+                                    <span data-i18n="themeDefault" style="display: block; line-height: 1.2;">Theme พื้นฐาน</span>
+                                </button>
+                                <button class="btn btn-secondary theme-btn" data-theme="pokemongo" style="width: 100%; padding: 6px; font-size: 11px; height: auto;">
+                                    <span style="font-size: 16px; display: block; margin-bottom: 2px;">🎯</span>
+                                    <span data-i18n="themePokemon" style="display: block; line-height: 1.2;">Pokemon GO Theme</span>
+                                </button>
+                                <button class="btn btn-secondary theme-btn" data-theme="ios26" style="width: 100%; padding: 6px; font-size: 11px; height: auto;">
+                                    <span style="font-size: 16px; display: block; margin-bottom: 2px;">💎</span>
+                                    <span data-i18n="themeIos26" style="display: block; line-height: 1.2;">ธีม Liquid Glass</span>
+                                </button>
+                                <button class="btn btn-secondary theme-btn" data-theme="darktheme" style="width: 100%; padding: 6px; font-size: 11px; height: auto;">
+                                    <span style="font-size: 16px; display: block; margin-bottom: 2px;">🖤</span>
+                                    <span data-i18n="themeDark" style="display: block; line-height: 1.2;">Dark Theme</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="toggle-row">
                             <span class="toggle-label" data-i18n="darkMode">🌙 โหมดกลางคืน (Dark Mode)</span>
@@ -235,8 +279,11 @@
                         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
                             <button class="btn btn-secondary" id="btn-sync-export" data-i18n="saveToDrive">☁️ บันทึกขึ้น
                                 Google Drive</button>
-                            <button class="btn btn-secondary" id="btn-sync-import" data-i18n="loadFromDrive">☁️
+                            <button class="btn btn-sync-import" id="btn-sync-import" data-i18n="loadFromDrive">☁️
                                 โหลดจาก Google Drive</button>
+                            <button class="btn btn-secondary" id="btn-json-export" data-i18n="exportJSON">📤 ส่งออก JSON</button>
+                            <button class="btn btn-secondary" id="btn-json-import" data-i18n="importJSON">📥 นำเข้า JSON</button>
+                            <input type="file" id="importJSONInput" accept=".json" style="display: none;">
                             <button class="btn btn-secondary" id="btn-local-import" data-i18n="importKML">📥 นำเข้า
                                 KML</button>
                             <input type="file" id="importKMLInput" accept=".kml" style="display: none;">
@@ -245,6 +292,22 @@
                             <button class="btn btn-danger" id="btn-local-clear" data-i18n="clearAll">🗑️
                                 ล้างข้อมูลทั้งหมด</button>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Group 4.5: Projects Management -->
+            <div class="accordion-item" id="acc-projects">
+                <button class="accordion-header">
+                    <span data-i18n="accProjects">📂 จัดการโปรเจค</span>
+                    <span class="icon">▼</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="accordion-inner">
+                        <div id="project-list-container" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                            <!-- Project items will be listed here -->
+                        </div>
+                        <button class="btn btn-primary" id="btn-new-project" style="margin-top: 15px;" data-i18n="btnNewProject">➕ สร้างโครงการใหม่</button>
                     </div>
                 </div>
             </div>
@@ -275,7 +338,7 @@
             </div>
 
             <div style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-top: 30px;">
-                CA Wayspot Tools v1.8.0<br>
+                CA Wayspot Tools v2.0.1<br>
                 <span data-i18n="credits">จัดทำโดย CA: Community Ambassador Thailand</span>
             </div>
 
@@ -352,6 +415,20 @@
             <div class="modal-buttons" style="gap: 12px;">
                 <button class="btn btn-secondary" id="btn-tutorial-back" data-i18n="btnBack">ย้อนกลับ</button>
                 <button class="btn btn-primary" id="btn-tutorial-next" data-i18n="btnNext">ถัดไป</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup Choice Modal -->
+    <div id="backup-modal-overlay" class="modal-overlay">
+        <div class="modal" id="backup-modal" style="max-width: 320px;">
+            <h3 data-i18n="backupOptionsTitle">เลือกการสำรองข้อมูล</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
+                <button class="btn btn-secondary" id="btn-backup-active" data-i18n="backupActiveOnly">สำรองเฉพาะโปรเจกต์ปัจจุบัน</button>
+                <button class="btn btn-primary" id="btn-backup-all" data-i18n="backupAllProjects">สำรองทุกโปรเจกต์</button>
+            </div>
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button class="btn btn-danger" id="btn-close-backup" data-i18n="btnCancel">ยกเลิก</button>
             </div>
         </div>
     </div>
