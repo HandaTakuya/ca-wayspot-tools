@@ -1207,10 +1207,16 @@ window.CAWayspotApp = (function () {
         panels.forEach(p => p.style.display = 'none');
 
         try {
+            // Add a very small delay to ensure UI is hidden and map is settled
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             // Use html-to-image to capture the map
             const dataUrl = await htmlToImage.toPng(mapElement, {
                 backgroundColor: '#ffffff',
                 cacheBust: true,
+                style: {
+                    transform: 'none' // Some browsers need this to render correctly
+                }
             });
             
             const link = document.createElement('a');
@@ -1271,7 +1277,7 @@ window.CAWayspotApp = (function () {
         let iconSize = parseInt(document.getElementById('setting-icon-size').value) || 36;
         return L.divIcon({
             className: 'custom-icon-wrapper',
-            html: `<img src="${getImageUrl(imgUrl, type)}" class="custom-marker" style="border-color: ${borderColor}; width: ${iconSize}px; height: ${iconSize}px;" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'">`,
+            html: `<img src="${getImageUrl(imgUrl, type)}" class="custom-marker" crossorigin="anonymous" style="border-color: ${borderColor}; width: ${iconSize}px; height: ${iconSize}px;" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'">`,
             iconSize: [iconSize, iconSize], iconAnchor: [iconSize / 2, iconSize / 2]
         });
     }
@@ -1283,7 +1289,7 @@ window.CAWayspotApp = (function () {
         var content = `
             <div style="text-align: center; min-width: 170px;">
                 <h4 style="margin: 0 0 5px 0;">${escapeHTML(spot.name)}</h4>
-                <img src="${getImageUrl(spot.imgUrl, spot.type)}" class="popup-spot-image" style="border-color: ${styleInfo.color};" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'"><br>
+                <img src="${getImageUrl(spot.imgUrl, spot.type)}" class="popup-spot-image" crossorigin="anonymous" style="border-color: ${styleInfo.color};" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'"><br>
                 <div style="font-size: 11px; color: #b3b3b3; font-family: monospace; margin-top: -3px; margin-bottom: 5px;">
                     (${spot.lat.toFixed(6)}, ${spot.lng.toFixed(6)})
                 </div>
