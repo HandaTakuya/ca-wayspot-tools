@@ -1,4 +1,4 @@
-// i18n Localization Dictionary v1.7.5
+// i18n Localization Dictionary v1.7.6
 const i18n = {
     th: {
         tooltipAddWayspot: "เพิ่ม Wayspot",
@@ -810,7 +810,7 @@ window.CAWayspotApp = (function () {
     }
 
     function createSpot(latlng, savedData = null, isFromClick = false) {
-        var type = savedData ? savedData.type : (isFromClick ? 'pokestop' : document.getElementById('spotType').value);
+        var type = savedData ? savedData.type : document.getElementById('spotType').value;
         var name = savedData ? savedData.name : (document.getElementById('spotName').value || t('unnamedAlert'));
         var imgUrl = savedData ? savedData.imgUrl : document.getElementById('spotImage').value;
         var radius = savedData ? savedData.radius : parseInt(document.getElementById('spotRadius').value);
