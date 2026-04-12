@@ -35,21 +35,21 @@
     <!-- Main Map -->
     <div id="map"></div>
 
-    <!-- Floating Action Buttons -->
-    <div class="fab-container">
-        <button class="fab active" id="fab-add-mode" data-tooltip-i18n="tooltipAddWayspot"
-            data-tooltip="เพิ่ม Wayspot">➕</button>
-        <button class="fab" id="fab-edit-mode" data-tooltip-i18n="tooltipEditPosition"
-            data-tooltip="แก้ไขตำแหน่ง">✏️</button>
-        <button class="fab" id="fab-undo" data-tooltip-i18n="tooltipUndo" data-tooltip="ย้อนกลับ">↩️</button>
-        <button class="fab" id="fab-info-mode" data-tooltip-i18n="tooltipWayspotList"
-            data-tooltip="รายการ Wayspot">📋</button>
-        <button class="fab" id="btn-capture" data-tooltip-i18n="tooltipCapture"
-            data-tooltip="📸 บันทึกภาพแผนที่">📸</button>
-        <button class="fab" id="fab-settings-mode" data-tooltip-i18n="tooltipSettings"
-            data-tooltip="การตั้งค่า">⚙️</button>
-        <button class="fab" id="btn-locate" data-tooltip-i18n="tooltipMyLocation"
-            data-tooltip="ตำแหน่งของฉัน">📍</button>
+    <div class="fab-container" id="fab-menu-container">
+        <!-- Main Menu Button -->
+        <button class="fab main-fab" id="fab-main-menu" data-tooltip-i18n="tooltipMenu" data-tooltip="เมนู">☰</button>
+        
+        <!-- Sub Buttons (Speed Dial) -->
+        <div class="fab-sub-buttons">
+            <button class="fab" id="fab-add-mode" data-tooltip-i18n="tooltipAddWayspot" data-tooltip="เพิ่ม Wayspot">➕</button>
+            <button class="fab" id="fab-edit-mode" data-tooltip-i18n="tooltipEditPosition" data-tooltip="แก้ไขตำแหน่ง">✏️</button>
+            <button class="fab" id="fab-undo" data-tooltip-i18n="tooltipUndo" data-tooltip="ย้อนกลับ">↩️</button>
+            <button class="fab" id="fab-info-mode" data-tooltip-i18n="tooltipWayspotList" data-tooltip="รายการ Wayspot">📋</button>
+            <button class="fab" id="btn-share" data-tooltip-i18n="tooltipShare" data-tooltip="🔗 แชร์โปรเจกต์">🔗</button>
+            <button class="fab" id="btn-capture" data-tooltip-i18n="tooltipCapture" data-tooltip="📸 บันทึกภาพแผนที่">📸</button>
+            <button class="fab" id="fab-settings-mode" data-tooltip-i18n="tooltipSettings" data-tooltip="การตั้งค่า">⚙️</button>
+            <button class="fab" id="btn-locate" data-tooltip-i18n="tooltipMyLocation" data-tooltip="ตำแหน่งของฉัน">📍</button>
+        </div>
     </div>
 
     <!-- Main Control Panel -->
@@ -68,7 +68,7 @@
                     <option value="caspot" data-i18n="optCaPokestop">CA PokeStop 🌸</option>
                     <option value="cagym" data-i18n="optCaGym">CA Gym 🟣</option>
                     <option value="clwayspot" data-i18n="optClWayspot">CL Wayspot 🍊</option>
-                    <option value="clgymwayspot" data-i18n="optClGymWayspot">CL Gym Wayspot 🟡</option>
+                    <option value="clgymwayspot" data-i18n="optClGymWayspot">CL Gym Wayspot 🟢</option>
                 </select>
             </div>
             <div class="input-group">
@@ -257,6 +257,11 @@
                             <label class="switch"><input type="checkbox" id="setting-show-radius" checked><span
                                     class="slider"></span></label>
                         </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label" data-i18n="showExclusionZoneLabel">🚫 แสดงพื้นที่ทับซ้อน (40ม.)</span>
+                            <label class="switch"><input type="checkbox" id="setting-show-exclusion"><span
+                                    class="slider"></span></label>
+                        </div>
 
                         <div class="section-title margin-t-15 padding-t-15" data-i18n="forceRadiusTitle">
                             บังคับเปลี่ยนรัศมี Wayspot</div>
@@ -281,20 +286,19 @@
                 <div class="accordion-content">
                     <div class="accordion-inner">
                         <div class="flex-column-gap-10">
-                            <button class="btn btn-secondary" id="btn-sync-export" data-i18n="saveToDrive">☁️ บันทึกขึ้น
-                                Google Drive</button>
-                            <button class="btn btn-sync-import" id="btn-sync-import" data-i18n="loadFromDrive">☁️
-                                โหลดจาก Google Drive</button>
-                            <button class="btn btn-secondary" id="btn-json-export" data-i18n="exportJSON">📤 ส่งออก JSON</button>
-                            <button class="btn btn-secondary" id="btn-json-import" data-i18n="importJSON">📥 นำเข้า JSON</button>
+                            <div class="input-row">
+                                <button class="btn btn-secondary" id="btn-json-export" data-i18n="exportJSON">📤 Export JSON</button>
+                                <button class="btn btn-secondary" id="btn-json-import" data-i18n="importJSON">📥 Import JSON</button>
+                            </div>
                             <input type="file" id="importJSONInput" accept=".json" class="hidden-input">
-                            <button class="btn btn-secondary" id="btn-local-import" data-i18n="importKML">📥 นำเข้า
-                                KML</button>
+                            <div class="input-row">
+                                <button class="btn btn-secondary" id="btn-local-export" data-i18n="exportKML">📤 Export KML</button>
+                                <button class="btn btn-secondary" id="btn-local-import" data-i18n="importKML">📥 Import KML</button>
+                            </div>
                             <input type="file" id="importKMLInput" accept=".kml" class="hidden-input">
-                            <button class="btn btn-secondary" id="btn-local-export" data-i18n="exportKML">📤 ส่งออก
-                                KML</button>
-                            <button class="btn btn-danger" id="btn-local-clear" data-i18n="clearAll">🗑️
-                                ล้างข้อมูลทั้งหมด</button>
+                            <button class="btn btn-secondary" id="btn-sync-export" data-i18n="saveToDrive">☁️ อัปโหลดไปยัง Google Drive</button>
+                            <button class="btn btn-sync-import" id="btn-sync-import" data-i18n="loadFromDrive">☁️ ดาวน์โหลดจาก Google Drive</button>
+                            <button class="btn btn-danger" id="btn-local-clear" data-i18n="clearAll">🗑️ ล้างข้อมูล Wayspot ทั้งหมด</button>
                         </div>
                     </div>
                 </div>
@@ -438,13 +442,13 @@
     </div>
 
     <!-- Modules -->
-    <script src="js/i18n-data.js?v=2.5.1"></script>
-    <script src="js/storage-manager.js?v=2.5.1"></script>
-    <script src="js/sync-provider.js?v=2.5.1"></script>
-    <script src="js/map-manager.js?v=2.5.1"></script>
-    <script src="js/ui-controller.js?v=2.5.1"></script>
+    <script src="js/i18n-data.js?v=2.6.0"></script>
+    <script src="js/storage-manager.js?v=2.6.0"></script>
+    <script src="js/sync-provider.js?v=2.6.0"></script>
+    <script src="js/map-manager.js?v=2.6.0"></script>
+    <script src="js/ui-controller.js?v=2.6.0"></script>
     <!-- Main App -->
-    <script src="app.js?v=2.5.1"></script>
+    <script src="app.js?v=2.6.0"></script>
 </body>
 
 </html>

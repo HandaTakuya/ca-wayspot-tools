@@ -69,16 +69,18 @@ const CA_UI = {
     },
 
     toggleControlPanel() {
-        const content = document.getElementById('control-content');
+        const panel = document.getElementById('control-panel');
         const btn = document.getElementById('btn-toggle-control');
-        if (this.isControlPanelOpen) { 
-            content.style.display = 'none'; 
-            btn.innerText = '🔼'; 
-        } else { 
-            content.style.display = 'flex'; 
-            btn.innerText = '🔽'; 
-        }
+        
         this.isControlPanelOpen = !this.isControlPanelOpen;
+        
+        if (this.isControlPanelOpen) {
+            panel.classList.remove('collapsed');
+            btn.innerText = '🔽';
+        } else {
+            panel.classList.add('collapsed');
+            btn.innerText = '🔼';
+        }
     },
 
     validateInput(name, imageUrl) {

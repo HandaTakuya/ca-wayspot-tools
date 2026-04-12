@@ -7,6 +7,7 @@ const CA_Map = {
     s2LayerGroup: null,
     spotsData: {},
     userLocationMarker: null,
+    exclusionLayerGroup: null,
 
     init(elementId, initialView) {
         this.map = L.map(elementId, { zoomControl: false, doubleClickZoom: false }).setView(initialView.center, initialView.zoom);
@@ -32,6 +33,7 @@ const CA_Map = {
         this.layers.bing = new BingLayer('https://t0.tiles.virtualearth.net/tiles/a{q}.jpeg?g=129', { maxZoom: 19, attribution: 'Bing Maps', className: 'no-invert' });
 
         this.s2LayerGroup = L.layerGroup().addTo(this.map);
+        this.exclusionLayerGroup = L.layerGroup();
         
         // Default layer
         this.currentLayer = this.layers.gmap_street;
@@ -100,5 +102,28 @@ const CA_Map = {
             }
         }
         this.spotsData = {};
+        this.updateExclusionZone(document.getElementById('setting-show-exclusion') && document.getElementById('setting-show-exclusion').checked);
+    },
+
+    updateExclusionZone(show) {
+        this.exclusionLayerGroup.clearLayers();
+        if (!show) {
+            if (this.map.hasLayer(this.exclusionLayerGroup)) this.map.removeLayer(this.exclusionLayerGroup);
+            return;
+        }
+        if (!this.map.hasLayer(this.exclusionLayerGroup)) this.exclusionLayerGroup.addTo(this.map);
+
+        for (let id in this.spotsData) {
+            const spot = this.spotsData[id];
+            L.circle([spot.lat, spot.lng], {
+                radius: 40, // User requested 40m for this project
+                color: '#ff3b30',
+                weight: 1,
+                fillColor: '#ff3b30',
+                fillOpacity: 0.15,
+                dashArray: '5, 5',
+                interactive: false
+            }).addTo(this.exclusionLayerGroup);
+        }
     }
 };

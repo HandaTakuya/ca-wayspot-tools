@@ -21,7 +21,7 @@ window.CAWayspotApp = (function () {
         'caspot': '#0bd3cd',
         'cagym': '#af52de',
         'clwayspot': '#f7931e',
-        'clgymwayspot': '#ffff00'
+        'clgymwayspot': '#90ee90'
     };
     let currentColors = JSON.parse(localStorage.getItem('caWayspotColors')) || { ...defaultColors };
 
@@ -42,6 +42,63 @@ window.CAWayspotApp = (function () {
             });
         }
         CA_Storage.updateActiveProjectData(dataToSave);
+    }
+
+    function generateShareLink() {
+        const activeProject = CA_Storage.getActiveProject();
+        if (!activeProject || activeProject.data.length === 0) {
+            alert(CA_UI.t('noDataToSave'));
+            return;
+        }
+        
+        // Minimize data to keep URL length manageable
+        const minData = activeProject.data.map(d => ({
+            id: d.id, t: d.type, n: d.name, i: d.imgUrl,
+            la: d.lat, ln: d.lng, r: d.radius
+        }));
+        
+        const jsonStr = JSON.stringify(minData);
+        // UTF-8 to Base64
+        const base64 = btoa(unescape(encodeURIComponent(jsonStr)));
+        const url = new URL(window.location.href);
+        url.searchParams.set('share', base64);
+        
+        navigator.clipboard.writeText(url.toString()).then(() => {
+            alert("คัดลอกลิงก์แชร์ไปยัง Clipboard แล้วครับ! 🔗");
+        }).catch(err => {
+            console.error('Could not copy text: ', err);
+            prompt("คัดลอกลิงก์แชร์ด้านล่างนี้ครับ:", url.toString());
+        });
+    }
+
+    function checkSharedLink() {
+        const params = new URLSearchParams(window.location.search);
+        const shareData = params.get('share');
+        if (shareData) {
+            try {
+                // Remove parameter from URL without refreshing for a cleaner experience
+                window.history.replaceState({}, document.title, window.location.pathname);
+
+                const jsonStr = decodeURIComponent(escape(atob(shareData)));
+                const data = JSON.parse(jsonStr);
+                
+                if (Array.isArray(data) && confirm(CA_UI.t('importShareConfirm'))) {
+                    // Map back from minimized format
+                    const fullData = data.map(d => ({
+                        id: d.id, type: d.t, name: d.n, imgUrl: d.i,
+                        lat: d.la, lng: d.ln, radius: d.r
+                    }));
+                    
+                    const newId = CA_Storage.createNewProject(CA_UI.t('sharedProjectName') + " " + new Date().toLocaleDateString());
+                    CA_Storage.activeProjectId = newId;
+                    CA_Storage.updateActiveProjectData(fullData);
+                    CA_Storage.saveAll();
+                    loadFromStorage();
+                }
+            } catch (e) {
+                console.error("Shared link error:", e);
+            }
+        }
     }
 
     function loadFromStorage() {
@@ -155,12 +212,17 @@ window.CAWayspotApp = (function () {
             updatePopupContent(currentId);
             refreshInfoPanel();
             saveToStorage();
+            if (document.getElementById('setting-show-exclusion')?.checked) CA_Map.updateExclusionZone(true);
         });
 
         updatePopupContent(currentId);
         if (document.getElementById('filter-' + type).checked) layerGroup.addTo(CA_Map.map);
         refreshInfoPanel();
-        if (!savedData) saveToStorage();
+        if (!savedData) {
+            saveToStorage();
+            // Update exclusion zone if active
+            if (document.getElementById('setting-show-exclusion')?.checked) CA_Map.updateExclusionZone(true);
+        }
     }
 
     function updatePopupContent(id) {
@@ -181,7 +243,7 @@ window.CAWayspotApp = (function () {
                     'cagym': 'optCaGym',
                     'clwayspot': 'optClWayspot',
                     'clgymwayspot': 'optClGymWayspot'
-                }[spot.type]).replace(/ [🔵🔴🌸🟣🍊🟡]/, '')}</b></span><br>
+                }[spot.type]).replace(/ [🔵🔴🌸🟣🍊🟡🟢]/, '')}</b></span><br>
                 <span style="font-size: 12px; color: var(--text-secondary);">${CA_UI.t('radiusLabel').replace(' (เมตร)', '').replace(' (meters)', '')}: <b>${spot.radius} m</b></span><br>
                 <div class="popup-buttons">
                     <button class="popup-btn btn-edit-popup" onclick="window.CAWayspotApp.openEditModal('${id}')">${CA_UI.t('btnEdit')}</button>
@@ -219,7 +281,7 @@ window.CAWayspotApp = (function () {
             { id: 'caspot', name: CA_UI.t('optCaPokestop'), color: '#0bd3cd' },
             { id: 'cagym', name: CA_UI.t('optCaGym'), color: '#af52de' },
             { id: 'clwayspot', name: CA_UI.t('optClWayspot'), color: '#f7931e' },
-            { id: 'clgymwayspot', name: CA_UI.t('optClGymWayspot'), color: '#ffff00' }
+            { id: 'clgymwayspot', name: CA_UI.t('optClGymWayspot'), color: '#90ee90' }
         ];
 
         cats.forEach(c => {
@@ -322,6 +384,7 @@ window.CAWayspotApp = (function () {
                     }
                     break;
             }
+            if (document.getElementById('setting-show-exclusion')?.checked) CA_Map.updateExclusionZone(true);
         } catch (e) { console.error("Undo Error:", e); } finally { window.isUndoing = false; }
     }
 
@@ -333,6 +396,7 @@ window.CAWayspotApp = (function () {
             }
             if (CA_Map.map.hasLayer(CA_Map.spotsData[id].layerGroup)) CA_Map.map.removeLayer(CA_Map.spotsData[id].layerGroup);
             delete CA_Map.spotsData[id]; refreshInfoPanel(); saveToStorage();
+            if (document.getElementById('setting-show-exclusion')?.checked) CA_Map.updateExclusionZone(true);
         }
     }
 
@@ -370,6 +434,15 @@ window.CAWayspotApp = (function () {
         safeListen('btn-close-info', 'click', () => {
             document.getElementById('info-panel').style.display = 'none';
         });
+
+        safeListen('fab-main-menu', 'click', () => {
+            const container = document.getElementById('fab-menu-container');
+            const btn = document.getElementById('fab-main-menu');
+            container.classList.toggle('active');
+            btn.innerText = container.classList.contains('active') ? '✕' : '☰';
+        });
+
+        safeListen('btn-share', 'click', () => generateShareLink());
         safeListen('btnAddByLatLng', 'click', () => {
             const lat = parseFloat(document.getElementById('spotLat').value);
             const lng = parseFloat(document.getElementById('spotLng').value);
@@ -487,6 +560,10 @@ window.CAWayspotApp = (function () {
             }
         });
 
+        safeListen('setting-show-exclusion', 'change', (e) => {
+            CA_Map.updateExclusionZone(e.target.checked);
+        });
+
         safeListen('btn-force-radius', 'click', () => {
             const r = parseInt(document.getElementById('globalRadiusInput').value);
             if (isNaN(r) || r <= 0) return alert(CA_UI.t('invalidRadius'));
@@ -579,6 +656,7 @@ window.CAWayspotApp = (function () {
             spot.marker.setLatLng(pos).setIcon(createCustomIcon(spot.imgUrl, style.color, spot.type));
             spot.circle.setLatLng(pos).setRadius(spot.radius).setStyle({ color: style.color, fillColor: style.color });
             updatePopupContent(id); CA_UI.closeModal('edit-modal-overlay'); saveToStorage(); refreshInfoPanel();
+            if (document.getElementById('setting-show-exclusion')?.checked) CA_Map.updateExclusionZone(true);
         });
 
         // Accordion functionality in Settings
@@ -740,6 +818,7 @@ window.CAWayspotApp = (function () {
         }
 
         loadFromStorage();
+        checkSharedLink();
         
         if (!localStorage.getItem('caWayspotWelcomeShown')) {
             setTimeout(() => CA_UI.openModal('welcome-modal-overlay'), 300);
