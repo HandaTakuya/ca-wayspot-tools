@@ -582,7 +582,10 @@ window.CAWayspotApp = (function () {
             if (data) { CA_Storage.projects = data; CA_Storage.activeProjectId = data[0].id; CA_Storage.saveAll(); loadFromStorage(); alert(CA_UI.t('loadSuccess')); }
         }));
         
-        safeListen('btn-json-export', 'click', () => CA_UI.openModal('backup-modal-overlay'));
+        safeListen('btn-json-export', 'click', () => {
+            CA_Sync.pendingDriveAction = null;
+            CA_UI.openModal('backup-modal-overlay');
+        });
         safeListen('btn-json-import', 'click', () => document.getElementById('importJSONInput').click());
         safeListen('importJSONInput', 'change', (e) => {
             const reader = new FileReader();
@@ -737,6 +740,7 @@ window.CAWayspotApp = (function () {
                 } else {
                     CA_Sync.downloadFile(content, `CA_Wayspot_${p.name}.json`, 'application/json');
                 }
+                CA_Sync.pendingDriveAction = null; // Reset state
             }
             CA_UI.closeModal('backup-modal-overlay');
         });
@@ -748,6 +752,7 @@ window.CAWayspotApp = (function () {
             } else {
                 CA_Sync.downloadFile(content, 'CA_Wayspot_All.json', 'application/json');
             }
+            CA_Sync.pendingDriveAction = null; // Reset state
             CA_UI.closeModal('backup-modal-overlay');
         });
 
