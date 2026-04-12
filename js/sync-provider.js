@@ -7,10 +7,11 @@ const CA_Sync = {
     tokenClient: null,
     accessToken: null,
     pendingDriveAction: null,
+    pendingAuthCallback: null,
 
-    initGSI(callback) {
+    initGSI() {
         if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-            setTimeout(() => this.initGSI(callback), 500);
+            setTimeout(() => this.initGSI(), 500);
             return;
         }
         this.tokenClient = google.accounts.oauth2.initTokenClient({
@@ -19,7 +20,10 @@ const CA_Sync = {
             callback: (tokenResponse) => {
                 if (tokenResponse && tokenResponse.access_token) {
                     this.accessToken = tokenResponse.access_token;
-                    if (callback) callback();
+                    if (this.pendingAuthCallback) {
+                        this.pendingAuthCallback();
+                        this.pendingAuthCallback = null;
+                    }
                 }
             },
         });
@@ -30,10 +34,11 @@ const CA_Sync = {
         if (this.accessToken) {
             if (onAuthSuccess) onAuthSuccess();
         } else {
+            this.pendingAuthCallback = onAuthSuccess;
             if (this.tokenClient) {
-                this.tokenClient.requestAccessToken({ prompt: 'consent' });
+                this.tokenClient.requestAccessToken({ prompt: '' });
             } else {
-                this.initGSI(onAuthSuccess);
+                this.initGSI();
                 alert("ระบบ Google กำลังโหลด... กรุณารอสักครู่แล้วลองกดอีกครั้งครับ");
             }
         }
