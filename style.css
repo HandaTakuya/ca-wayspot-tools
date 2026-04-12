@@ -20,6 +20,8 @@
         --info-item: rgba(255, 255, 255, 0.6);
         --marker-border: white;
         --btn-popup: #f2f2f7;
+        --accent-blue: #007aff;
+        --accent-blue-light: rgba(0, 122, 255, 0.1);
     }
 
     /* Pokemon GO Theme overrides */
@@ -364,6 +366,31 @@
         select:focus {
             border-color: var(--accent-primary);
             box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        }
+
+        /* Specific sizing for Wayspot icon size input - Adjusted to reach right edge */
+        .input-row-align-center {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+        }
+
+        #setting-icon-size {
+            flex: 1; /* Stretch to reach the right edge */
+            text-align: right;
+            padding-right: 12px;
+            min-width: 0;
+        }
+
+        /* Reverting Global Radius input to previous preferred sizing */
+        #globalRadiusInput {
+            width: 140px;
+        }
+
+        #btn-force-radius {
+            width: auto;
+            white-space: nowrap;
         }
 
         .btn {
@@ -740,7 +767,7 @@
             height: 140px;
             border-radius: 50%;
             object-fit: cover;
-            margin: 5px auto 10px;
+            margin: 20px auto;
             display: block;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
@@ -960,3 +987,247 @@
                 display: none !important;
             }
         }
+/* Utility Classes for Refactoring */
+.flex-column-gap-12 {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+.add-by-map-hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: -5px;
+}
+
+.search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon-hint {
+    position: absolute;
+    left: 10px;
+    font-size: 14px;
+    opacity: 0.6;
+}
+
+input.search-input-field {
+    width: 100%;
+    padding: 8px 35px 8px 40px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.search-clear-btn {
+    position: absolute;
+    right: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    user-select: none;
+}
+
+.search-clear-btn:hover {
+    opacity: 1;
+}
+
+.theme-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.theme-btn-compact {
+    width: 100%;
+    padding: 6px;
+    font-size: 11px;
+    height: auto;
+}
+
+.theme-btn-icon {
+    font-size: 16px;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.theme-btn-text {
+    display: block;
+    line-height: 1.2;
+}
+
+.accordion-inner-container {
+    padding: 10px 0;
+}
+
+.project-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.project-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.project-item.active {
+    background: var(--accent-blue-light);
+}
+
+.project-item-name {
+    flex: 1;
+    color: var(--text-main);
+}
+
+.project-item.active .project-item-name {
+    font-weight: 600;
+    color: var(--accent-blue);
+}
+
+.btn-project-action {
+    font-size: 14px;
+    opacity: 0.6;
+}
+
+.welcome-text-container {
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.tutorial-dots-container {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 25px;
+}
+
+.relative-modal {
+    position: relative;
+}
+
+.modal-close-top {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+}
+
+.modal-title {
+    margin-top: 10px;
+    margin-bottom: 25px;
+}
+
+.margin-b-20 { margin-bottom: 20px; }
+.margin-b-15 { margin-bottom: 15px; }
+.margin-b-5 { margin-bottom: 5px; }
+.margin-t-15 { margin-top: 15px; }
+.margin-t-5 { margin-top: 5px; }
+.padding-t-15 { padding-top: 15px; }
+
+.mapbox-settings-panel {
+    display: none;
+    margin-bottom: 5px;
+}
+
+.input-row-align-center {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.icon-size-input {
+    width: 60px;
+    height: 34px;
+    text-align: center;
+}
+
+.row-gap-5 {
+    display: flex;
+    gap: 5px;
+}
+
+.flex-1-h-38 {
+    flex: 1;
+    height: 38px;
+}
+
+.btn-compact-h-38 {
+    width: auto;
+    padding: 0 10px;
+    height: 38px;
+    font-size: 13px;
+}
+
+.flex-column-gap-10 {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.hidden-input {
+    display: none;
+}
+
+.tutorial-trigger {
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+.text-accent-blue {
+    color: var(--accent-blue);
+}
+
+.no-transform {
+    transform: none !important;
+}
+
+.app-info-footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 30px;
+}
+
+.modal-buttons-margin {
+    margin-top: 20px;
+}
+
+.modal-buttons-gap-12 {
+    display: flex;
+    gap: 12px;
+}
+
+.welcome-title {
+    font-size: 24px;
+    color: var(--text-main);
+}
+
+.tutorial-content-container {
+    min-height: 220px;
+    margin-bottom: 20px;
+    padding: 10px 0;
+}
+
+.modal-narrow {
+    max-width: 320px;
+}

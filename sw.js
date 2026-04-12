@@ -1,10 +1,10 @@
-const CACHE_NAME = 'wayspot-cache-v2.0.2';
+const CACHE_NAME = 'wayspot-cache-v2.5.1';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
-  './style.css?v=2.0.2',
-  './app.js?v=2.0.2'
+  './style.css?v=2.5.1',
+  './app.js?v=2.5.1'
 ];
 
 // Install Event

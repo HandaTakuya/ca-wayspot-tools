@@ -27,7 +27,7 @@
         async defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2.0.2" />
+    <link rel="stylesheet" href="style.css?v=2.5.1" />
 </head>
 
 <body>
@@ -59,7 +59,7 @@
             <button class="btn-icon" id="btn-toggle-control">🔽</button>
         </div>
 
-        <div id="control-content" style="display: flex; flex-direction: column; gap: 12px;">
+        <div id="control-content" class="flex-column-gap-12">
             <div class="input-group">
                 <label data-i18n="wayspotTypeLabel">ประเภท Wayspot</label>
                 <select id="spotType">
@@ -67,6 +67,8 @@
                     <option value="gym" data-i18n="optGym">Gym 🔴</option>
                     <option value="caspot" data-i18n="optCaPokestop">CA PokeStop 🌸</option>
                     <option value="cagym" data-i18n="optCaGym">CA Gym 🟣</option>
+                    <option value="clwayspot" data-i18n="optClWayspot">CL Wayspot 🍊</option>
+                    <option value="clgymwayspot" data-i18n="optClGymWayspot">CL Gym Wayspot 🟡</option>
                 </select>
             </div>
             <div class="input-group">
@@ -79,7 +81,7 @@
             </div>
 
             <div class="input-row">
-                <div class="input-group" style="flex: 1;">
+                <div class="input-group flex-1">
                     <label data-i18n="latLabel">ละติจูด (Lat)</label>
                     <input type="number" id="spotLat" placeholder="13.7649" step="any">
                 </div>
@@ -94,7 +96,7 @@
             </div>
 
             <button class="btn btn-primary" id="btnAddByLatLng" data-i18n="btnAddByCoords">เพิ่มด้วยพิกัด</button>
-            <div style="text-align: center; font-size: 12px; color: var(--text-secondary); margin-top: -5px;"
+            <div class="add-by-map-hint"
                 data-i18n="addByMapHint">
                 หรือคลิกค้าง 1 วินาทีบนแผนที่เพื่อเพิ่มหมุด</div>
         </div>
@@ -107,11 +109,12 @@
             <button class="btn-icon" id="btn-close-info">❌</button>
         </div>
         <div class="input-group" style="padding: 10px 15px; border-bottom: 1px solid var(--border-color);">
-            <div style="position: relative; display: flex; align-items: center;">
-                <span style="position: absolute; left: 10px; font-size: 14px; opacity: 0.6;">🔍</span>
+            <div class="search-wrapper">
+                <span class="search-icon-hint">🔍</span>
                 <input type="text" id="info-search-input" data-i18n-placeholder="searchPlaceholder" 
                     placeholder="ค้นหาชื่อ..." 
-                    style="width: 100%; padding: 8px 10px 8px 30px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.05);">
+                    class="search-input-field">
+                <span id="btn-clear-search" class="search-clear-btn" style="display:none;">✕</span>
             </div>
         </div>
         <div id="info-content"></div>
@@ -119,10 +122,9 @@
 
     <!-- Settings Modal -->
     <div id="settings-modal-overlay" class="modal-overlay">
-        <div class="modal" id="settings-modal" style="position: relative;">
-            <button id="btn-close-settings-top" class="btn-icon"
-                style="position: absolute; right: 20px; top: 20px;">❌</button>
-            <h2 data-i18n="settingsTitle" style="margin-top: 10px; margin-bottom: 25px;">การตั้งค่า</h2>
+        <div class="modal relative-modal" id="settings-modal">
+            <button id="btn-close-settings-top" class="btn-icon modal-close-top">❌</button>
+            <h2 data-i18n="settingsTitle" class="modal-title">การตั้งค่า</h2>
 
             <!-- Group 1: Map & Themes (Open by default) -->
             <div class="accordion-item active" id="acc-map">
@@ -132,7 +134,7 @@
                 </button>
                 <div class="accordion-content">
                     <div class="accordion-inner">
-                        <div class="input-group" style="margin-bottom: 15px;">
+                        <div class="input-group margin-b-15">
                             <label data-i18n="mapLayerLabel">ชั้นข้อมูลแผนที่ (Map Layer)</label>
                             <select id="mapLayer">
                                 <option value="gmap_street" data-i18n="optGmapStreet">Google Maps (ถนน)</option>
@@ -143,35 +145,24 @@
                                 <option value="mapbox" data-i18n="optMapbox">Pokemon GO Map</option>
                             </select>
                         </div>
-                        <!-- Mapbox settings hidden as requested -->
-                        <div id="mapbox-settings" style="display: none; margin-bottom: 5px;">
-                            <div class="input-group" style="margin-bottom: 5px;">
-                                <label data-i18n="mapboxTokenLabel">Mapbox Access Token</label>
-                                <input type="text" id="mapboxToken" value="pk.eyJ1IjoieXVsamFuZzAxIiwiYSI6ImNqd2lwaDEzZTA3a3A0YnA2bTB3amw3bGQifQ.xP7t0DvEJTi97webcHYftg" placeholder="pk.eyJ1... (Token)">
-                            </div>
-                            <div class="input-group">
-                                <label data-i18n="mapboxStyleLabel">Mapbox Style URL</label>
-                                <input type="text" id="mapboxStyleId" value="mapbox://styles/yuljang01/cjwiphjwn10lj1cp0nye6wtec">
-                            </div>
-                        </div>
-                        <div class="input-group" style="margin-bottom: 5px;">
+                        <div class="input-group margin-b-5">
                             <label data-i18n="themeLabel">ธีมของ UI</label>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px;">
-                                <button class="btn btn-secondary theme-btn" data-theme="default" style="width: 100%; padding: 6px; font-size: 11px; height: auto;">
-                                    <span style="font-size: 16px; display: block; margin-bottom: 2px;">🔵</span>
-                                    <span data-i18n="themeDefault" style="display: block; line-height: 1.2;">Theme พื้นฐาน</span>
+                            <div class="theme-grid">
+                                <button class="btn btn-secondary theme-btn theme-btn-compact" data-theme="default">
+                                    <span class="theme-btn-icon">🔵</span>
+                                    <span data-i18n="themeDefault" class="theme-btn-text">Theme พื้นฐาน</span>
                                 </button>
-                                <button class="btn btn-secondary theme-btn" data-theme="pokemongo" style="width: 100%; padding: 6px; font-size: 11px; height: auto;">
-                                    <span style="font-size: 16px; display: block; margin-bottom: 2px;">🎯</span>
-                                    <span data-i18n="themePokemon" style="display: block; line-height: 1.2;">Pokemon GO Theme</span>
+                                <button class="btn btn-secondary theme-btn theme-btn-compact" data-theme="pokemongo">
+                                    <span class="theme-btn-icon">🎯</span>
+                                    <span data-i18n="themePokemon" class="theme-btn-text">Pokemon GO Theme</span>
                                 </button>
-                                <button class="btn btn-secondary theme-btn" data-theme="ios26" style="width: 100%; padding: 6px; font-size: 11px; height: auto;">
-                                    <span style="font-size: 16px; display: block; margin-bottom: 2px;">💎</span>
-                                    <span data-i18n="themeIos26" style="display: block; line-height: 1.2;">ธีม Liquid Glass</span>
+                                <button class="btn btn-secondary theme-btn theme-btn-compact" data-theme="ios26">
+                                    <span class="theme-btn-icon">💎</span>
+                                    <span data-i18n="themeIos26" class="theme-btn-text">ธีม Liquid Glass</span>
                                 </button>
-                                <button class="btn btn-secondary theme-btn" data-theme="darktheme" style="width: 100%; padding: 6px; font-size: 11px; height: auto;">
-                                    <span style="font-size: 16px; display: block; margin-bottom: 2px;">🖤</span>
-                                    <span data-i18n="themeDark" style="display: block; line-height: 1.2;">Dark Theme</span>
+                                <button class="btn btn-secondary theme-btn theme-btn-compact" data-theme="darktheme">
+                                    <span class="theme-btn-icon">🖤</span>
+                                    <span data-i18n="themeDark" class="theme-btn-text">Dark Theme</span>
                                 </button>
                             </div>
                         </div>
@@ -217,9 +208,18 @@
                             <label class="switch"><input type="checkbox" id="filter-cagym" checked><span
                                     class="slider"></span></label>
                         </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">CL Wayspot</span>
+                            <label class="switch"><input type="checkbox" id="filter-clwayspot" checked><span
+                                    class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">CL Gym Wayspot</span>
+                            <label class="switch"><input type="checkbox" id="filter-clgymwayspot" checked><span
+                                    class="slider"></span></label>
+                        </div>
 
-                        <div class="section-title" data-i18n="customColorsTitle"
-                            style="margin-top: 15px; padding-top: 15px;">
+                        <div class="section-title margin-t-15 padding-t-15" data-i18n="customColorsTitle">
                             กำหนดสี Wayspot</div>
                         <div class="toggle-row">
                             <span class="toggle-label">PokéStop</span>
@@ -237,14 +237,20 @@
                             <span class="toggle-label">CA Gym</span>
                             <input type="color" id="color-cagym" class="color-picker-circle">
                         </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">CL Wayspot</span>
+                            <input type="color" id="color-clwayspot" class="color-picker-circle">
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">CL Gym Wayspot</span>
+                            <input type="color" id="color-clgymwayspot" class="color-picker-circle">
+                        </div>
                         <button class="btn btn-secondary" id="btn-reset-colors"
                             data-i18n="btnResetColors">คืนค่าดั่งเดิม</button>
 
-                        <div class="input-row" style="margin-top: 15px; align-items: center;">
-                            <span class="toggle-label" data-i18n="iconSizeLabel" style="flex: 1;">ปรับขนาดรูป
-                                Wayspot</span>
-                            <input type="number" id="setting-icon-size" value="36" min="20" max="40"
-                                style="width: 60px; height: 34px; text-align: center;">
+                        <div class="input-row-align-center">
+                            <span class="toggle-label flex-1" data-i18n="iconSizeLabel">ปรับขนาดรูป Wayspot</span>
+                            <input type="number" id="setting-icon-size" value="36" min="20" max="40" class="icon-size-input">
                         </div>
                         <div class="toggle-row">
                             <span class="toggle-label" data-i18n="showRadiusLabel">แสดงวงรัศมีของ Wayspot</span>
@@ -252,15 +258,13 @@
                                     class="slider"></span></label>
                         </div>
 
-                        <div class="section-title" data-i18n="forceRadiusTitle"
-                            style="margin-top: 15px; padding-top: 15px;">
+                        <div class="section-title margin-t-15 padding-t-15" data-i18n="forceRadiusTitle">
                             บังคับเปลี่ยนรัศมี Wayspot</div>
-                        <div class="input-row" style="gap: 5px;">
+                        <div class="row-gap-5">
                             <input type="number" id="globalRadiusInput" data-i18n-placeholder="radiusPlaceholder"
                                 placeholder="ระบุระยะ (เช่น 20 หรือ 40)" min="1" max="500"
-                                style="flex: 1; height: 38px;">
-                            <button class="btn btn-secondary" id="btn-force-radius" data-i18n="forceRadiusBtn"
-                                style="width: auto; padding: 0 10px; height: 38px; font-size: 13px;">เปลี่ยนระยะรัศมีทั้งหมด</button>
+                                class="flex-1-h-38">
+                            <button class="btn btn-secondary btn-compact-h-38" id="btn-force-radius" data-i18n="forceRadiusBtn">เปลี่ยนระยะรัศมีทั้งหมด</button>
                         </div>
                     </div>
                 </div>
@@ -276,17 +280,17 @@
                 </button>
                 <div class="accordion-content">
                     <div class="accordion-inner">
-                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                        <div class="flex-column-gap-10">
                             <button class="btn btn-secondary" id="btn-sync-export" data-i18n="saveToDrive">☁️ บันทึกขึ้น
                                 Google Drive</button>
                             <button class="btn btn-sync-import" id="btn-sync-import" data-i18n="loadFromDrive">☁️
                                 โหลดจาก Google Drive</button>
                             <button class="btn btn-secondary" id="btn-json-export" data-i18n="exportJSON">📤 ส่งออก JSON</button>
                             <button class="btn btn-secondary" id="btn-json-import" data-i18n="importJSON">📥 นำเข้า JSON</button>
-                            <input type="file" id="importJSONInput" accept=".json" style="display: none;">
+                            <input type="file" id="importJSONInput" accept=".json" class="hidden-input">
                             <button class="btn btn-secondary" id="btn-local-import" data-i18n="importKML">📥 นำเข้า
                                 KML</button>
-                            <input type="file" id="importKMLInput" accept=".kml" style="display: none;">
+                            <input type="file" id="importKMLInput" accept=".kml" class="hidden-input">
                             <button class="btn btn-secondary" id="btn-local-export" data-i18n="exportKML">📤 ส่งออก
                                 KML</button>
                             <button class="btn btn-danger" id="btn-local-clear" data-i18n="clearAll">🗑️
@@ -304,10 +308,10 @@
                 </button>
                 <div class="accordion-content">
                     <div class="accordion-inner">
-                        <div id="project-list-container" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                        <div id="project-list-container" class="project-list-container">
                             <!-- Project items will be listed here -->
                         </div>
-                        <button class="btn btn-primary" id="btn-new-project" style="margin-top: 15px;" data-i18n="btnNewProject">➕ สร้างโครงการใหม่</button>
+                        <button class="btn btn-primary margin-t-15" id="btn-new-project" data-i18n="btnNewProject">➕ สร้างโครงการใหม่</button>
                     </div>
                 </div>
             </div>
@@ -320,7 +324,7 @@
                 </button>
                 <div class="accordion-content">
                     <div class="accordion-inner">
-                        <div class="input-group" style="margin-bottom: 20px;">
+                        <div class="input-group margin-b-20">
                             <label data-i18n="langTitle">ภาษา (Language)</label>
                             <select id="setting-language">
                                 <option value="th">ภาษาไทย (Thai)</option>
@@ -331,14 +335,14 @@
                 </div>
             </div>
 
-            <div class="toggle-row" id="btn-open-tutorial" style="cursor: pointer; margin-top: 5px;">
-                <span class="toggle-label" style="color: var(--accent-blue);" data-i18n="menuTutorial">📘
+            <div class="toggle-row tutorial-trigger" id="btn-open-tutorial">
+                <span class="toggle-label text-accent-blue" data-i18n="menuTutorial">📘
                     การใช้งานเบื้องต้น</span>
-                <span class="icon" style="transform: none !important;">➔</span>
+                <span class="icon no-transform">➔</span>
             </div>
 
-            <div style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-top: 30px;">
-                CA Wayspot Tools v2.0.2<br>
+            <div class="app-info-footer">
+                CA Wayspot Tools v2.5.1<br>
                 <span data-i18n="credits">จัดทำโดย CA: Community Ambassador Thailand</span>
             </div>
 
@@ -352,7 +356,7 @@
     <div id="edit-modal-overlay" class="modal-overlay">
         <div class="modal" id="edit-modal">
             <h3 data-i18n="editTitle">แก้ไขข้อมูล</h3>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="flex-column-gap-12">
                 <div class="input-group">
                     <label data-i18n="editTypeLabel">ประเภท</label>
                     <select id="editType">
@@ -360,6 +364,8 @@
                         <option value="gym">Gym</option>
                         <option value="caspot">CA PokeStop</option>
                         <option value="cagym">CA Gym</option>
+                        <option value="clwayspot">CL Wayspot</option>
+                        <option value="clgymwayspot">CL Gym Wayspot</option>
                     </select>
                 </div>
                 <div class="input-group"><label data-i18n="nameLabel">ชื่อ</label><input type="text" id="editName">
@@ -367,9 +373,9 @@
                 <div class="input-group"><label data-i18n="imgUrlLabel">URL รูปภาพ</label><input type="text"
                         id="editImage"></div>
                 <div class="input-row">
-                    <div class="input-group" style="flex:1;"><label data-i18n="latLabel">Lat</label><input type="number"
+                    <div class="input-group flex-1"><label data-i18n="latLabel">Lat</label><input type="number"
                             id="editLat" step="any"></div>
-                    <div class="input-group" style="flex:1;"><label data-i18n="lngLabel">Lng</label><input type="number"
+                    <div class="input-group flex-1"><label data-i18n="lngLabel">Lng</label><input type="number"
                             id="editLng" step="any"></div>
                 </div>
                 <div class="input-group"><label data-i18n="radiusLabel">รัศมี (ม.)</label><input type="number"
@@ -385,13 +391,12 @@
     <!-- Welcome Modal -->
     <div id="welcome-modal-overlay" class="modal-overlay">
         <div class="modal" id="welcome-modal">
-            <h2 style="font-size: 24px; color: var(--text-main);" data-i18n="welcomeTitle">สวัสดีครับ 👋</h2>
-            <p style="color: var(--text-secondary); font-size: 15px; line-height: 1.5; text-align: center;"
-                data-i18n="welcomeText">
+            <h2 class="welcome-title" data-i18n="welcomeTitle">สวัสดีครับ 👋</h2>
+            <div class="welcome-text-container" data-i18n="welcomeText">
                 <b>CA Wayspot Tools</b> โฉมใหม่!<br><br>จำลอง กะระยะ และวางแผนการตั้ง CA Wayspot ได้ง่ายขึ้น
                 รองรับการวาด S2 Cells และไฟล์ KML จาก Google My Maps<br><br>
                 ลองคลิกบนแผนที่เพื่อปักหมุดแรกได้เลยครับ
-            </p>
+            </div>
             <button class="btn btn-primary" id="btn-start-welcome" data-i18n="btnStart">เริ่มต้นใช้งาน</button>
         </div>
     </div>
@@ -399,20 +404,19 @@
     <div id="tutorial-modal-overlay" class="modal-overlay">
         <div class="modal">
             <h2 id="tutorial-header-title" data-i18n="tutorialTitle">การใช้งานเบื้องต้น</h2>
-            <div id="tutorial-slides-container" style="min-height: 220px; margin-bottom: 20px; padding: 10px 0;">
+            <div id="tutorial-slides-container" class="tutorial-content-container">
                 <div id="tutorial-slide-content">
                     <!-- Dynamic Content -->
                 </div>
             </div>
-            <div class="tutorial-dots" style="display: flex; justify-content: center; gap: 8px; margin-bottom: 25px;"
-                id="tutorial-indicators">
+            <div class="tutorial-dots-container" id="tutorial-indicators">
                 <span class="dot active"></span>
                 <span class="dot"></span>
                 <span class="dot"></span>
                 <span class="dot"></span>
                 <span class="dot"></span>
             </div>
-            <div class="modal-buttons" style="gap: 12px;">
+            <div class="modal-buttons modal-buttons-gap-12">
                 <button class="btn btn-secondary" id="btn-tutorial-back" data-i18n="btnBack">ย้อนกลับ</button>
                 <button class="btn btn-primary" id="btn-tutorial-next" data-i18n="btnNext">ถัดไป</button>
             </div>
@@ -421,9 +425,9 @@
 
     <!-- Backup Choice Modal -->
     <div id="backup-modal-overlay" class="modal-overlay">
-        <div class="modal" id="backup-modal" style="max-width: 320px;">
+        <div class="modal modal-narrow" id="backup-modal">
             <h3 data-i18n="backupOptionsTitle">เลือกการสำรองข้อมูล</h3>
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
+            <div class="flex-column-gap-12 margin-t-15">
                 <button class="btn btn-secondary" id="btn-backup-active" data-i18n="backupActiveOnly">สำรองเฉพาะโปรเจกต์ปัจจุบัน</button>
                 <button class="btn btn-primary" id="btn-backup-all" data-i18n="backupAllProjects">สำรองทุกโปรเจกต์</button>
             </div>
@@ -433,7 +437,14 @@
         </div>
     </div>
 
-    <script src="app.js?v=2.0.2"></script>
+    <!-- Modules -->
+    <script src="js/i18n-data.js?v=2.5.1"></script>
+    <script src="js/storage-manager.js?v=2.5.1"></script>
+    <script src="js/sync-provider.js?v=2.5.1"></script>
+    <script src="js/map-manager.js?v=2.5.1"></script>
+    <script src="js/ui-controller.js?v=2.5.1"></script>
+    <!-- Main App -->
+    <script src="app.js?v=2.5.1"></script>
 </body>
 
 </html>
