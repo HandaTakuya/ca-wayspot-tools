@@ -44,62 +44,7 @@ window.CAWayspotApp = (function () {
         CA_Storage.updateActiveProjectData(dataToSave);
     }
 
-    function generateShareLink() {
-        const activeProject = CA_Storage.getActiveProject();
-        if (!activeProject || activeProject.data.length === 0) {
-            alert(CA_UI.t('noDataToSave'));
-            return;
-        }
-        
-        // Minimize data to keep URL length manageable
-        const minData = activeProject.data.map(d => ({
-            id: d.id, t: d.type, n: d.name, i: d.imgUrl,
-            la: d.lat, ln: d.lng, r: d.radius
-        }));
-        
-        const jsonStr = JSON.stringify(minData);
-        // UTF-8 to Base64
-        const base64 = btoa(unescape(encodeURIComponent(jsonStr)));
-        const url = new URL(window.location.href);
-        url.searchParams.set('share', base64);
-        
-        navigator.clipboard.writeText(url.toString()).then(() => {
-            alert("คัดลอกลิงก์แชร์ไปยัง Clipboard แล้วครับ! 🔗");
-        }).catch(err => {
-            console.error('Could not copy text: ', err);
-            prompt("คัดลอกลิงก์แชร์ด้านล่างนี้ครับ:", url.toString());
-        });
-    }
 
-    function checkSharedLink() {
-        const params = new URLSearchParams(window.location.search);
-        const shareData = params.get('share');
-        if (shareData) {
-            try {
-                // Remove parameter from URL without refreshing for a cleaner experience
-                window.history.replaceState({}, document.title, window.location.pathname);
-
-                const jsonStr = decodeURIComponent(escape(atob(shareData)));
-                const data = JSON.parse(jsonStr);
-                
-                if (Array.isArray(data) && confirm(CA_UI.t('importShareConfirm'))) {
-                    // Map back from minimized format
-                    const fullData = data.map(d => ({
-                        id: d.id, type: d.t, name: d.n, imgUrl: d.i,
-                        lat: d.la, lng: d.ln, radius: d.r
-                    }));
-                    
-                    const newId = CA_Storage.createNewProject(CA_UI.t('sharedProjectName') + " " + new Date().toLocaleDateString());
-                    CA_Storage.activeProjectId = newId;
-                    CA_Storage.updateActiveProjectData(fullData);
-                    CA_Storage.saveAll();
-                    loadFromStorage();
-                }
-            } catch (e) {
-                console.error("Shared link error:", e);
-            }
-        }
-    }
 
     function loadFromStorage() {
         CA_Storage.init();
@@ -442,7 +387,7 @@ window.CAWayspotApp = (function () {
             btn.innerText = container.classList.contains('active') ? '✕' : '☰';
         });
 
-        safeListen('btn-share', 'click', () => generateShareLink());
+
         safeListen('btnAddByLatLng', 'click', () => {
             const lat = parseFloat(document.getElementById('spotLat').value);
             const lng = parseFloat(document.getElementById('spotLng').value);
@@ -823,7 +768,6 @@ window.CAWayspotApp = (function () {
         }
 
         loadFromStorage();
-        checkSharedLink();
         
         if (!localStorage.getItem('caWayspotWelcomeShown')) {
             setTimeout(() => CA_UI.openModal('welcome-modal-overlay'), 300);

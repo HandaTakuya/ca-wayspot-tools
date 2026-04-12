@@ -286,7 +286,8 @@
             flex-direction: column;
             gap: 15px;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
+            overflow-y: auto; /* Allow scroll when expanded */
+            overflow-x: hidden;
         }
 
         #control-panel.collapsed {
@@ -1039,6 +1040,16 @@
                 bottom: auto;
                 top: max(20px, env(safe-area-inset-top));
                 right: 15px;
+                flex-direction: column; /* Sub-buttons go downwards */
+            }
+
+            .fab-sub-buttons {
+                flex-direction: column;
+                transform: translateY(-20px) scale(0.8); /* Pop down from top */
+            }
+
+            .fab-container.active .fab-sub-buttons {
+                transform: translateY(0) scale(1);
             }
 
             #info-panel {
