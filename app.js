@@ -956,6 +956,7 @@ window.CAWayspotApp = (function () {
         moveSpotLocally,
         removeSpotLocally,
         clearAllSpotsLocally,
+        updatePopupContentLocally: (id) => updatePopupContent(id),
         openEditModal: (id) => { 
             window.currentEditId = id;
             const s = CA_Map.spotsData[id];
