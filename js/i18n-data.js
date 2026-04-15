@@ -9,6 +9,7 @@ const CA_I18N = {
         tooltipMyLocation: "ตำแหน่งของฉัน",
         tooltipCapture: "📸 บันทึกภาพแผนที่",
         tooltipMenu: "☰ เมนู",
+        tooltipCopy: "คัดลอกรหัส",
         addWayspotTitle: "➕ เพิ่ม Wayspot",
         wayspotTypeLabel: "ประเภท Wayspot",
         optPokestop: "PokéStop",
@@ -128,7 +129,18 @@ const CA_I18N = {
         themeIos26: "ธีม Liquid Glass",
         themeDark: "Dark Theme",
         invalidName: "กรุณาระบุชื่อ Wayspot",
-        invalidImageUrl: "รูปแบบ URL รูปภาพไม่ถูกต้อง"
+        invalidImageUrl: "รูปแบบ URL รูปภาพไม่ถูกต้อง",
+        accCollab: "🤝 แชร์หน้าจอ",
+        collabHostBtn: "สร้างห้อง",
+        collabJoinBtn: "เข้าร่วม",
+        collabIdPlaceholder: "ใส่รหัสห้อง...",
+        collabStatusPrefix: "สถานะ: ",
+        collabDisconnected: "ไม่ได้เชื่อมต่อ",
+        collabWait: "กำลังรอเพื่อนเข้าร่วมรหัส: {id}",
+        collabConnectedHost: "เชื่อมต่อกับเพื่อนสำเร็จ!",
+        collabConnectedClient: "เชื่อมต่อห้อง {id} สำเร็จ!",
+        collabError: "เชื่อมต่อไม่สำเร็จ: ",
+        collabDisconnectBtn: "ยกเลิกการเชื่อมต่อ"
     },
     en: {
         tooltipAddWayspot: "Add Wayspot",
@@ -139,6 +151,7 @@ const CA_I18N = {
         tooltipMyLocation: "My Location",
         tooltipCapture: "📸 Capture Map",
         tooltipMenu: "☰ Menu",
+        tooltipCopy: "Copy ID",
         addWayspotTitle: "➕ Add Wayspot",
         wayspotTypeLabel: "Wayspot Type",
         optPokestop: "PokéStop",
@@ -258,6 +271,17 @@ const CA_I18N = {
         errorLocation: "Cannot access your location. Please try again later.",
         importError: "An error occurred while loading the data. Please check the file format.",
         invalidName: "Please enter Wayspot name",
-        invalidImageUrl: "Invalid Image URL format"
+        invalidImageUrl: "Invalid Image URL format",
+        accCollab: "🤝 Live Collaboration (Share Screen)",
+        collabHostBtn: "Create Room (Host)",
+        collabJoinBtn: "Join Room",
+        collabIdPlaceholder: "Enter Room ID...",
+        collabStatusPrefix: "Status: ",
+        collabDisconnected: "Disconnected",
+        collabWait: "Waiting for peers at: {id}",
+        collabConnectedHost: "Connected to peer!",
+        collabConnectedClient: "Joined room {id} successfully!",
+        collabError: "Connection failed: ",
+        collabDisconnectBtn: "Disconnect"
     }
 };

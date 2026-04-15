@@ -1,10 +1,15 @@
-const CACHE_NAME = 'wayspot-cache-v2.5.1';
+const CACHE_NAME = 'wayspot-cache-v2.7.0';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
-  './style.css?v=2.5.1',
-  './app.js?v=2.5.1'
+  './style.css?v=2.7.0',
+  './app.js?v=2.7.0',
+  './js/i18n-data.js?v=2.7.0',
+  './js/storage-manager.js?v=2.7.0',
+  './js/sync-provider.js?v=2.7.0',
+  './js/map-manager.js?v=2.7.0',
+  './js/ui-controller.js?v=2.7.0'
 ];
 
 // Install Event
@@ -13,7 +18,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
+        console.log('Opened cache v2.7.0');
         return cache.addAll(urlsToCache);
       })
   );
@@ -26,12 +31,12 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
-            console.log('Service Worker: Clearing Old Cache');
+            console.log('Service Worker: Clearing Old Cache', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim()) // Take control of all clients immediately
   );
 });
 

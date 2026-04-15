@@ -80,8 +80,8 @@ window.CAWayspotApp = (function () {
             'gym': 'https://lh3.googleusercontent.com/fs2mYM4r9Qq93ejdOP_2lwefRNLVa9tqmJW7XXwqNhMCMXNKwoJoFuMboBpXwnKUf7fJGImbajM9mHAOMlndt5A-Ts9Qh9f_t6YoaQ6u=s0',
             'caspot': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQcm3QbkubsZfLk4kiEHCdzIe3nezdt3yU4dA&s',
             'cagym': 'https://lh3.googleusercontent.com/p-LbBPtPAKKNNZFMYy84f35FFaEpZBSEfPKx0xK9t48a_SJwaeBEBGOzrPOu0vtcKnnWSe9FpVyt25Rh8PoKldVKlOm9B5iTweq8Ox8=s0',
-            'clwayspot': 'https://lh3.googleusercontent.com/vux5c-AQTr_0Qd-NN5-k_-pds6QCeZe9xzpYYn_0B7ZrFhLs77mqdVzGLwVqVlW0htEKtiOXFnhN64RaZaKGTHAXwP2-dG-_W-XY=e365-pa-nu-w3456',
-            'clgymwayspot': 'https://lh3.googleusercontent.com/vux5c-AQTr_0Qd-NN5-k_-pds6QCeZe9xzpYYn_0B7ZrFhLs77mqdVzGLwVqVlW0htEKtiOXFnhN64RaZaKGTHAXwP2-dG-_W-XY=e365-pa-nu-w3456'
+            'clwayspot': 'https://lh3.googleusercontent.com/1X_n9YMH-P-LMVfeaMffmx49EiRxFGX4CZceamtAbsjHUqZsXoKcLQzV5SH_XOafm4Egex7se7yhr64e_ADEDTw5jQx25K3pmKjW',
+            'clgymwayspot': 'https://lh3.googleusercontent.com/1X_n9YMH-P-LMVfeaMffmx49EiRxFGX4CZceamtAbsjHUqZsXoKcLQzV5SH_XOafm4Egex7se7yhr64e_ADEDTw5jQx25K3pmKjW'
         };
         return imgUrl || defaultImages[type] || 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png';
     }
@@ -124,7 +124,7 @@ window.CAWayspotApp = (function () {
         });
 
         const layerGroup = L.layerGroup([circle, marker]);
-        const currentId = savedData && savedData.id ? savedData.id : crypto.randomUUID();
+        const currentId = savedData && savedData.id ? savedData.id : CA_UI.generateId();
 
         CA_Map.spotsData[currentId] = {
             id: currentId, type: type, name: name, imgUrl: imgUrl,
@@ -134,6 +134,11 @@ window.CAWayspotApp = (function () {
 
         if (!savedData && !window.isUndoing) {
             pushToUndo({ type: 'ADD', id: currentId });
+        }
+
+        // Collab Hook
+        if (!window.isCollabSyncing && window.CA_Collab && !savedData) {
+            CA_Collab.broadcast('ADD', currentId);
         }
 
         // Marker Events
@@ -158,6 +163,11 @@ window.CAWayspotApp = (function () {
             refreshInfoPanel();
             saveToStorage();
             if (document.getElementById('setting-show-exclusion')?.checked) CA_Map.updateExclusionZone(true);
+
+            // Collab Hook
+            if (!window.isCollabSyncing && window.CA_Collab) {
+                CA_Collab.broadcast('MOVE', currentId, {lat: newPos.lat, lng: newPos.lng});
+            }
         });
 
         updatePopupContent(currentId);
@@ -342,6 +352,10 @@ window.CAWayspotApp = (function () {
             if (CA_Map.map.hasLayer(CA_Map.spotsData[id].layerGroup)) CA_Map.map.removeLayer(CA_Map.spotsData[id].layerGroup);
             delete CA_Map.spotsData[id]; refreshInfoPanel(); saveToStorage();
             if (document.getElementById('setting-show-exclusion')?.checked) CA_Map.updateExclusionZone(true);
+
+            if (!window.isCollabSyncing && window.CA_Collab) {
+                CA_Collab.broadcast('DELETE', id);
+            }
         }
     }
 
@@ -579,7 +593,12 @@ window.CAWayspotApp = (function () {
 
         safeListen('btn-tutorial-next', 'click', () => (tutorialIndex < tutorialContent.length - 1 ? showTutorialStep(tutorialIndex + 1) : CA_UI.closeModal('tutorial-modal-overlay')));
         safeListen('btn-tutorial-back', 'click', () => (tutorialIndex > 0 ? showTutorialStep(tutorialIndex - 1) : null));
-        safeListen('btn-local-clear', 'click', () => { if (confirm(CA_UI.t('clearAllConfirm'))) { CA_Map.clearAllSpots(); saveToStorage(); refreshInfoPanel(); } });
+        safeListen('btn-local-clear', 'click', () => { 
+            if (confirm(CA_UI.t('clearAllConfirm'))) { 
+                CA_Map.clearAllSpots(); saveToStorage(); refreshInfoPanel(); 
+                if (!window.isCollabSyncing && window.CA_Collab) CA_Collab.broadcast('DATA_CLEAR');
+            } 
+        });
         
         safeListen('btn-save-edit', 'click', () => {
             const id = window.currentEditId;
@@ -605,6 +624,10 @@ window.CAWayspotApp = (function () {
             spot.circle.setLatLng(pos).setRadius(spot.radius).setStyle({ color: style.color, fillColor: style.color });
             updatePopupContent(id); CA_UI.closeModal('edit-modal-overlay'); saveToStorage(); refreshInfoPanel();
             if (document.getElementById('setting-show-exclusion')?.checked) CA_Map.updateExclusionZone(true);
+
+            if (!window.isCollabSyncing && window.CA_Collab) {
+                CA_Collab.broadcast('EDIT', id);
+            }
         });
 
         // Accordion functionality in Settings
@@ -720,6 +743,73 @@ window.CAWayspotApp = (function () {
         safeListen('btn-close-edit', 'click', () => CA_UI.closeModal('edit-modal-overlay'));
 
         window.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { if (document.activeElement.tagName !== 'INPUT') undoAction(); } });
+
+        // Collab UI handlers
+        safeListen('btn-collab-host', 'click', () => {
+            if(window.CA_Collab) window.CA_Collab.hostSession(updateCollabUI);
+        });
+        
+        safeListen('btn-collab-join', 'click', () => {
+            const id = document.getElementById('collab-join-id').value.trim();
+            if(!id) return;
+            if(window.CA_Collab) window.CA_Collab.joinSession(id, updateCollabUI);
+        });
+        
+        safeListen('btn-collab-disconnect', 'click', () => {
+            if(window.CA_Collab) window.CA_Collab.disconnect();
+            updateCollabUI('DISCONNECTED');
+        });
+        
+        safeListen('btn-collab-copy', 'click', (e) => {
+            const btn = document.getElementById('btn-collab-copy');
+            const id = btn.getAttribute('data-id');
+            if (id) {
+                navigator.clipboard.writeText(id).then(() => {
+                    const orig = btn.innerText;
+                    btn.innerText = '✅';
+                    setTimeout(() => btn.innerText = orig, 1500);
+                });
+            }
+        });
+        
+        function updateCollabUI(status, id) {
+            const stateEl = document.getElementById('collab-status-state');
+            const disBtn = document.getElementById('btn-collab-disconnect');
+            const copyBtn = document.getElementById('btn-collab-copy');
+            if(!stateEl) return;
+            
+            if (copyBtn) copyBtn.style.display = 'none';
+            
+            if (status === 'WAIT') {
+                stateEl.innerText = CA_UI.t('collabWait', {id: id});
+                stateEl.style.color = '#f5a623';
+                if(disBtn) disBtn.style.display = 'inline-block';
+                if(copyBtn && window.CA_Collab && window.CA_Collab.isHost) {
+                    copyBtn.style.display = 'inline-block';
+                    copyBtn.setAttribute('data-id', id);
+                }
+            } else if (status === 'CONNECTED_HOST') {
+                stateEl.innerText = CA_UI.t('collabConnectedHost', {id: id});
+                stateEl.style.color = '#34c759';
+                if(disBtn) disBtn.style.display = 'inline-block';
+                if(copyBtn) {
+                    copyBtn.style.display = 'inline-block';
+                    copyBtn.setAttribute('data-id', id);
+                }
+            } else if (status === 'CONNECTED_CLIENT') {
+                stateEl.innerText = CA_UI.t('collabConnectedClient', {id: id});
+                stateEl.style.color = '#34c759';
+                if(disBtn) disBtn.style.display = 'inline-block';
+            } else if (status === 'DISCONNECTED') {
+                stateEl.innerText = CA_UI.t('collabDisconnected');
+                stateEl.style.color = 'var(--text-secondary)';
+                if(disBtn) disBtn.style.display = 'none';
+            } else if (status === 'ERROR') {
+                stateEl.innerText = CA_UI.t('collabError') + id;
+                stateEl.style.color = '#ff3b30';
+                if(disBtn) disBtn.style.display = 'inline-block';
+            }
+        }
     }
 
     function setMode(mode) {
@@ -815,9 +905,44 @@ window.CAWayspotApp = (function () {
         });
     }
 
+    function createSpotLocally(latlng, data) {
+        window.isCollabSyncing = true;
+        createSpot(latlng, data, false);
+        window.isCollabSyncing = false;
+    }
+    
+    function moveSpotLocally(id, lat, lng) {
+        window.isCollabSyncing = true;
+        let spot = CA_Map.spotsData[id];
+        if (spot) {
+            let pos = L.latLng(lat, lng);
+            spot.marker.setLatLng(pos);
+            spot.circle.setLatLng(pos);
+            spot.lat = lat; spot.lng = lng;
+            updatePopupContent(id); refreshInfoPanel(); saveToStorage();
+        }
+        window.isCollabSyncing = false;
+    }
+    
+    function removeSpotLocally(id) {
+        window.isCollabSyncing = true;
+        removeSpot(id, true);
+        window.isCollabSyncing = false;
+    }
+    
+    function clearAllSpotsLocally() {
+        window.isCollabSyncing = true;
+        CA_Map.clearAllSpots(); refreshInfoPanel(); saveToStorage();
+        window.isCollabSyncing = false;
+    }
+
     // Export API
     return {
         init,
+        createSpotLocally,
+        moveSpotLocally,
+        removeSpotLocally,
+        clearAllSpotsLocally,
         openEditModal: (id) => { 
             window.currentEditId = id;
             const s = CA_Map.spotsData[id];

@@ -15,7 +15,7 @@ const CA_Storage = {
             this.activeProjectId = savedActiveId || (this.projects.length > 0 ? this.projects[0].id : null);
         } else if (oldData) {
             const parsedOldData = JSON.parse(oldData);
-            const defaultId = crypto.randomUUID();
+            const defaultId = CA_UI.generateId();
             this.projects = [{
                 id: defaultId,
                 name: "โปรเจกต์เริ่มต้น",
@@ -24,7 +24,7 @@ const CA_Storage = {
             this.activeProjectId = defaultId;
             this.saveAll();
         } else {
-            const defaultId = crypto.randomUUID();
+            const defaultId = CA_UI.generateId();
             this.projects = [{
                 id: defaultId,
                 name: "โปรเจกต์เริ่มต้น",
@@ -53,7 +53,7 @@ const CA_Storage = {
     },
 
     createNewProject(name) {
-        const newId = crypto.randomUUID();
+        const newId = CA_UI.generateId();
         this.projects.push({
             id: newId,
             name: name,
@@ -66,7 +66,7 @@ const CA_Storage = {
     duplicateProject(id, suffix) {
         const project = this.projects.find(p => p.id === id);
         if (project) {
-            const newId = crypto.randomUUID();
+            const newId = CA_UI.generateId();
             const newProject = {
                 id: newId,
                 name: project.name + suffix,
