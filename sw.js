@@ -1,16 +1,16 @@
-const CACHE_NAME = 'wayspot-cache-v2.7.3';
+const CACHE_NAME = 'wayspot-cache-v2.7.4';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
-  './style.css?v=2.7.3',
-  './app.js?v=2.7.3',
-  './js/i18n-data.js?v=2.7.3',
-  './js/storage-manager.js?v=2.7.3',
-  './js/sync-provider.js?v=2.7.3',
-  './js/map-manager.js?v=2.7.3',
-  './js/ui-controller.js?v=2.7.3',
-  './js/collab-manager.js?v=2.7.3'
+  './style.css?v=2.7.4',
+  './app.js?v=2.7.4',
+  './js/i18n-data.js?v=2.7.4',
+  './js/storage-manager.js?v=2.7.4',
+  './js/sync-provider.js?v=2.7.4',
+  './js/map-manager.js?v=2.7.4',
+  './js/ui-controller.js?v=2.7.4',
+  './js/collab-manager.js?v=2.7.4'
 ];
 
 // Install Event
@@ -19,7 +19,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache v2.7.3');
+        console.log('Opened cache v2.7.4');
         return cache.addAll(urlsToCache);
       })
   );

@@ -125,8 +125,8 @@ const CA_Collab = {
     sendFullState() {
         if (!this.eventsRef) return;
         const currentData = [];
-        for(let id in window.CA_Map.spotsData) {
-            let s = window.CA_Map.spotsData[id];
+        for(let id in CA_Map.spotsData) {
+            let s = CA_Map.spotsData[id];
             currentData.push({
                 id: s.id, type: s.type, name: s.name, imgUrl: s.imgUrl,
                 lat: s.lat, lng: s.lng, radius: s.radius
@@ -153,8 +153,8 @@ const CA_Collab = {
         
         let payload = { type: actionType, id: spotId, senderId: this.clientId };
         
-        if (actionType !== 'DELETE' && actionType !== 'DATA_CLEAR' && spotId && window.CA_Map.spotsData[spotId]) {
-            let s = window.CA_Map.spotsData[spotId];
+        if (actionType !== 'DELETE' && actionType !== 'DATA_CLEAR' && spotId && CA_Map.spotsData[spotId]) {
+            let s = CA_Map.spotsData[spotId];
             payload.data = {
                 id: s.id, type: s.type, name: s.name, imgUrl: s.imgUrl,
                 lat: s.lat, lng: s.lng, radius: s.radius
@@ -195,12 +195,16 @@ const CA_Collab = {
                 case 'ADD':
                 case 'EDIT':
                     if (payload.data) {
+                        if (payload.id && CA_Map.spotsData[payload.id]) {
+                            // Remove legacy spot before recreating so the visuals update correctly without duplicates
+                            window.CAWayspotApp.removeSpotLocally(payload.id);
+                        }
                         window.CAWayspotApp.createSpotLocally(L.latLng(payload.data.lat, payload.data.lng), payload.data);
                     }
                     break;
                 case 'MOVE':
-                    if (payload.id && window.CA_Map.spotsData[payload.id]) {
-                        const spot = window.CA_Map.spotsData[payload.id];
+                    if (payload.id && CA_Map.spotsData[payload.id]) {
+                        const spot = CA_Map.spotsData[payload.id];
                         const pos = L.latLng(payload.lat, payload.lng);
                         spot.marker.setLatLng(pos);
                         if (spot.circle) spot.circle.setLatLng(pos);
@@ -212,10 +216,10 @@ const CA_Collab = {
                     }
                     break;
                 case 'DELETE':
-                    if (payload.id && window.CA_Map.spotsData[payload.id]) {
-                        const spot = window.CA_Map.spotsData[payload.id];
-                        window.CA_Map.map.removeLayer(spot.layerGroup);
-                        delete window.CA_Map.spotsData[payload.id];
+                    if (payload.id && CA_Map.spotsData[payload.id]) {
+                        const spot = CA_Map.spotsData[payload.id];
+                        CA_Map.map.removeLayer(spot.layerGroup);
+                        delete CA_Map.spotsData[payload.id];
                     }
                     break;
                 case 'DATA_CLEAR':

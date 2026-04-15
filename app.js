@@ -323,9 +323,17 @@ window.CAWayspotApp = (function () {
                         spotMove.marker.setLatLng(oldPos); spotMove.circle.setLatLng(oldPos);
                         spotMove.lat = oldPos.lat; spotMove.lng = oldPos.lng;
                         updatePopupContent(lastAction.id); refreshInfoPanel(); saveToStorage();
+                        if (!window.isCollabSyncing && window.CA_Collab) {
+                            CA_Collab.broadcast('MOVE', lastAction.id, {lat: oldPos.lat, lng: oldPos.lng});
+                        }
                     }
                     break;
-                case 'DELETE': createSpot(L.latLng(lastAction.data.lat, lastAction.data.lng), { ...lastAction.data, id: lastAction.id }, false); break;
+                case 'DELETE': 
+                    createSpot(L.latLng(lastAction.data.lat, lastAction.data.lng), { ...lastAction.data, id: lastAction.id }, false); 
+                    if (!window.isCollabSyncing && window.CA_Collab) {
+                        CA_Collab.broadcast('ADD', lastAction.id);
+                    }
+                    break;
                 case 'EDIT':
                     const spotEdit = CA_Map.spotsData[lastAction.id];
                     if (spotEdit) {
@@ -336,6 +344,9 @@ window.CAWayspotApp = (function () {
                         spotEdit.circle.setLatLng(oldLatLng).setRadius(old.radius).setStyle({ color: styleInfo.color, fillColor: styleInfo.fillColor });
                         spotEdit.marker.setLatLng(oldLatLng).setIcon(createCustomIcon(spotEdit.imgUrl, styleInfo.color, spotEdit.type));
                         updatePopupContent(lastAction.id); refreshInfoPanel(); saveToStorage();
+                        if (!window.isCollabSyncing && window.CA_Collab) {
+                            CA_Collab.broadcast('EDIT', lastAction.id);
+                        }
                     }
                     break;
             }
