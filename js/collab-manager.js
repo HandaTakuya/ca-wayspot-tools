@@ -37,11 +37,12 @@ const CA_Collab = {
             this.conn = connection;
             this.setupConnection(onStatusUpdate);
             
-            // As host, send current state upon connection
-            this.conn.on('open', () => {
+            const onOpen = () => {
                 onStatusUpdate('CONNECTED_HOST', this.roomId);
                 this.sendFullState();
-            });
+            };
+            if (this.conn.open) onOpen();
+            else this.conn.on('open', onOpen);
         });
 
         this.peer.on('error', (err) => {
@@ -68,9 +69,11 @@ const CA_Collab = {
             }
             this.setupConnection(onStatusUpdate);
             
-            this.conn.on('open', () => {
+            const onOpen = () => {
                 onStatusUpdate('CONNECTED_CLIENT', hostId);
-            });
+            };
+            if (this.conn.open) onOpen();
+            else this.conn.on('open', onOpen);
         });
 
         this.peer.on('error', (err) => {
@@ -104,6 +107,11 @@ const CA_Collab = {
         this.conn.send({ type: 'FULL_STATE', data: currentData });
     },
 
+    requestFullState() {
+        if (!this.conn || !this.conn.open || this.isHost) return;
+        this.conn.send({ type: 'REQUEST_FULL_STATE' });
+    },
+
     broadcast(actionType, spotId, extraData = {}) {
         // actionType: ADD, MOVE, DELETE, EDIT, DATA_CLEAR
         if (!this.conn || !this.conn.open) return;
@@ -134,6 +142,11 @@ const CA_Collab = {
                     payload.data.forEach(d => {
                         window.CAWayspotApp.createSpotLocally(L.latLng(d.lat, d.lng), d);
                     });
+                    break;
+                case 'REQUEST_FULL_STATE':
+                    if (window.CA_Collab && window.CA_Collab.isHost) {
+                        window.CA_Collab.sendFullState();
+                    }
                     break;
                 case 'ADD':
                 case 'EDIT':

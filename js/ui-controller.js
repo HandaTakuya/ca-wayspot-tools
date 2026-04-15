@@ -106,9 +106,11 @@ const CA_UI = {
     },
 
     generateId() {
-        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-            return crypto.randomUUID();
-        }
+        try {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+        } catch (e) {}
         return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 9);
     }
 };

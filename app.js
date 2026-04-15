@@ -771,14 +771,26 @@ window.CAWayspotApp = (function () {
                 });
             }
         });
+
+        safeListen('btn-collab-sync', 'click', (e) => {
+            if(window.CA_Collab && !window.CA_Collab.isHost) {
+                const btn = document.getElementById('btn-collab-sync');
+                const orig = btn.innerText;
+                btn.innerText = '⌛...';
+                window.CA_Collab.requestFullState();
+                setTimeout(() => btn.innerText = orig, 1000);
+            }
+        });
         
         function updateCollabUI(status, id) {
             const stateEl = document.getElementById('collab-status-state');
             const disBtn = document.getElementById('btn-collab-disconnect');
             const copyBtn = document.getElementById('btn-collab-copy');
+            const syncBtn = document.getElementById('btn-collab-sync');
             if(!stateEl) return;
             
             if (copyBtn) copyBtn.style.display = 'none';
+            if (syncBtn) syncBtn.style.display = 'none';
             
             if (status === 'WAIT') {
                 stateEl.innerText = CA_UI.t('collabWait', {id: id});
@@ -800,6 +812,7 @@ window.CAWayspotApp = (function () {
                 stateEl.innerText = CA_UI.t('collabConnectedClient', {id: id});
                 stateEl.style.color = '#34c759';
                 if(disBtn) disBtn.style.display = 'inline-block';
+                if(syncBtn) syncBtn.style.display = 'inline-block';
             } else if (status === 'DISCONNECTED') {
                 stateEl.innerText = CA_UI.t('collabDisconnected');
                 stateEl.style.color = 'var(--text-secondary)';
