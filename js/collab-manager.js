@@ -104,12 +104,12 @@ const CA_Collab = {
                 lat: s.lat, lng: s.lng, radius: s.radius
             });
         }
-        this.conn.send({ type: 'FULL_STATE', data: currentData });
+        try { this.conn.send({ type: 'FULL_STATE', data: currentData }); } catch(err) { console.error("Collab send error:", err); }
     },
 
     requestFullState() {
         if (!this.conn || !this.conn.open || this.isHost) return;
-        this.conn.send({ type: 'REQUEST_FULL_STATE' });
+        try { this.conn.send({ type: 'REQUEST_FULL_STATE' }); } catch(err) { console.error("Collab send error:", err); }
     },
 
     broadcast(actionType, spotId, extraData = {}) {
@@ -127,7 +127,7 @@ const CA_Collab = {
         }
         Object.assign(payload, extraData);
         
-        this.conn.send(payload);
+        try { this.conn.send(payload); } catch(err) { console.error("Collab broadcast error:", err); }
     },
 
     handleIncomingData(payload) {
@@ -136,14 +136,20 @@ const CA_Collab = {
         window.isCollabSyncing = true;
         
         try {
+            console.log("Collab Received:", payload.type, payload);
             switch(payload.type) {
                 case 'FULL_STATE':
+                    const originalText = document.getElementById('collab-status-state').innerText;
+                    document.getElementById('collab-status-state').innerText = CA_UI.t('collabSyncing', {count: payload.data.length});
+                    setTimeout(() => { document.getElementById('collab-status-state').innerText = originalText; }, 1500);
+
                     window.CAWayspotApp.clearAllSpotsLocally();
                     payload.data.forEach(d => {
                         window.CAWayspotApp.createSpotLocally(L.latLng(d.lat, d.lng), d);
                     });
                     break;
                 case 'REQUEST_FULL_STATE':
+                    console.log("Host received REQUEST_FULL_STATE, sending data...");
                     if (window.CA_Collab && window.CA_Collab.isHost) {
                         window.CA_Collab.sendFullState();
                     }
