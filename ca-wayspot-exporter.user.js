@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         CA Wayspot Exporter
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.1
 // @description  ส่งออกข้อมูลเสาจาก Niantic Wayfarer แบบอัตโนมัติ (ผ่าน XHR/Fetch) ภายในรัศมี 500m
-// @author       CA Community
+// @author       HandaTakuya
 // @match        *://wayfarer.nianticlabs.com/*
 // @grant        none
 // ==/UserScript==
@@ -40,15 +40,15 @@
             if (lat && lng && (obj.title || obj.name || obj.imageUrl || obj.guid || obj.id)) {
                 let id = obj.guid || obj.id || (lat + "_" + lng);
                 let name = obj.title || obj.name || "Unknown Wayspot";
-                
+
                 // พยายามกวาดหา URL รูปภาพทุกรูปแบบที่ Niantic นิยมใช้
                 let imgUrl = obj.imageUrl || obj.image || obj.coverImageUrl || obj.photoUrl || obj.url || "";
                 if (!imgUrl && Array.isArray(obj.imageUrls) && obj.imageUrls.length > 0 && typeof obj.imageUrls[0] === 'string') imgUrl = obj.imageUrls[0];
                 if (!imgUrl && Array.isArray(obj.photos) && obj.photos.length > 0 && obj.photos[0].url) imgUrl = obj.photos[0].url;
                 if (!imgUrl && Array.isArray(obj.images) && obj.images.length > 0 && obj.images[0].url) imgUrl = obj.images[0].url;
-                
+
                 let rawStr = JSON.stringify(obj);
-                
+
                 // ท่าไม้ตาย: ถ้าหาไม่เจอจริงๆ ให้ควานหาลิงก์ googleusercontent (ที่เก็บรูป Niantic) ในก้อนข้อความ
                 if (!imgUrl) {
                     let photoMatch = rawStr.match(/https:\/\/(lh3\.googleusercontent\.com|ggpht\.com)[^"'\\]+/i);
@@ -58,7 +58,7 @@
                 }
 
                 rawStr = rawStr.toLowerCase();
-                let statusInfo = "none"; 
+                let statusInfo = "none";
                 let caType = "none"; // default for None
 
                 // วิเคราะห์สถานะจาก JSON (Pokestop, Gym, Power Spot, None)
@@ -155,26 +155,53 @@
         setTimeout(() => { document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 100);
     };
 
+    const getFallbackCenter = () => {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('lat') && params.get('lng')) {
+                return { lat: parseFloat(params.get('lat')), lng: parseFloat(params.get('lng')) };
+            }
+        } catch (e) { }
+
+        const allSpots = Array.from(window.__CA_WAYSPOT_CACHE.values());
+        if (allSpots.length > 0) {
+            const lastSpot = allSpots[allSpots.length - 1];
+            return { lat: lastSpot.lat, lng: lastSpot.lng };
+        }
+        return null;
+    };
+
     const processAndExport = (gpsLat, gpsLng, btn) => {
         const allSpots = Array.from(window.__CA_WAYSPOT_CACHE.values());
         let filteredSpots = [];
 
-        if (gpsLat && gpsLng) {
+        let centerLat = gpsLat;
+        let centerLng = gpsLng;
+
+        if (!centerLat || !centerLng) {
+            const fallback = getFallbackCenter();
+            if (fallback) {
+                centerLat = fallback.lat;
+                centerLng = fallback.lng;
+            }
+        }
+
+        if (centerLat && centerLng) {
             filteredSpots = allSpots.filter(spot => {
-                const dist = getDistance(gpsLat, gpsLng, spot.lat, spot.lng);
+                const dist = getDistance(centerLat, centerLng, spot.lat, spot.lng);
                 return dist <= 500;
             });
         } else {
-            filteredSpots = allSpots; // ถ้าหา GPS ไม่ได้ ให้โชว์ทั้งหมดที่ดักจับได้
+            filteredSpots = allSpots; // ถ้าหาอะไรไม่ได้เลยจริงๆ ถึงจะให้ทั้งหมด
         }
 
         if (filteredSpots.length > 0) {
             const timestamp = new Date().toLocaleString('th-TH');
             // เรียบเรียงชื่อโดยเพิ่มวงเล็บสถานะตามที่ขอ
             filteredSpots.forEach(s => {
-               if(s.statusText !== 'none' && !s.name.includes(s.statusText)) {
-                   s.name = `${s.name} [${s.statusText}]`;
-               } 
+                if (s.statusText !== 'none' && !s.name.includes(s.statusText)) {
+                    s.name = `${s.name} [${s.statusText}]`;
+                }
             });
 
             const projectData = {
@@ -201,7 +228,7 @@
             navigator.geolocation.getCurrentPosition(
                 (pos) => processAndExport(pos.coords.latitude, pos.coords.longitude, btn),
                 (err) => {
-                    alert('ไม่อนุญาต/ไม่สามารถดึง GPS ได้ ระบบจะส่งออกทุกเสาที่โหลดไว้บนพื้นที่ปัจจุบันแทน');
+                    alert('ไม่อนุญาต/ไม่สามารถดึง GPS ได้ ระบบจะอิงพิกัดจากหน้าจอหรือข้อมูลล่าสุดแทน');
                     processAndExport(null, null, btn);
                 },
                 { enableHighAccuracy: true, timeout: 5000 }
