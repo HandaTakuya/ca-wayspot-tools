@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CA Wayspot Exporter
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  ส่งออกข้อมูลเสาจาก Niantic Wayfarer แบบอัตโนมัติ (ผ่าน XHR/Fetch) ภายในรัศมี 500m
 // @author       HandaTakuya
 // @match        *://wayfarer.nianticlabs.com/*
@@ -38,7 +38,7 @@
 
             // โฟกัสเฉพาะ Object ที่มีพิกัด หรือพบ ID เพื่อจับรวมร่างกัน
             if (lat && lng && (obj.title || obj.name || obj.imageUrl || obj.guid || obj.id)) {
-                let id = obj.guid || obj.id || (lat + "_" + lng);
+                let uniqueKey = `${parseFloat(lat).toFixed(5)}_${parseFloat(lng).toFixed(5)}`;
                 let name = obj.title || obj.name || "Unknown Wayspot";
 
                 // พยายามกวาดหา URL รูปภาพทุกรูปแบบที่ Niantic นิยมใช้
@@ -70,13 +70,17 @@
                     statusInfo = "Power Spot"; caType = "powerspot";
                 }
 
-                // การ Merge ข้อมูล: ถ้าเราเคยมีรูปเสานี้แล้ว จะไม่เขียนทับด้วย String ว่าง
-                let existing = window.__CA_WAYSPOT_CACHE.get(id);
-                if (existing && !imgUrl) imgUrl = existing.imgUrl;
-                if (existing && name === "Unknown Wayspot") name = existing.name;
+                // การ Merge ข้อมูล: ถ้าเราเคยมีข้อมูลพิกัดนี้แล้ว จะไม่เขียนทับด้วยข้อมูลแหว่งๆ
+                let existing = window.__CA_WAYSPOT_CACHE.get(uniqueKey);
+                if (existing) {
+                    if (!imgUrl) imgUrl = existing.imgUrl;
+                    if (name === "Unknown Wayspot") name = existing.name;
+                    if (statusInfo === "none") statusInfo = existing.statusText;
+                    if (caType === "none") caType = existing.type;
+                }
 
-                window.__CA_WAYSPOT_CACHE.set(id, {
-                    id: id,
+                window.__CA_WAYSPOT_CACHE.set(uniqueKey, {
+                    id: uniqueKey,
                     type: caType,
                     statusText: statusInfo,
                     name: name,
