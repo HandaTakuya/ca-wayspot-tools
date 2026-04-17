@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CA Wayspot Exporter
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      1.0.3
 // @description  ส่งออกข้อมูลเสาจาก Niantic Wayfarer แบบอัตโนมัติ (ผ่าน XHR/Fetch) ภายในรัศมี 500m
 // @author       HandaTakuya
 // @match        *://wayfarer.nianticlabs.com/*
@@ -87,7 +87,8 @@
                     lat: lat,
                     lng: lng,
                     radius: 40,
-                    imgUrl: imgUrl
+                    imgUrl: imgUrl,
+                    fetchedAt: Date.now()
                 });
             }
             // ค้นหาลึกลงไปใน Child objects
@@ -168,11 +169,27 @@
         } catch (e) { }
 
         const allSpots = Array.from(window.__CA_WAYSPOT_CACHE.values());
-        if (allSpots.length > 0) {
-            const lastSpot = allSpots[allSpots.length - 1];
-            return { lat: lastSpot.lat, lng: lastSpot.lng };
+        if (allSpots.length === 0) return null;
+
+        // หา Timestamp ที่เป็นรอบการโหลดข้อมูลล่าสุด
+        let maxTime = 0;
+        allSpots.forEach(s => { if (s.fetchedAt && s.fetchedAt > maxTime) maxTime = s.fetchedAt; });
+
+        // กรองเอาเฉพาะกลุ่มเสาที่ถูกโหลดเข้ามาในช่วงใกล้ๆ กัน (ตีว่าไม่เกิน 5 วินาทีจากรอบล่าสุด)
+        const recentSpots = allSpots.filter(s => s.fetchedAt && (maxTime - s.fetchedAt) <= 5000);
+
+        if (recentSpots.length === 0) {
+            return { lat: allSpots[allSpots.length - 1].lat, lng: allSpots[allSpots.length - 1].lng };
         }
-        return null;
+
+        // หาจุดกึ่งกลางของกลุ่มเสากลุ่มล่าสุด (Average Cluster Center) แทนการสุ่มหยิบมาเสาเดียว
+        let sumLat = 0, sumLng = 0;
+        recentSpots.forEach(s => { sumLat += s.lat; sumLng += s.lng; });
+
+        return {
+            lat: sumLat / recentSpots.length,
+            lng: sumLng / recentSpots.length
+        };
     };
 
     const processAndExport = (gpsLat, gpsLng, btn) => {
