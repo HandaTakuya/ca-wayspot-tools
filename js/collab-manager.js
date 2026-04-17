@@ -169,7 +169,7 @@ const CA_Collab = {
         window.isCollabSyncing = true;
         
         try {
-            console.log("Collab Received:", payload.type, payload);
+            // console.log("Collab Received:", payload.type, payload);
             switch(payload.type) {
                 case 'FULL_STATE':
                     const stateEl = document.getElementById('collab-status-state');
@@ -187,7 +187,6 @@ const CA_Collab = {
                     }
                     break;
                 case 'REQUEST_FULL_STATE':
-                    console.log("Host received REQUEST_FULL_STATE, sending data...");
                     if (window.CA_Collab && window.CA_Collab.isHost) {
                         window.CA_Collab.sendFullState();
                     }

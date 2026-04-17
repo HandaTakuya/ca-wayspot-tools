@@ -30,7 +30,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2.7.4" />
+    <link rel="stylesheet" href="style.css?v=2.8.0" />
 </head>
 
 <body>
@@ -72,6 +72,7 @@
                     <option value="cagym" data-i18n="optCaGym">CA Gym 🟣</option>
                     <option value="clwayspot" data-i18n="optClWayspot">CL Wayspot 🍊</option>
                     <option value="clgymwayspot" data-i18n="optClGymWayspot">CL Gym Wayspot 🟢</option>
+                    <option value="powerspot" data-i18n="optPowerSpot">Power Spot 🟣</option>
                 </select>
             </div>
             <div class="input-group">
@@ -221,6 +222,11 @@
                             <label class="switch"><input type="checkbox" id="filter-clgymwayspot" checked><span
                                     class="slider"></span></label>
                         </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label" data-i18n="optPowerSpot">Power Spot</span>
+                            <label class="switch"><input type="checkbox" id="filter-powerspot" checked><span
+                                    class="slider"></span></label>
+                        </div>
 
                         <div class="section-title margin-t-15 padding-t-15" data-i18n="customColorsTitle">
                             กำหนดสี Wayspot</div>
@@ -247,6 +253,10 @@
                         <div class="toggle-row">
                             <span class="toggle-label">CL Gym Wayspot</span>
                             <input type="color" id="color-clgymwayspot" class="color-picker-circle">
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label" data-i18n="optPowerSpot">Power Spot</span>
+                            <input type="color" id="color-powerspot" class="color-picker-circle">
                         </div>
                         <button class="btn btn-secondary" id="btn-reset-colors"
                             data-i18n="btnResetColors">คืนค่าดั่งเดิม</button>
@@ -289,6 +299,19 @@
                 <div class="accordion-content">
                     <div class="accordion-inner">
                         <div class="flex-column-gap-10">
+                            <!-- New Integration Section -->
+                            <div class="section-title margin-t-15 padding-t-15" style="margin-top: 0; padding-top: 0;" data-i18n="importWayfarerTitle">นำเข้าข้อมูล Wayspot จากเว็บ Niantic Wayfarer</div>
+                            <button class="btn btn-primary" onclick="window.open('https://raw.githubusercontent.com/HandaTakuya/ca-wayspot-tools/refs/heads/main/ca-wayspot-exporter.user.js', '_blank')" style="margin-bottom: 5px;" data-i18n="btnDownloadScript">ดาวน์โหลด Script</button>
+                            <button class="btn btn-secondary" onclick="const p=document.getElementById('install-instructions'); p.style.display=p.style.display==='none'?'block':'none';" data-i18n="btnInstallInstructions">วิธีติดตั้ง</button>
+                            <div id="install-instructions" style="display: none; font-size: 13px; color: var(--text-secondary); background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; margin-bottom: 10px; line-height: 1.5;" data-i18n="installInstructionsList">
+                                1. กดปุ่ม "ดาวน์โหลด Script"<br>
+                                2. ติดตั้ง Script ผ่านทาง tampermonkey หรือ Userscripts<br>
+                                3. ล็อกอินเข้าเว็บ Niantic Wayfarer และไปที่หน้า Mapview<br>
+                                4. กดปุ่ม Export CA ระบบจะดาวน์โหลดไฟล์ที่ชื่อ CA_Wayfarer_500m_XXXX.json<br>
+                                5. นำไฟล์ CA_Wayfarer_500m_XXXX.json ผ่านช่องทาง "Import JSON"
+                            </div>
+                            <hr style="margin: 5px 0; border: none; border-top: 1px solid var(--border-glass);">
+
                             <div class="input-row">
                                 <button class="btn btn-secondary" id="btn-json-export" data-i18n="exportJSON">📤 Export JSON</button>
                                 <button class="btn btn-secondary" id="btn-json-import" data-i18n="importJSON">📥 Import JSON</button>
@@ -374,7 +397,7 @@
             </div>
 
             <div class="app-info-footer">
-                CA Wayspot Tools v2.7.4<br>
+                CA Wayspot Tools v2.8.0<br>
                 <span data-i18n="credits">จัดทำโดย CA: Community Ambassador Thailand</span>
             </div>
 
@@ -398,6 +421,7 @@
                         <option value="cagym">CA Gym</option>
                         <option value="clwayspot">CL Wayspot</option>
                         <option value="clgymwayspot">CL Gym Wayspot</option>
+                        <option value="powerspot" data-i18n="optPowerSpot">Power Spot</option>
                     </select>
                 </div>
                 <div class="input-group"><label data-i18n="nameLabel">ชื่อ</label><input type="text" id="editName">
@@ -447,6 +471,8 @@
                 <span class="dot"></span>
                 <span class="dot"></span>
                 <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
             </div>
             <div class="modal-buttons modal-buttons-gap-12">
                 <button class="btn btn-secondary" id="btn-tutorial-back" data-i18n="btnBack">ย้อนกลับ</button>
@@ -469,15 +495,22 @@
         </div>
     </div>
 
+    <!-- Drag Drop Overlay -->
+    <div id="drag-drop-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; flex-direction:column; color:white; pointer-events:none; backdrop-filter: blur(5px);">
+        <div style="font-size: 80px; margin-bottom: 20px;">📥</div>
+        <h2 data-i18n="dragDropText">ลากไฟล์มาวางเพื่อนำเข้าข้อมูล</h2>
+        <div style="color: #ccc; font-size: 14px; margin-top: 10px;">(รองรับไฟล์ .json และ .kml)</div>
+    </div>
+
     <!-- Modules -->
-    <script src="js/i18n-data.js?v=2.7.4"></script>
-    <script src="js/storage-manager.js?v=2.7.4"></script>
-    <script src="js/sync-provider.js?v=2.7.4"></script>
-    <script src="js/map-manager.js?v=2.7.4"></script>
-    <script src="js/ui-controller.js?v=2.7.4"></script>
-    <script src="js/collab-manager.js?v=2.7.4"></script>
+    <script src="js/i18n-data.js?v=2.8.0"></script>
+    <script src="js/storage-manager.js?v=2.8.0"></script>
+    <script src="js/sync-provider.js?v=2.8.0"></script>
+    <script src="js/map-manager.js?v=2.8.0"></script>
+    <script src="js/ui-controller.js?v=2.8.0"></script>
+    <script src="js/collab-manager.js?v=2.8.0"></script>
     <!-- Main App -->
-    <script src="app.js?v=2.7.4"></script>
+    <script src="app.js?v=2.8.0"></script>
 </body>
 
 </html>

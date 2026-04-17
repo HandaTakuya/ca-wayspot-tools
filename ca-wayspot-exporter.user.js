@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CA Wayspot Exporter
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.4
 // @description  ส่งออกข้อมูลเสาจาก Niantic Wayfarer แบบอัตโนมัติ (ผ่าน XHR/Fetch) ภายในรัศมี 500m
 // @author       HandaTakuya
 // @match        *://wayfarer.nianticlabs.com/*
@@ -38,7 +38,7 @@
 
             // โฟกัสเฉพาะ Object ที่มีพิกัด หรือพบ ID เพื่อจับรวมร่างกัน
             if (lat && lng && (obj.title || obj.name || obj.imageUrl || obj.guid || obj.id)) {
-                let id = obj.guid || obj.id || (lat + "_" + lng);
+                let uniqueKey = `${parseFloat(lat).toFixed(5)}_${parseFloat(lng).toFixed(5)}`;
                 let name = obj.title || obj.name || "Unknown Wayspot";
 
                 // พยายามกวาดหา URL รูปภาพทุกรูปแบบที่ Niantic นิยมใช้
@@ -70,20 +70,25 @@
                     statusInfo = "Power Spot"; caType = "powerspot";
                 }
 
-                // การ Merge ข้อมูล: ถ้าเราเคยมีรูปเสานี้แล้ว จะไม่เขียนทับด้วย String ว่าง
-                let existing = window.__CA_WAYSPOT_CACHE.get(id);
-                if (existing && !imgUrl) imgUrl = existing.imgUrl;
-                if (existing && name === "Unknown Wayspot") name = existing.name;
+                // การ Merge ข้อมูล: ถ้าเราเคยมีข้อมูลพิกัดนี้แล้ว จะไม่เขียนทับด้วยข้อมูลแหว่งๆ
+                let existing = window.__CA_WAYSPOT_CACHE.get(uniqueKey);
+                if (existing) {
+                    if (!imgUrl) imgUrl = existing.imgUrl;
+                    if (name === "Unknown Wayspot") name = existing.name;
+                    if (statusInfo === "none") statusInfo = existing.statusText;
+                    if (caType === "none") caType = existing.type;
+                }
 
-                window.__CA_WAYSPOT_CACHE.set(id, {
-                    id: id,
+                window.__CA_WAYSPOT_CACHE.set(uniqueKey, {
+                    id: uniqueKey,
                     type: caType,
                     statusText: statusInfo,
                     name: name,
                     lat: lat,
                     lng: lng,
                     radius: 40,
-                    imgUrl: imgUrl
+                    imgUrl: imgUrl,
+                    fetchedAt: Date.now()
                 });
             }
             // ค้นหาลึกลงไปใน Child objects
@@ -164,11 +169,27 @@
         } catch (e) { }
 
         const allSpots = Array.from(window.__CA_WAYSPOT_CACHE.values());
-        if (allSpots.length > 0) {
-            const lastSpot = allSpots[allSpots.length - 1];
-            return { lat: lastSpot.lat, lng: lastSpot.lng };
+        if (allSpots.length === 0) return null;
+
+        // หา Timestamp ที่เป็นรอบการโหลดข้อมูลล่าสุด
+        let maxTime = 0;
+        allSpots.forEach(s => { if (s.fetchedAt && s.fetchedAt > maxTime) maxTime = s.fetchedAt; });
+
+        // กรองเอาเฉพาะกลุ่มเสาที่ถูกโหลดเข้ามาในช่วงใกล้ๆ กัน (ตีว่าไม่เกิน 5 วินาทีจากรอบล่าสุด)
+        const recentSpots = allSpots.filter(s => s.fetchedAt && (maxTime - s.fetchedAt) <= 5000);
+
+        if (recentSpots.length === 0) {
+            return { lat: allSpots[allSpots.length - 1].lat, lng: allSpots[allSpots.length - 1].lng };
         }
-        return null;
+
+        // หาจุดกึ่งกลางของกลุ่มเสากลุ่มล่าสุด (Average Cluster Center) แทนการสุ่มหยิบมาเสาเดียว
+        let sumLat = 0, sumLng = 0;
+        recentSpots.forEach(s => { sumLat += s.lat; sumLng += s.lng; });
+
+        return {
+            lat: sumLat / recentSpots.length,
+            lng: sumLng / recentSpots.length
+        };
     };
 
     const processAndExport = (gpsLat, gpsLng, btn) => {
@@ -189,10 +210,10 @@
         if (centerLat && centerLng) {
             filteredSpots = allSpots.filter(spot => {
                 const dist = getDistance(centerLat, centerLng, spot.lat, spot.lng);
-                return dist <= 500;
+                return dist <= 500 && spot.type !== 'none';
             });
         } else {
-            filteredSpots = allSpots; // ถ้าหาอะไรไม่ได้เลยจริงๆ ถึงจะให้ทั้งหมด
+            filteredSpots = allSpots.filter(spot => spot.type !== 'none');
         }
 
         if (filteredSpots.length > 0) {

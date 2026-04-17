@@ -12,7 +12,9 @@ window.CAWayspotApp = (function () {
         { title: 'tutorialSlide2Title', text: 'tutorialSlide2Content', image: 'img/img_tutorial%20page%202.webp' },
         { title: 'tutorialSlide3Title', text: 'tutorialSlide3Content', image: 'img/img_tutorial%20page%203.webp' },
         { title: 'tutorialSlide4Title', text: 'tutorialSlide4Content', image: 'img/img_tutorial%20page%204.webp' },
-        { title: 'tutorialSlide5Title', text: 'tutorialSlide5Content', image: 'img/img_tutorial%20page%205.webp' }
+        { title: 'tutorialSlide5Title', text: 'tutorialSlide5Content', image: 'img/img_tutorial%20page%205.webp' },
+        { title: 'tutorialSlide6Title', text: 'tutorialSlide6Content', image: 'img/img_tutorial%20page%206.webp' },
+        { title: 'tutorialSlide7Title', text: 'tutorialSlide7Content', image: 'img/img_tutorial%20page%207.webp' }
     ];
 
     const defaultColors = {
@@ -21,9 +23,11 @@ window.CAWayspotApp = (function () {
         'caspot': '#0bd3cd',
         'cagym': '#af52de',
         'clwayspot': '#f7931e',
-        'clgymwayspot': '#90ee90'
+        'clgymwayspot': '#90ee90',
+        'powerspot': '#911042'
     };
-    let currentColors = JSON.parse(localStorage.getItem('caWayspotColors')) || { ...defaultColors };
+    let storedColors = JSON.parse(localStorage.getItem('caWayspotColors'));
+    let currentColors = { ...defaultColors, ...(storedColors || {}) };
 
     // --- Core Logic ---
 
@@ -54,6 +58,7 @@ window.CAWayspotApp = (function () {
 
         const activeProject = CA_Storage.getActiveProject();
         if (activeProject && activeProject.data) {
+            activeProject.data = activeProject.data.filter(s => s.type !== 'none'); // Remove legacy 'none' data
             activeProject.data.forEach(spotData => {
                 createSpot(L.latLng(spotData.lat, spotData.lng), spotData, false);
             });
@@ -69,7 +74,8 @@ window.CAWayspotApp = (function () {
             'caspot': 'CA PokeStop',
             'cagym': 'CA Gym',
             'clwayspot': 'CL Wayspot',
-            'clgymwayspot': 'CL Gym Wayspot'
+            'clgymwayspot': 'CL Gym Wayspot',
+            'powerspot': 'Power Spot'
         };
         return { color: color, fillColor: color, typeName: typeMap[type] || 'Unknown' };
     }
@@ -81,7 +87,8 @@ window.CAWayspotApp = (function () {
             'caspot': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQcm3QbkubsZfLk4kiEHCdzIe3nezdt3yU4dA&s',
             'cagym': 'https://lh3.googleusercontent.com/p-LbBPtPAKKNNZFMYy84f35FFaEpZBSEfPKx0xK9t48a_SJwaeBEBGOzrPOu0vtcKnnWSe9FpVyt25Rh8PoKldVKlOm9B5iTweq8Ox8=s0',
             'clwayspot': 'https://lh3.googleusercontent.com/1X_n9YMH-P-LMVfeaMffmx49EiRxFGX4CZceamtAbsjHUqZsXoKcLQzV5SH_XOafm4Egex7se7yhr64e_ADEDTw5jQx25K3pmKjW',
-            'clgymwayspot': 'https://lh3.googleusercontent.com/1X_n9YMH-P-LMVfeaMffmx49EiRxFGX4CZceamtAbsjHUqZsXoKcLQzV5SH_XOafm4Egex7se7yhr64e_ADEDTw5jQx25K3pmKjW'
+            'clgymwayspot': 'https://lh3.googleusercontent.com/1X_n9YMH-P-LMVfeaMffmx49EiRxFGX4CZceamtAbsjHUqZsXoKcLQzV5SH_XOafm4Egex7se7yhr64e_ADEDTw5jQx25K3pmKjW',
+            'powerspot': 'https://drive.google.com/u/0/drive-viewer/AKGpihYwxqAl82dV7ZkfcAefpLJiCLnXzYyem-pze5_e88HYBATa21Ed7gbnn7SljXmIcxeld37Yvk_2PekzMqmokY5PECJVK6KvZsA=s2560'
         };
         return imgUrl || defaultImages[type] || 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png';
     }
@@ -116,7 +123,7 @@ window.CAWayspotApp = (function () {
             radius: radius 
         });
 
-        const isDraggable = document.getElementById('setting-draggable') ? document.getElementById('setting-draggable').checked : (window.isDraggableMode || false);
+        const isDraggable = (window.isDraggableMode || false);
         
         const marker = L.marker(latlng, {
             icon: createCustomIcon(imgUrl, styleInfo.color, type),
@@ -197,8 +204,9 @@ window.CAWayspotApp = (function () {
                     'caspot': 'optCaPokestop',
                     'cagym': 'optCaGym',
                     'clwayspot': 'optClWayspot',
-                    'clgymwayspot': 'optClGymWayspot'
-                }[spot.type]).replace(/ [🔵🔴🌸🟣🍊🟡🟢]/, '')}</b></span><br>
+                    'clgymwayspot': 'optClGymWayspot',
+                    'powerspot': 'optPowerSpot'
+                }[spot.type] || 'Unknown').replace(/ [🔵🔴🌸🟣🍊🟡🟢]/, '')}</b></span><br>
                 <span style="font-size: 12px; color: var(--text-secondary);">${CA_UI.t('radiusLabel').replace(' (เมตร)', '').replace(' (meters)', '')}: <b>${spot.radius} m</b></span><br>
                 <div class="popup-buttons">
                     <button class="popup-btn btn-edit-popup" onclick="window.CAWayspotApp.openEditModal('${id}')">${CA_UI.t('btnEdit')}</button>
@@ -210,8 +218,8 @@ window.CAWayspotApp = (function () {
     }
 
     function refreshInfoPanel(filterText = '') {
-        const htmlData = { 'pokestop': '', 'gym': '', 'caspot': '', 'cagym': '', 'clwayspot': '', 'clgymwayspot': '' };
-        const counts = { 'pokestop': 0, 'gym': 0, 'caspot': 0, 'cagym': 0, 'clwayspot': 0, 'clgymwayspot': 0 };
+        const htmlData = { 'pokestop': '', 'gym': '', 'caspot': '', 'cagym': '', 'clwayspot': '', 'clgymwayspot': '', 'powerspot': '' };
+        const counts = { 'pokestop': 0, 'gym': 0, 'caspot': 0, 'cagym': 0, 'clwayspot': 0, 'clgymwayspot': 0, 'powerspot': 0 };
         filterText = filterText.toLowerCase();
 
         for (let id in CA_Map.spotsData) {
@@ -236,7 +244,8 @@ window.CAWayspotApp = (function () {
             { id: 'caspot', name: CA_UI.t('optCaPokestop'), color: '#0bd3cd' },
             { id: 'cagym', name: CA_UI.t('optCaGym'), color: '#af52de' },
             { id: 'clwayspot', name: CA_UI.t('optClWayspot'), color: '#f7931e' },
-            { id: 'clgymwayspot', name: CA_UI.t('optClGymWayspot'), color: '#90ee90' }
+            { id: 'clgymwayspot', name: CA_UI.t('optClGymWayspot'), color: '#90ee90' },
+            { id: 'powerspot', name: CA_UI.t('optPowerSpot') || 'Power Spot', color: '#911042' }
         ];
 
         cats.forEach(c => {
@@ -430,7 +439,7 @@ window.CAWayspotApp = (function () {
         safeListen('mapLayer', 'change', () => {
             const val = document.getElementById('mapLayer').value;
             if (val === 'mapbox') {
-                const token = "pk.eyJ1IjoieXVsamFuZzAxIiwiYSI6ImNqd2lwaDEzZTA3a3A0YnA2bTB3amw3bGQifQ.xP7t0DvEJTi97webcHYftg";
+                const token = "pk.eyJ1IjoieXVsamFuZzAxIiwiYSI6ImNtbzJhaDRvMDBzaWQycHF3amtmMmg1bHUifQ.z6KdZVVik50x4nNb7BEIBg";
                 const user = "yuljang01";
                 const styleId = "cjwiphjwn10lj1cp0nye6wtec";
                 CA_Map.setLayer('mapbox', { user, styleId, token });
@@ -457,7 +466,7 @@ window.CAWayspotApp = (function () {
         });
         safeListen('setting-s2grid', 'change', () => CA_Map.updateS2Grid(document.getElementById('setting-s2grid').checked));
         
-        ['filter-pokestop', 'filter-gym', 'filter-caspot', 'filter-cagym', 'filter-clwayspot', 'filter-clgymwayspot'].forEach(id => {
+        ['filter-pokestop', 'filter-gym', 'filter-caspot', 'filter-cagym', 'filter-clwayspot', 'filter-clgymwayspot', 'filter-powerspot'].forEach(id => {
             safeListen(id, 'change', () => {
                 const results = { 
                     'pokestop': document.getElementById('filter-pokestop').checked, 
@@ -465,7 +474,8 @@ window.CAWayspotApp = (function () {
                     'caspot': document.getElementById('filter-caspot').checked, 
                     'cagym': document.getElementById('filter-cagym').checked,
                     'clwayspot': document.getElementById('filter-clwayspot').checked,
-                    'clgymwayspot': document.getElementById('filter-clgymwayspot').checked
+                    'clgymwayspot': document.getElementById('filter-clgymwayspot').checked,
+                    'powerspot': document.getElementById('filter-powerspot').checked
                 };
                 for (let sid in CA_Map.spotsData) {
                     const spot = CA_Map.spotsData[sid];
@@ -476,7 +486,7 @@ window.CAWayspotApp = (function () {
         });
 
         // Custom Wayspot Colors Listeners
-        ['pokestop', 'gym', 'caspot', 'cagym', 'clwayspot', 'clgymwayspot'].forEach(type => {
+        ['pokestop', 'gym', 'caspot', 'cagym', 'clwayspot', 'clgymwayspot', 'powerspot'].forEach(type => {
             safeListen('color-' + type, 'change', (e) => {
                 currentColors[type] = e.target.value;
                 localStorage.setItem('caWayspotColors', JSON.stringify(currentColors));
@@ -496,7 +506,7 @@ window.CAWayspotApp = (function () {
         safeListen('btn-reset-colors', 'click', () => {
             currentColors = { ...defaultColors };
             localStorage.removeItem('caWayspotColors');
-            ['pokestop', 'gym', 'caspot', 'cagym', 'clwayspot', 'clgymwayspot'].forEach(type => {
+            ['pokestop', 'gym', 'caspot', 'cagym', 'clwayspot', 'clgymwayspot', 'powerspot'].forEach(type => {
                 document.getElementById('color-' + type).value = currentColors[type];
                 const style = getStyleByType(type);
                 for (let id in CA_Map.spotsData) {
@@ -557,18 +567,7 @@ window.CAWayspotApp = (function () {
             CA_UI.openModal('backup-modal-overlay');
         });
         safeListen('btn-json-import', 'click', () => document.getElementById('importJSONInput').click());
-        safeListen('importJSONInput', 'change', (e) => {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                const data = JSON.parse(ev.target.result);
-                if (Array.isArray(data)) {
-                    if (data[0] && data[0].hasOwnProperty('data')) {
-                        CA_Storage.projects = data; CA_Storage.activeProjectId = data[0].id; CA_Storage.saveAll(); loadFromStorage();
-                    }
-                }
-            };
-            reader.readAsText(e.target.files[0]);
-        });
+        safeListen('importJSONInput', 'change', (e) => parseImportedFile(e.target.files[0]));
 
         safeListen('btn-capture', 'click', async () => {
             const btn = document.getElementById('btn-capture');
@@ -685,29 +684,54 @@ window.CAWayspotApp = (function () {
             if (kml) CA_Sync.downloadFile(kml, 'wayspot_export.kml', 'application/vnd.google-earth.kml+xml');
         });
 
-        safeListen('btn-local-import', 'click', () => document.getElementById('importKMLInput').click());
-        safeListen('importKMLInput', 'change', (e) => {
-            const file = e.target.files[0];
+        // KML / JSON Parser
+        const parseImportedFile = (file) => {
             if (!file) return;
+            const fn = file.name.toLowerCase();
             const reader = new FileReader();
             reader.onload = (ev) => {
-                const parser = new DOMParser();
-                const kml = parser.parseFromString(ev.target.result, "text/xml");
-
-                const placemarks = kml.querySelectorAll("Placemark");
-                let count = 0;
-                placemarks.forEach(pm => {
-                    const name = pm.querySelector("name") ? pm.querySelector("name").textContent : "Imported Spot";
-                    const coords = pm.querySelector("coordinates") ? pm.querySelector("coordinates").textContent.trim().split(",") : null;
-                    if (coords && coords.length >= 2) {
-                        createSpot(L.latLng(parseFloat(coords[1]), parseFloat(coords[0])), { name, type: 'pokestop', radius: 40 }, false);
-                        count++;
-                    }
-                });
-                alert(CA_UI.t('importSuccessCount', { count: count, dup: 0 }));
+                if (fn.endsWith('.json')) {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        if (Array.isArray(data) && data[0] && data[0].hasOwnProperty('data')) {
+                            data.forEach(proj => { if (proj.data) proj.data = proj.data.filter(s => s.type !== 'none'); });
+                            CA_Storage.projects = data; CA_Storage.activeProjectId = data[0].id; CA_Storage.saveAll(); loadFromStorage();
+                            alert(CA_UI.t('loadSuccess'));
+                        }
+                    } catch(e) {}
+                } else if (fn.endsWith('.kml')) {
+                    const parser = new DOMParser();
+                    const kml = parser.parseFromString(ev.target.result, "text/xml");
+                    const placemarks = kml.querySelectorAll("Placemark");
+                    let count = 0;
+                    placemarks.forEach(pm => {
+                        const name = pm.querySelector("name") ? pm.querySelector("name").textContent : "Imported Spot";
+                        const coords = pm.querySelector("coordinates") ? pm.querySelector("coordinates").textContent.trim().split(",") : null;
+                        if (coords && coords.length >= 2) {
+                            createSpot(L.latLng(parseFloat(coords[1]), parseFloat(coords[0])), { name, type: 'pokestop', radius: 40 }, false);
+                            count++;
+                        }
+                    });
+                    if (count > 0) { saveToStorage(); refreshInfoPanel(); }
+                    alert(CA_UI.t('importSuccessCount', { count: count, dup: 0 }));
+                }
             };
             reader.readAsText(file);
-        });
+        };
+
+        safeListen('btn-local-import', 'click', () => document.getElementById('importKMLInput').click());
+        safeListen('importKMLInput', 'change', (e) => parseImportedFile(e.target.files[0]));
+        
+        // Drag Object Handler
+        const dropOverlay = document.getElementById('drag-drop-overlay');
+        if (dropOverlay) {
+            document.body.addEventListener('dragover', (e) => { e.preventDefault(); dropOverlay.style.display = 'flex'; });
+            document.body.addEventListener('dragleave', (e) => { e.preventDefault(); if (!e.relatedTarget || e.relatedTarget.nodeName === "HTML") dropOverlay.style.display = 'none'; });
+            document.body.addEventListener('drop', (e) => {
+                e.preventDefault(); dropOverlay.style.display = 'none';
+                if (e.dataTransfer.files.length > 0) parseImportedFile(e.dataTransfer.files[0]);
+            });
+        }
 
         // Backup Modal Logic
         safeListen('btn-backup-active', 'click', () => {
@@ -862,7 +886,7 @@ window.CAWayspotApp = (function () {
         CA_UI.setTheme(CA_UI.currentTheme);
 
         // Initialize Color Pickers
-        ['pokestop', 'gym', 'caspot', 'cagym', 'clwayspot', 'clgymwayspot'].forEach(type => {
+        ['pokestop', 'gym', 'caspot', 'cagym', 'clwayspot', 'clgymwayspot', 'powerspot'].forEach(type => {
             const el = document.getElementById('color-' + type);
             if (el) el.value = currentColors[type];
         });
