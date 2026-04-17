@@ -559,7 +559,17 @@ window.CAWayspotApp = (function () {
         safeListen('btn-sync-export', 'click', () => CA_Sync.requestDriveAccess('export', () => CA_UI.openModal('backup-modal-overlay')));
         safeListen('btn-sync-import', 'click', () => CA_Sync.requestDriveAccess('import', async () => {
             const data = await CA_Sync.downloadFromDrive('CA_Wayspot_All_Backup.json');
-            if (data) { CA_Storage.projects = data; CA_Storage.activeProjectId = data[0].id; CA_Storage.saveAll(); loadFromStorage(); alert(CA_UI.t('loadSuccess')); }
+            if (data && Array.isArray(data)) {
+                data.forEach(proj => {
+                    const idx = CA_Storage.projects.findIndex(p => p.id === proj.id);
+                    if (idx >= 0) CA_Storage.projects[idx] = proj;
+                    else CA_Storage.projects.push(proj);
+                });
+                CA_Storage.activeProjectId = data[0].id;
+                CA_Storage.saveAll();
+                loadFromStorage();
+                alert(CA_UI.t('loadSuccess'));
+            }
         }));
         
         safeListen('btn-json-export', 'click', () => {
@@ -694,8 +704,15 @@ window.CAWayspotApp = (function () {
                     try {
                         const data = JSON.parse(ev.target.result);
                         if (Array.isArray(data) && data[0] && data[0].hasOwnProperty('data')) {
-                            data.forEach(proj => { if (proj.data) proj.data = proj.data.filter(s => s.type !== 'none'); });
-                            CA_Storage.projects = data; CA_Storage.activeProjectId = data[0].id; CA_Storage.saveAll(); loadFromStorage();
+                            data.forEach(proj => {
+                                if (proj.data) proj.data = proj.data.filter(s => s.type !== 'none');
+                                const idx = CA_Storage.projects.findIndex(p => p.id === proj.id);
+                                if (idx >= 0) CA_Storage.projects[idx] = proj;
+                                else CA_Storage.projects.push(proj);
+                            });
+                            CA_Storage.activeProjectId = data[0].id;
+                            CA_Storage.saveAll();
+                            loadFromStorage();
                             alert(CA_UI.t('loadSuccess'));
                         }
                     } catch(e) {}
