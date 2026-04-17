@@ -88,7 +88,7 @@ window.CAWayspotApp = (function () {
             'cagym': 'https://lh3.googleusercontent.com/p-LbBPtPAKKNNZFMYy84f35FFaEpZBSEfPKx0xK9t48a_SJwaeBEBGOzrPOu0vtcKnnWSe9FpVyt25Rh8PoKldVKlOm9B5iTweq8Ox8=s0',
             'clwayspot': 'https://lh3.googleusercontent.com/1X_n9YMH-P-LMVfeaMffmx49EiRxFGX4CZceamtAbsjHUqZsXoKcLQzV5SH_XOafm4Egex7se7yhr64e_ADEDTw5jQx25K3pmKjW',
             'clgymwayspot': 'https://lh3.googleusercontent.com/1X_n9YMH-P-LMVfeaMffmx49EiRxFGX4CZceamtAbsjHUqZsXoKcLQzV5SH_XOafm4Egex7se7yhr64e_ADEDTw5jQx25K3pmKjW',
-            'powerspot': 'https://drive.google.com/u/0/drive-viewer/AKGpihYwxqAl82dV7ZkfcAefpLJiCLnXzYyem-pze5_e88HYBATa21Ed7gbnn7SljXmIcxeld37Yvk_2PekzMqmokY5PECJVK6KvZsA=s2560'
+            'powerspot': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NSIgZmlsbD0iIzkxMTA0MiIgLz4KICA8cGF0aCBkPSJNNDggMjAgTDMwIDU1IEw1MCA1NSBMNDUgODAgTDcwIDQ1IEw1MCA0NSBaIiBmaWxsPSIjZmZmZmZmIiAvPgo8L3N2Zz4='
         };
         return imgUrl || defaultImages[type] || 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png';
     }
