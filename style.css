@@ -899,7 +899,7 @@
         }
 
         .accordion-item.active .accordion-content {
-            max-height: 1000px; /* Reduced to a more reasonable height for smoother animation */
+            max-height: 2000px; /* Increased to prevent content cutting off */
         }
 
         /* Inner container for padding to avoid jumpy animation */
