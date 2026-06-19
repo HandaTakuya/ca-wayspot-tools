@@ -30,7 +30,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2.8.0" />
+    <link rel="stylesheet" href="style.css?v=2.8.1" />
 </head>
 
 <body>
@@ -96,7 +96,7 @@
             </div>
             <div class="input-group">
                 <label data-i18n="radiusLabel">รัศมี (เมตร)</label>
-                <input type="number" id="spotRadius" value="40" min="40" max="80">
+                <input type="number" id="spotRadius" value="45" min="45" max="80">
             </div>
 
             <button class="btn btn-primary" id="btnAddByLatLng" data-i18n="btnAddByCoords">เพิ่มด้วยพิกัด</button>
@@ -271,7 +271,7 @@
                                     class="slider"></span></label>
                         </div>
                         <div class="toggle-row">
-                            <span class="toggle-label" data-i18n="showExclusionZoneLabel">🚫 แสดงพื้นที่ทับซ้อน (40ม.)</span>
+                            <span class="toggle-label" data-i18n="showExclusionZoneLabel">🚫 แสดงพื้นที่ทับซ้อน (45ม.)</span>
                             <label class="switch"><input type="checkbox" id="setting-show-exclusion"><span
                                     class="slider"></span></label>
                         </div>
@@ -280,7 +280,7 @@
                             บังคับเปลี่ยนรัศมี Wayspot</div>
                         <div class="row-gap-5">
                             <input type="number" id="globalRadiusInput" data-i18n-placeholder="radiusPlaceholder"
-                                placeholder="ระบุระยะ (เช่น 20 หรือ 40)" min="1" max="500"
+                                placeholder="ระบุระยะ (เช่น 20 หรือ 45)" min="1" max="500"
                                 class="flex-1-h-38">
                             <button class="btn btn-secondary btn-compact-h-38" id="btn-force-radius" data-i18n="forceRadiusBtn">เปลี่ยนระยะรัศมีทั้งหมด</button>
                         </div>
@@ -397,7 +397,7 @@
             </div>
 
             <div class="app-info-footer">
-                CA Wayspot Tools v2.8.0<br>
+                CA Wayspot Tools v2.8.1<br>
                 <span data-i18n="credits">จัดทำโดย CA: Community Ambassador Thailand</span>
             </div>
 
@@ -435,7 +435,7 @@
                             id="editLng" step="any"></div>
                 </div>
                 <div class="input-group"><label data-i18n="radiusLabel">รัศมี (ม.)</label><input type="number"
-                        id="editRadius" min="40" max="80"></div>
+                        id="editRadius" min="45" max="80"></div>
             </div>
             <div class="modal-buttons">
                 <button class="btn btn-secondary" id="btn-close-edit" data-i18n="btnCancel">ยกเลิก</button>
@@ -503,14 +503,14 @@
     </div>
 
     <!-- Modules -->
-    <script src="js/i18n-data.js?v=2.8.0"></script>
-    <script src="js/storage-manager.js?v=2.8.0"></script>
-    <script src="js/sync-provider.js?v=2.8.0"></script>
-    <script src="js/map-manager.js?v=2.8.0"></script>
-    <script src="js/ui-controller.js?v=2.8.0"></script>
-    <script src="js/collab-manager.js?v=2.8.0"></script>
+    <script src="js/i18n-data.js?v=2.8.1"></script>
+    <script src="js/storage-manager.js?v=2.8.1"></script>
+    <script src="js/sync-provider.js?v=2.8.1"></script>
+    <script src="js/map-manager.js?v=2.8.1"></script>
+    <script src="js/ui-controller.js?v=2.8.1"></script>
+    <script src="js/collab-manager.js?v=2.8.1"></script>
     <!-- Main App -->
-    <script src="app.js?v=2.8.0"></script>
+    <script src="app.js?v=2.8.1"></script>
 </body>
 
 </html>

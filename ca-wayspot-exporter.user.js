@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CA Wayspot Exporter
 // @namespace    http://tampermonkey.net/
-// @version      1.0.4
+// @version      1.0.5
 // @description  ส่งออกข้อมูลเสาจาก Niantic Wayfarer แบบอัตโนมัติ (ผ่าน XHR/Fetch) ภายในรัศมี 500m
 // @author       HandaTakuya
 // @match        *://wayfarer.nianticlabs.com/*
@@ -86,7 +86,7 @@
                     name: name,
                     lat: lat,
                     lng: lng,
-                    radius: 40,
+                    radius: 45,
                     imgUrl: imgUrl,
                     fetchedAt: Date.now()
                 });

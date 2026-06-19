@@ -108,7 +108,7 @@ window.CAWayspotApp = (function () {
         const imgUrl = savedData ? savedData.imgUrl : document.getElementById('spotImage').value;
         let radius = savedData ? savedData.radius : parseInt(document.getElementById('spotRadius').value);
 
-        radius = Math.max(40, Math.min(80, isNaN(radius) ? 40 : radius));
+        radius = Math.max(45, Math.min(80, isNaN(radius) ? 45 : radius));
         if (!savedData) document.getElementById('spotRadius').value = radius;
 
         const styleInfo = getStyleByType(type);
@@ -725,7 +725,7 @@ window.CAWayspotApp = (function () {
                         const name = pm.querySelector("name") ? pm.querySelector("name").textContent : "Imported Spot";
                         const coords = pm.querySelector("coordinates") ? pm.querySelector("coordinates").textContent.trim().split(",") : null;
                         if (coords && coords.length >= 2) {
-                            createSpot(L.latLng(parseFloat(coords[1]), parseFloat(coords[0])), { name, type: 'pokestop', radius: 40 }, false);
+                            createSpot(L.latLng(parseFloat(coords[1]), parseFloat(coords[0])), { name, type: 'pokestop', radius: 45 }, false);
                             count++;
                         }
                     });

@@ -37,7 +37,7 @@
                 showRadiusLabel: "แสดงวงรัศมีของ Wayspot",
                 visibilityTitle: "การแสดงผล Wayspot",
                 forceRadiusTitle: "บังคับเปลี่ยนรัศมี Wayspot",
-                radiusPlaceholder: "ระบุระยะ (เช่น 20 หรือ 40)",
+                radiusPlaceholder: "ระบุระยะ (เช่น 20 หรือ 45)",
                 forceRadiusBtn: "เปลี่ยนระยะรัศมีทั้งหมด",
                 cloudSyncTitle: "Cloud Sync (Google Drive)",
                 saveToDrive: "☁️ บันทึกขึ้น Google Drive",
@@ -113,7 +113,7 @@
                 showRadiusLabel: "Show Wayspot Radius",
                 visibilityTitle: "Wayspot Visibility",
                 forceRadiusTitle: "Force Change Radius",
-                radiusPlaceholder: "Enter distance (e.g., 20 or 40)",
+                radiusPlaceholder: "Enter distance (e.g., 20 or 45)",
                 forceRadiusBtn: "Change All Radiuses",
                 cloudSyncTitle: "Cloud Sync (Google Drive)",
                 saveToDrive: "☁️ Save to Google Drive",
@@ -547,7 +547,7 @@
                             else if (desc.includes('CA PokeStop') || desc.includes('CA Spot')) type = 'caspot';
 
                             var radiusMatch = desc.match(/รัศมี:\s*(\d+)/);
-                            var radius = radiusMatch ? parseInt(radiusMatch[1]) : 40;
+                            var radius = radiusMatch ? parseInt(radiusMatch[1]) : 45;
 
                             var isDuplicate = false;
                             for (var existingId in spotsData) {
@@ -680,7 +680,7 @@
             var imgUrl = savedData ? savedData.imgUrl : document.getElementById('spotImage').value;
             var radius = savedData ? savedData.radius : parseInt(document.getElementById('spotRadius').value);
 
-            radius = Math.max(40, Math.min(80, isNaN(radius) ? 40 : radius));
+            radius = Math.max(45, Math.min(80, isNaN(radius) ? 45 : radius));
             if (!savedData) document.getElementById('spotRadius').value = radius;
 
             var styleInfo = getStyleByType(type);
@@ -755,7 +755,7 @@
             var newRadius = parseInt(document.getElementById('editRadius').value);
 
             if (isNaN(newLat) || isNaN(newLng)) return alert(t('invalidLatLong'));
-            newRadius = Math.max(40, Math.min(80, isNaN(newRadius) ? 40 : newRadius));
+            newRadius = Math.max(45, Math.min(80, isNaN(newRadius) ? 45 : newRadius));
 
             spot.type = document.getElementById('editType').value;
             spot.name = document.getElementById('editName').value || t('unnamedAlert');

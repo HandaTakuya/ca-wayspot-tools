@@ -116,7 +116,7 @@ const CA_Map = {
         for (let id in this.spotsData) {
             const spot = this.spotsData[id];
             L.circle([spot.lat, spot.lng], {
-                radius: 40, // User requested 40m for this project
+                radius: 45, // User requested 45m for this project
                 color: '#ff3b30',
                 weight: 1,
                 fillColor: '#ff3b30',
