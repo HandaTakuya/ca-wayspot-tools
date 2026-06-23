@@ -158,7 +158,7 @@ const CA_Simulation3D = (() => {
         bg.position.y = -0.5;
         scene.add(bg);
 
-        const RADIUS = 3; // 7 × 7 grid
+        const RADIUS = 4; // 9 × 9 grid
         const BLEED  = 1; // 1 m overlap on each side to close seams
 
         for (let dy = -RADIUS; dy <= RADIUS; dy++) {
