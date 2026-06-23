@@ -10,6 +10,7 @@ const CA_Simulation3D = (() => {
     let lastFrameTime = 0;
     let joystickState       = { active: false, jx: 0, jy: 0 };
     let spinPartsClockwise  = []; // rotates Y = -rot (clockwise from above)
+    let zoneRings = [];          // exclusion zone ring meshes (togglable)
 
     // Fetch a URL → blob URL (same-origin) → Three.js Texture
     // Bypasses WebGL cross-origin restriction while still respecting CORS at fetch level.
@@ -612,6 +613,7 @@ const CA_Simulation3D = (() => {
         scene.add(playerGroup);
 
         spinParts = [];
+        zoneRings = [];
 
         if (spotList.length === 0) return;
 
@@ -631,7 +633,7 @@ const CA_Simulation3D = (() => {
             result.spin.forEach(s => spinParts.push(s));
             if (result.spinCW) result.spinCW.forEach(s => spinPartsClockwise.push(s));
 
-            makeExclusionZone(x, z, 45, hex).forEach(m => scene.add(m));
+            makeExclusionZone(x, z, 45, hex).forEach(m => { scene.add(m); zoneRings.push(m); });
         });
     }
 
@@ -808,6 +810,7 @@ const CA_Simulation3D = (() => {
         scene = camera = controls = null;
         spinParts = [];
         spinPartsClockwise = [];
+        zoneRings = [];
         playerGroup = null;
         playerPos = { x: 0, z: 0 };
         lastFrameTime = 0;
@@ -856,5 +859,12 @@ const CA_Simulation3D = (() => {
 
     window.addEventListener('resize', onResize);
 
-    return { open, close, resetView };
+    function toggleZoneRings() {
+        const btn = document.getElementById('btn-sim3d-rings');
+        const visible = zoneRings.length > 0 && zoneRings[0].visible;
+        zoneRings.forEach(m => { m.visible = !visible; });
+        if (btn) btn.textContent = visible ? '⭕ รัศมี' : '🚫 รัศมี';
+    }
+
+    return { open, close, resetView, toggleZoneRings };
 })();
