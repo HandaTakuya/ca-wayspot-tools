@@ -11,6 +11,25 @@ const CA_Simulation3D = (() => {
     let joystickState       = { active: false, jx: 0, jy: 0 };
     let spinPartsClockwise  = []; // rotates Y = -rot (clockwise from above)
 
+    // Fetch a URL → blob URL (same-origin) → Three.js Texture
+    // Bypasses WebGL cross-origin restriction while still respecting CORS at fetch level.
+    function fetchTexture(url, onLoad, onError) {
+        fetch(url)
+            .then(r => { if (!r.ok) throw r.status; return r.blob(); })
+            .then(blob => {
+                const blobUrl = URL.createObjectURL(blob);
+                const loader  = new THREE.TextureLoader();
+                loader.load(blobUrl, tex => {
+                    URL.revokeObjectURL(blobUrl);
+                    onLoad(tex);
+                }, undefined, err => {
+                    URL.revokeObjectURL(blobUrl);
+                    onError && onError(err);
+                });
+            })
+            .catch(() => onError && onError());
+    }
+
     const TYPE_COLORS = {
         pokestop:    0x007aff,
         gym:         0xff3b30,
@@ -139,9 +158,6 @@ const CA_Simulation3D = (() => {
         bg.position.y = -0.5;
         scene.add(bg);
 
-        const loader = new THREE.TextureLoader();
-        loader.crossOrigin = 'anonymous';
-
         const RADIUS = 2; // 5 × 5 grid
         const BLEED  = 1; // 1 m overlap on each side to close seams
 
@@ -177,7 +193,7 @@ const CA_Simulation3D = (() => {
                 plane.position.set(centerX, yOffset, centerZ);
                 scene.add(plane);
 
-                loader.load(getTileUrl(tx, ty, ZOOM),
+                fetchTexture(getTileUrl(tx, ty, ZOOM),
                     (tex) => {
                         tex.generateMipmaps  = true;
                         tex.minFilter        = THREE.LinearMipmapLinearFilter;
@@ -186,9 +202,7 @@ const CA_Simulation3D = (() => {
                         mat.map = tex;
                         mat.color.setHex(0xffffff);
                         mat.needsUpdate = true;
-                    },
-                    undefined,
-                    () => { /* CORS or network error — show fallback color */ }
+                    }
                 );
             }
         }
@@ -266,20 +280,14 @@ const CA_Simulation3D = (() => {
         imgDiscBack.rotation.y = Math.PI;
         discGroup.add(imgDiscBack);
 
-        // Load POI image as texture if available
+        // Load POI image via blob URL to bypass WebGL cross-origin restriction
         if (imgUrl) {
-            const loader = new THREE.TextureLoader();
-            loader.crossOrigin = 'anonymous';
-            loader.load(imgUrl,
-                (tex) => {
-                    tex.minFilter = THREE.LinearFilter;
-                    tex.generateMipmaps = false;
-                    imgMat.map = tex;
-                    imgMat.needsUpdate = true;
-                },
-                undefined,
-                () => {}
-            );
+            fetchTexture(imgUrl, (tex) => {
+                tex.minFilter = THREE.LinearFilter;
+                tex.generateMipmaps = false;
+                imgMat.map = tex;
+                imgMat.needsUpdate = true;
+            });
         }
 
 
