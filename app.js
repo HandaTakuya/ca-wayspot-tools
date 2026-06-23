@@ -399,6 +399,10 @@ window.CAWayspotApp = (function () {
     function setupEventListeners() {
         const safeListen = (id, event, cb) => { const el = document.getElementById(id); if (el) el.addEventListener(event, cb); };
 
+        safeListen('fab-3d-sim', 'click', () => CA_Simulation3D.open());
+        safeListen('btn-sim3d-close', 'click', () => CA_Simulation3D.close());
+        safeListen('btn-sim3d-reset', 'click', () => CA_Simulation3D.resetView());
+
         safeListen('fab-add-mode', 'click', () => setMode('add'));
         safeListen('fab-edit-mode', 'click', () => setMode('edit'));
         safeListen('fab-undo', 'click', () => undoAction());

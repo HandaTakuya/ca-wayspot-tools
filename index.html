@@ -26,11 +26,13 @@
     <script src="https://accounts.google.com/gsi/client" id="gsi-script" onload="if(window.initGSI) window.initGSI()"
         async defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <!-- Firebase Compat Libraries -->
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=2.8.1" />
+    <link rel="stylesheet" href="style.css?v=3.0.0" />
 </head>
 
 <body>
@@ -49,6 +51,7 @@
             <button class="fab" id="fab-undo" data-tooltip-i18n="tooltipUndo" data-tooltip="ย้อนกลับ">↩️</button>
             <button class="fab" id="fab-info-mode" data-tooltip-i18n="tooltipWayspotList" data-tooltip="รายการ Wayspot">📋</button>
 
+            <button class="fab" id="fab-3d-sim" data-tooltip-i18n="tooltip3DSim" data-tooltip="จำลอง 3D">🎮</button>
             <button class="fab" id="btn-capture" data-tooltip-i18n="tooltipCapture" data-tooltip="📸 บันทึกภาพแผนที่">📸</button>
             <button class="fab" id="fab-settings-mode" data-tooltip-i18n="tooltipSettings" data-tooltip="การตั้งค่า">⚙️</button>
             <button class="fab" id="btn-locate" data-tooltip-i18n="tooltipMyLocation" data-tooltip="ตำแหน่งของฉัน">📍</button>
@@ -397,7 +400,7 @@
             </div>
 
             <div class="app-info-footer">
-                CA Wayspot Tools v2.8.1<br>
+                CA Wayspot Tools v3.0.0<br>
                 <span data-i18n="credits">จัดทำโดย CA: Community Ambassador Thailand</span>
             </div>
 
@@ -495,6 +498,26 @@
         </div>
     </div>
 
+    <!-- 3D Simulation Overlay -->
+    <div id="sim3d-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; flex-direction:column; background:#080818; font-family: 'Noto Sans Thai', sans-serif;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:rgba(0,0,0,0.65); backdrop-filter:blur(10px); flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span style="color:white; font-size:15px; font-weight:700;">🎮 จำลองตำแหน่ง 3D</span>
+                <span style="color:#555; font-size:11px;" id="sim3d-hint">ลากเพื่อหมุน · Scroll ซูม · Pinch ซูม (มือถือ)</span>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button id="btn-sim3d-reset" style="background:rgba(255,255,255,0.1); color:#ddd; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px 12px; cursor:pointer; font-size:13px;">🔄</button>
+                <button id="btn-sim3d-close" style="background:rgba(255,80,80,0.2); color:#ff8888; border:1px solid rgba(255,80,80,0.3); border-radius:8px; padding:6px 14px; cursor:pointer; font-size:13px; font-weight:600;">✕</button>
+            </div>
+        </div>
+        <canvas id="sim3d-canvas" style="flex:1; display:block; width:100%; height:100%; outline:none;"></canvas>
+        <!-- Virtual joystick -->
+        <div id="sim3d-joystick" style="position:absolute; bottom:28px; left:28px; width:110px; height:110px; z-index:10001; touch-action:none; user-select:none; cursor:grab;">
+            <div style="position:absolute; inset:0; background:rgba(255,255,255,0.07); border:2px solid rgba(255,255,255,0.22); border-radius:50%; box-shadow:0 0 18px rgba(0,0,0,0.5);"></div>
+            <div id="sim3d-joystick-thumb" style="position:absolute; width:44px; height:44px; background:rgba(100,220,255,0.35); border:2px solid rgba(100,220,255,0.7); border-radius:50%; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none;"></div>
+        </div>
+    </div>
+
     <!-- Drag Drop Overlay -->
     <div id="drag-drop-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; flex-direction:column; color:white; pointer-events:none; backdrop-filter: blur(5px);">
         <div style="font-size: 80px; margin-bottom: 20px;">📥</div>
@@ -503,14 +526,15 @@
     </div>
 
     <!-- Modules -->
-    <script src="js/i18n-data.js?v=2.8.1"></script>
-    <script src="js/storage-manager.js?v=2.8.1"></script>
-    <script src="js/sync-provider.js?v=2.8.1"></script>
-    <script src="js/map-manager.js?v=2.8.1"></script>
-    <script src="js/ui-controller.js?v=2.8.1"></script>
-    <script src="js/collab-manager.js?v=2.8.1"></script>
+    <script src="js/i18n-data.js?v=3.0.0"></script>
+    <script src="js/storage-manager.js?v=3.0.0"></script>
+    <script src="js/sync-provider.js?v=3.0.0"></script>
+    <script src="js/map-manager.js?v=3.0.0"></script>
+    <script src="js/ui-controller.js?v=3.0.0"></script>
+    <script src="js/collab-manager.js?v=3.0.0"></script>
+    <script src="js/simulation-3d.js?v=3.0.0"></script>
     <!-- Main App -->
-    <script src="app.js?v=2.8.1"></script>
+    <script src="app.js?v=3.0.0"></script>
 </body>
 
 </html>
