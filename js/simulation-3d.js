@@ -619,9 +619,13 @@ const CA_Simulation3D = (() => {
             const [x, z] = toXZ(spot.lat, spot.lng, cLat, cLng);
             const hex = TYPE_COLORS[spot.type] || 0x007aff;
 
+            // Resolve disc image: local override for CA/CL types, else remote imgUrl
+            const localImg = { caspot: 'poi_img/CA_PokeStop.jpeg', clwayspot: 'poi_img/CL_POI.jpg' };
+            const discImg  = localImg[spot.type] || spot.imgUrl || null;
+
             const result = GYM_TYPES.has(spot.type) ? makeGym(hex)
                          : spot.type === 'powerspot' ? makePowerSpot()
-                         : makePokeStop(hex, spot.imgUrl || null);
+                         : makePokeStop(hex, discImg);
             result.group.position.set(x, 0, z);
             scene.add(result.group);
             result.spin.forEach(s => spinParts.push(s));
