@@ -141,7 +141,7 @@ const CA_Simulation3D = (() => {
     // ── Map tile ground ───────────────────────────────────────────────────────
 
     function buildMapGround(cLat, cLng) {
-        const ZOOM = 17;
+        const ZOOM = 19;
         const n   = Math.pow(2, ZOOM);
         const center = latLngToTile(cLat, cLng, ZOOM);
         const R      = 6371000;
@@ -162,7 +162,7 @@ const CA_Simulation3D = (() => {
         bg.position.y = -0.5;
         scene.add(bg);
 
-        const RADIUS = 5; // 11 × 11 grid at zoom 17 — good coverage + 4× sharper than zoom 16
+        const RADIUS = 7; // 15 × 15 grid at zoom 19 — ~550m radius, max detail
         const BLEED  = 1; // 1 m overlap on each side to close seams
 
         for (let dy = -RADIUS; dy <= RADIUS; dy++) {
