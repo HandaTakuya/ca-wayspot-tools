@@ -187,9 +187,9 @@ const CA_Simulation3D = (() => {
                 const centerX = (westX + eastX)   / 2;
                 const centerZ = (northZ + southZ)  / 2;
 
-                // Tiny Y stagger per tile (distance from center) to prevent
-                // z-fighting where BLEED areas of adjacent tiles overlap
-                const yOffset = -0.05 - Math.sqrt(dx * dx + dy * dy) * 0.002;
+                // Y stagger: center tile highest, outer tiles progressively lower.
+                // Must exceed WebGL depth-buffer precision — 0.05 per step (was 0.002) prevents z-fighting.
+                const yOffset = -0.05 - Math.sqrt(dx * dx + dy * dy) * 0.05;
 
                 const mat = new THREE.MeshBasicMaterial({ color: fallback });
                 const plane = new THREE.Mesh(new THREE.PlaneGeometry(tileW, tileH), mat);
@@ -202,6 +202,8 @@ const CA_Simulation3D = (() => {
                     tex.minFilter       = THREE.LinearMipmapLinearFilter;
                     tex.magFilter       = THREE.LinearFilter;
                     tex.anisotropy      = renderer.capabilities.getMaxAnisotropy();
+                    tex.wrapS           = THREE.ClampToEdgeWrapping;
+                    tex.wrapT           = THREE.ClampToEdgeWrapping;
                     mat.map = tex;
                     mat.color.setHex(0xffffff);
                     mat.needsUpdate = true;
