@@ -12,23 +12,26 @@ const CA_Simulation3D = (() => {
     let spinPartsClockwise  = []; // rotates Y = -rot (clockwise from above)
     let zoneRings = [];          // exclusion zone ring meshes (togglable)
 
-    // Fetch a URL → blob URL (same-origin) → Three.js Texture
-    // Bypasses WebGL cross-origin restriction while still respecting CORS at fetch level.
+    // Load a texture — tries crossOrigin img first (works on file:// + HTTPS when server sends CORS *),
+    // falls back to fetch→blob (bypasses WebGL cross-origin for non-null origins).
     function fetchTexture(url, onLoad, onError) {
-        fetch(url)
-            .then(r => { if (!r.ok) throw r.status; return r.blob(); })
-            .then(blob => {
-                const blobUrl = URL.createObjectURL(blob);
-                const loader  = new THREE.TextureLoader();
-                loader.load(blobUrl, tex => {
-                    URL.revokeObjectURL(blobUrl);
-                    onLoad(tex);
-                }, undefined, err => {
-                    URL.revokeObjectURL(blobUrl);
-                    onError && onError(err);
-                });
-            })
-            .catch(() => onError && onError());
+        const loader = new THREE.TextureLoader();
+        loader.crossOrigin = 'anonymous';
+        loader.load(url, onLoad, undefined, () => {
+            fetch(url)
+                .then(r => { if (!r.ok) throw r.status; return r.blob(); })
+                .then(blob => {
+                    const blobUrl = URL.createObjectURL(blob);
+                    new THREE.TextureLoader().load(blobUrl, tex => {
+                        URL.revokeObjectURL(blobUrl);
+                        onLoad(tex);
+                    }, undefined, err => {
+                        URL.revokeObjectURL(blobUrl);
+                        onError && onError(err);
+                    });
+                })
+                .catch(() => onError && onError());
+        });
     }
 
     const TYPE_COLORS = {
@@ -138,7 +141,7 @@ const CA_Simulation3D = (() => {
     // ── Map tile ground ───────────────────────────────────────────────────────
 
     function buildMapGround(cLat, cLng) {
-        const ZOOM = 16;
+        const ZOOM = 17;
         const n   = Math.pow(2, ZOOM);
         const center = latLngToTile(cLat, cLng, ZOOM);
         const R      = 6371000;
@@ -159,7 +162,7 @@ const CA_Simulation3D = (() => {
         bg.position.y = -0.5;
         scene.add(bg);
 
-        const RADIUS = 4; // 9 × 9 grid
+        const RADIUS = 5; // 11 × 11 grid at zoom 17 — good coverage + 4× sharper than zoom 16
         const BLEED  = 1; // 1 m overlap on each side to close seams
 
         for (let dy = -RADIUS; dy <= RADIUS; dy++) {
@@ -194,16 +197,19 @@ const CA_Simulation3D = (() => {
                 plane.position.set(centerX, yOffset, centerZ);
                 scene.add(plane);
 
-                fetchTexture(getTileUrl(tx, ty, ZOOM),
-                    (tex) => {
-                        tex.generateMipmaps  = true;
-                        tex.minFilter        = THREE.LinearMipmapLinearFilter;
-                        tex.magFilter        = THREE.LinearFilter;
-                        tex.anisotropy       = renderer.capabilities.getMaxAnisotropy();
-                        mat.map = tex;
-                        mat.color.setHex(0xffffff);
-                        mat.needsUpdate = true;
-                    }
+                const applyTex = (tex) => {
+                    tex.generateMipmaps = true;
+                    tex.minFilter       = THREE.LinearMipmapLinearFilter;
+                    tex.magFilter       = THREE.LinearFilter;
+                    tex.anisotropy      = renderer.capabilities.getMaxAnisotropy();
+                    mat.map = tex;
+                    mat.color.setHex(0xffffff);
+                    mat.needsUpdate = true;
+                };
+                const s3 = ['a', 'b', 'c'][(tx + ty) % 3];
+                const fallbackTileUrl = `https://${s3}.basemaps.cartocdn.com/rastertiles/voyager/${ZOOM}/${tx}/${ty}.png`;
+                fetchTexture(getTileUrl(tx, ty, ZOOM), applyTex,
+                    () => fetchTexture(fallbackTileUrl, applyTex)
                 );
             }
         }
