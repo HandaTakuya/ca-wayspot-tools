@@ -132,6 +132,7 @@
         font-weight: bold;
     }
 
+
     body[data-theme="pokemongo"] .leaflet-popup-content-wrapper {
         border-radius: 20px;
     }
@@ -828,6 +829,58 @@
         .btn-del-popup {
             background: var(--btn-popup);
             color: var(--accent-red);
+        }
+
+        .popup-lock-corner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.35;
+            transition: opacity 0.2s;
+            padding: 0;
+        }
+
+        .popup-lock-corner:hover {
+            opacity: 0.8;
+        }
+
+        .popup-lock-corner.locked {
+            opacity: 1;
+        }
+
+        .custom-icon-wrapper {
+            overflow: visible !important;
+        }
+
+        .custom-icon-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .lock-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            font-size: 13px;
+            line-height: 1;
+            pointer-events: none;
+            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6));
+            z-index: 10;
+        }
+
+        .marker-locked {
+            opacity: 0.75;
         }
 
         .popup-spot-image {

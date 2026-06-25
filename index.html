@@ -150,7 +150,15 @@
                                 <option value="cartodb_dark" data-i18n="optCartoDark">CartoDB DarkMatter</option>
                                 <option value="bing" data-i18n="optBing">Bing Maps (Satellite)</option>
                                 <option value="mapbox" data-i18n="optMapbox">Pokemon GO Map</option>
+<option value="gmap_styled" data-i18n="optGmapStyled">Google Maps (Pokemon GO Style)</option>
                             </select>
+                        </div>
+                        <div class="input-group margin-b-15" id="gmap-api-key-group" style="display:none;">
+                            <label data-i18n="gmapApiKeyLabel">Google Maps API Key</label>
+                            <div style="display:flex; gap:8px;">
+                                <input type="text" id="gmapApiKey" placeholder="AIzaSy..." style="flex:1; padding:8px 10px; border-radius:8px; border:1px solid var(--border-glass); background:var(--bg-glass); font-size:13px; font-family:monospace;">
+                                <button class="btn btn-primary" id="btn-apply-gmap-key" style="width:auto; padding:8px 14px; font-size:13px;" data-i18n="applyLabel">ใช้งาน</button>
+                            </div>
                         </div>
                         <div class="input-group margin-b-5">
                             <label data-i18n="themeLabel">ธีมของ UI</label>

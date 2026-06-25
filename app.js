@@ -42,7 +42,7 @@ window.CAWayspotApp = (function () {
             let spot = CA_Map.spotsData[id];
             dataToSave.push({
                 id: spot.id, type: spot.type, name: spot.name, imgUrl: spot.imgUrl,
-                lat: spot.lat, lng: spot.lng, radius: spot.radius
+                lat: spot.lat, lng: spot.lng, radius: spot.radius, locked: spot.locked || false
             });
         }
         CA_Storage.updateActiveProjectData(dataToSave);
@@ -93,11 +93,12 @@ window.CAWayspotApp = (function () {
         return imgUrl || defaultImages[type] || 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png';
     }
 
-    function createCustomIcon(imgUrl, borderColor, type) {
+    function createCustomIcon(imgUrl, borderColor, type, locked = false) {
         let iconSize = parseInt(document.getElementById('setting-icon-size').value) || 36;
+        const lockBadge = locked ? `<span class="lock-badge">🔒</span>` : '';
         return L.divIcon({
             className: 'custom-icon-wrapper',
-            html: `<img crossorigin="anonymous" src="${getImageUrl(imgUrl, type)}" class="custom-marker" style="border-color: ${borderColor}; width: ${iconSize}px; height: ${iconSize}px;" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'">`,
+            html: `<div class="custom-icon-inner"><img crossorigin="anonymous" src="${getImageUrl(imgUrl, type)}" class="custom-marker${locked ? ' marker-locked' : ''}" style="border-color: ${borderColor}; width: ${iconSize}px; height: ${iconSize}px;" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'">${lockBadge}</div>`,
             iconSize: [iconSize, iconSize], iconAnchor: [iconSize / 2, iconSize / 2]
         });
     }
@@ -123,10 +124,11 @@ window.CAWayspotApp = (function () {
             radius: radius 
         });
 
-        const isDraggable = (window.isDraggableMode || false);
-        
+        const locked = (savedData && savedData.locked) || false;
+        const isDraggable = (window.isDraggableMode || false) && !locked;
+
         const marker = L.marker(latlng, {
-            icon: createCustomIcon(imgUrl, styleInfo.color, type),
+            icon: createCustomIcon(imgUrl, styleInfo.color, type, locked),
             draggable: isDraggable
         });
 
@@ -136,6 +138,7 @@ window.CAWayspotApp = (function () {
         CA_Map.spotsData[currentId] = {
             id: currentId, type: type, name: name, imgUrl: imgUrl,
             radius: radius, lat: latlng.lat, lng: latlng.lng,
+            locked: locked,
             layerGroup: layerGroup, marker: marker, circle: circle
         };
 
@@ -192,7 +195,8 @@ window.CAWayspotApp = (function () {
         if (!spot) return;
         const styleInfo = getStyleByType(spot.type);
         const content = `
-            <div style="text-align: center; min-width: 170px;">
+            <div style="text-align: center; min-width: 170px; position: relative;">
+                <button class="popup-lock-corner${spot.locked ? ' locked' : ''}" onclick="window.CAWayspotApp.toggleLock('${id}')" title="${spot.locked ? CA_UI.t('btnUnlock') : CA_UI.t('btnLock')}">${spot.locked ? '🔓' : '🔒'}</button>
                 <h4 style="margin: 0;">${CA_UI.escapeHTML(spot.name) || CA_UI.t('unnamedAlert')}</h4>
                 <img crossorigin="anonymous" src="${getImageUrl(spot.imgUrl, spot.type)}" class="popup-spot-image" style="border-color: ${styleInfo.color};" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'">
                 <div style="font-size: 11px; color: #b3b3b3; font-family: monospace; margin: 0 0 5px 0;">
@@ -411,7 +415,16 @@ window.CAWayspotApp = (function () {
             p.style.display = (p.style.display === 'block' ? 'none' : 'block');
             if (p.style.display === 'block') refreshInfoPanel();
         });
-        safeListen('fab-settings-mode', 'click', () => CA_UI.openModal('settings-modal-overlay'));
+        function syncGmapKeyGroup() {
+            const sel = document.getElementById('mapLayer');
+            const g = document.getElementById('gmap-api-key-group');
+            if (sel && g) g.style.display = sel.value === 'gmap_styled' ? 'block' : 'none';
+        }
+
+        safeListen('fab-settings-mode', 'click', () => {
+            CA_UI.openModal('settings-modal-overlay');
+            syncGmapKeyGroup();
+        });
         safeListen('btn-locate', 'click', () => CA_Map.map.locate({ setView: true, maxZoom: 17 }));
         safeListen('btn-toggle-control', 'click', () => CA_UI.toggleControlPanel());
         safeListen('btn-close-info', 'click', () => {
@@ -442,15 +455,32 @@ window.CAWayspotApp = (function () {
         safeListen('btn-close-settings-done', 'click', () => CA_UI.closeModal('settings-modal-overlay'));
         safeListen('mapLayer', 'change', () => {
             const val = document.getElementById('mapLayer').value;
+            syncGmapKeyGroup();
+
             if (val === 'mapbox') {
                 const token = "pk.eyJ1IjoieXVsamFuZzAxIiwiYSI6ImNtbzJhaDRvMDBzaWQycHF3amtmMmg1bHUifQ.z6KdZVVik50x4nNb7BEIBg";
                 const user = "yuljang01";
                 const styleId = "cjwiphjwn10lj1cp0nye6wtec";
                 CA_Map.setLayer('mapbox', { user, styleId, token });
+            } else if (val === 'gmap_styled') {
+                const key = localStorage.getItem('caGmapApiKey') || '';
+                if (key) {
+                    CA_Map.setGmapStyled(key);
+                } else {
+                    // ยังไม่มี key — map ยังคงอยู่ที่ layer เดิม รอ user กด Apply
+                    setTimeout(() => document.getElementById('gmapApiKey')?.focus(), 100);
+                }
             } else {
                 CA_Map.setLayer(val);
             }
             localStorage.setItem('caWayspotMapLayer', val);
+        });
+
+        safeListen('btn-apply-gmap-key', 'click', () => {
+            const key = (document.getElementById('gmapApiKey')?.value || '').trim();
+            if (!key) return;
+            localStorage.setItem('caGmapApiKey', key);
+            CA_Map.setGmapStyled(key);
         });
         
         safeListen('setting-darkmode', 'change', (e) => {
@@ -887,7 +917,25 @@ window.CAWayspotApp = (function () {
         const btnEdit = document.getElementById('fab-edit-mode');
         btnAdd.classList[mode === 'add' ? 'add' : 'remove']('active');
         btnEdit.classList[mode === 'edit' ? 'add' : 'remove']('active');
-        for (let id in CA_Map.spotsData) CA_Map.spotsData[id].marker.dragging[window.isDraggableMode ? 'enable' : 'disable']();
+        for (let id in CA_Map.spotsData) {
+            const spot = CA_Map.spotsData[id];
+            spot.marker.dragging[window.isDraggableMode && !spot.locked ? 'enable' : 'disable']();
+        }
+    }
+
+    function toggleLock(id) {
+        const spot = CA_Map.spotsData[id];
+        if (!spot) return;
+        spot.locked = !spot.locked;
+        spot.marker.setIcon(createCustomIcon(spot.imgUrl, getStyleByType(spot.type).color, spot.type, spot.locked));
+        if (spot.locked) {
+            spot.marker.dragging.disable();
+        } else if (window.isDraggableMode) {
+            spot.marker.dragging.enable();
+        }
+        updatePopupContent(id);
+        spot.marker.openPopup();
+        saveToStorage();
     }
 
     // --- Start App ---
@@ -922,6 +970,20 @@ window.CAWayspotApp = (function () {
             const user = "yuljang01";
             const styleId = "cjwiphjwn10lj1cp0nye6wtec";
             CA_Map.setLayer('mapbox', { user, styleId, token });
+        } else if (savedLayer === 'gmap_styled') {
+            const savedKey = localStorage.getItem('caGmapApiKey') || '';
+            const keyInput = document.getElementById('gmapApiKey');
+            if (keyInput) keyInput.value = savedKey;
+            syncGmapKeyGroup();
+            if (savedKey) {
+                CA_Map.setGmapStyled(savedKey);
+            } else {
+                // ยังไม่มี key — sync select + localStorage ให้ตรงกับ map ที่แสดงอยู่
+                document.getElementById('mapLayer').value = 'gmap_street';
+                localStorage.setItem('caWayspotMapLayer', 'gmap_street');
+                syncGmapKeyGroup();
+                CA_Map.setLayer('gmap_street');
+            }
         } else {
             CA_Map.setLayer(savedLayer);
         }
@@ -1013,6 +1075,7 @@ window.CAWayspotApp = (function () {
         removeSpotLocally,
         clearAllSpotsLocally,
         updatePopupContentLocally: (id) => updatePopupContent(id),
+        toggleLock,
         openEditModal: (id) => { 
             window.currentEditId = id;
             const s = CA_Map.spotsData[id];
