@@ -843,12 +843,25 @@ const CA_Simulation3D = (() => {
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 initThree();
-                buildScene(CA_Map.spotsData);
+                buildScene(buildCombinedSpotsData());
                 initJoystick();
                 initDoubleClickMove();
                 animate();
             });
         });
+    }
+
+    // รวม Wayspot ที่ผู้ใช้สร้างเองกับ POI จริงจาก Wayfarer (ที่ยังไม่ถูกซ่อน)
+    // เป็น object เดียวกันก่อนส่งเข้า buildScene — ให้จำลอง 3D เห็นทั้งสองแหล่ง
+    function buildCombinedSpotsData() {
+        const combined = Object.assign({}, CA_Map.spotsData);
+        if (window.CA_LivePOI && CA_LivePOI.getAllPoiList) {
+            CA_LivePOI.getAllPoiList().forEach(p => {
+                if (p.hidden) return;
+                combined[p.id] = { type: p.type, name: p.name, lat: p.lat, lng: p.lng, imgUrl: p.imgUrl };
+            });
+        }
+        return combined;
     }
 
     function close() {

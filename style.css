@@ -1142,6 +1142,18 @@
                 flex-direction: column; /* Sub-buttons go downwards */
             }
 
+            /* ปุ่มลอย (FAB) เล็กลง 40% บนมือถือ — desktop 55px / 24px font
+               ยังคงเดิม, ลดเฉพาะ breakpoint นี้ */
+            .fab {
+                width: 33px;
+                height: 33px;
+                font-size: 14.4px;
+            }
+
+            .main-fab {
+                font-size: 17px !important;
+            }
+
             .fab-sub-buttons {
                 flex-direction: column;
                 transform: translateY(-20px) scale(0.8); /* Pop down from top */
@@ -1315,7 +1327,9 @@ input.search-input-field {
 .margin-b-20 { margin-bottom: 20px; }
 .margin-b-15 { margin-bottom: 15px; }
 .margin-b-5 { margin-bottom: 5px; }
+.margin-t-20 { margin-top: 20px; }
 .margin-t-15 { margin-top: 15px; }
+.margin-t-10 { margin-top: 10px; }
 .margin-t-5 { margin-top: 5px; }
 .padding-t-15 { padding-top: 15px; }
 

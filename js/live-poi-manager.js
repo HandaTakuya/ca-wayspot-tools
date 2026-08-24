@@ -200,7 +200,8 @@ window.CA_LivePOI = (function () {
     }
 
     function defaultIconFor(type) {
-        // ไอคอน fallback ต่อประเภท กรณี API ไม่ส่ง imageUrl มาให้
+        // ไอคอน fallback ต่อประเภท กรณี API ไม่ส่ง imageUrl มาให้ และไม่มีรูป
+        // default (defaultImageFor) รองรับ type นั้นด้วย
         const svg = {
             pokestop: '🔵',
             gym: '🔴',
@@ -209,10 +210,20 @@ window.CA_LivePOI = (function () {
         return svg;
     }
 
+    // รูป default เดียวกับที่ Wayspot ประเภทเดียวกันของผู้ใช้เองใช้ (ดู
+    // defaultImages.powerspot ใน app.js's getImageUrl) — Power Spot จริงจาก
+    // Wayfarer ส่วนใหญ่ไม่มี imageUrl มาให้เลย ใช้วงกลมสายฟ้าม่วงนี้แทน emoji
+    const POWERSPOT_DEFAULT_IMG = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NSIgZmlsbD0iIzkxMTA0MiIgLz4KICA8cGF0aCBkPSJNNDggMjAgTDMwIDU1IEw1MCA1NSBMNDUgODAgTDcwIDQ1IEw1MCA0NSBaIiBmaWxsPSIjZmZmZmZmIiAvPgo8L3N2Zz4=';
+
+    function defaultImageFor(type) {
+        return type === 'powerspot' ? POWERSPOT_DEFAULT_IMG : null;
+    }
+
     function buildIcon(poi) {
         const size = 26;
-        const inner = poi.imageUrl
-            ? `<img crossorigin="anonymous" src="${poi.imageUrl}" class="live-poi-thumb" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'live-poi-fallback',textContent:'${defaultIconFor(poi.type)}'}))">`
+        const imgSrc = poi.imageUrl || defaultImageFor(poi.type);
+        const inner = imgSrc
+            ? `<img crossorigin="anonymous" src="${imgSrc}" class="live-poi-thumb" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'live-poi-fallback',textContent:'${defaultIconFor(poi.type)}'}))">`
             : `<span class="live-poi-fallback">${defaultIconFor(poi.type)}</span>`;
         return L.divIcon({
             className: 'live-poi-icon-wrapper',
@@ -229,11 +240,13 @@ window.CA_LivePOI = (function () {
         const megaBadge = poi.isMegaEnhancedEligible ? ` <span class="live-poi-mega-badge">⭐ Mega</span>` : '';
         // รูปใหญ่วงกลม — pattern เดียวกับ .popup-spot-image ของ custom marker
         // เดิม แค่ใส่ขอบสีตาม type (ฟ้า=PokéStop, แดง=Gym, ม่วง=Power Spot) ให้
-        // ตรงกับสี ring ของ marker บนแผนที่ — ถ้าไม่มี imageUrl หรือโหลดพัง ใช้
-        // ไอคอน emoji fallback แทนที่รูป
+        // ตรงกับสี ring ของ marker บนแผนที่ — ไม่มี imageUrl ก็ใช้รูป default
+        // เดียวกับ Wayspot ประเภทเดียวกันของผู้ใช้เอง (มีแค่ powerspot ตอนนี้),
+        // ถ้าไม่มีรูป default ด้วยหรือโหลดพัง ค่อย fallback เป็น emoji
         const ringColor = RING_COLOR[poi.type] || '#888';
-        const img = poi.imageUrl
-            ? `<img crossorigin="anonymous" src="${poi.imageUrl}" class="popup-spot-image" style="border: 3px solid ${ringColor};" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'live-poi-popup-fallback',textContent:'${defaultIconFor(poi.type)}'}))">`
+        const imgSrc = poi.imageUrl || defaultImageFor(poi.type);
+        const img = imgSrc
+            ? `<img crossorigin="anonymous" src="${imgSrc}" class="popup-spot-image" style="border: 3px solid ${ringColor};" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'live-poi-popup-fallback',textContent:'${defaultIconFor(poi.type)}'}))">`
             : `<div class="live-poi-popup-fallback">${defaultIconFor(poi.type)}</div>`;
         // ปุ่มตา — กดซ่อนจุดนี้ได้ตรงจาก popup เหมือน Wayspot ของผู้ใช้เอง
         // (กด hidden แล้ว marker หลุดจากแผนที่ทันที popup เลยปิดตามไปเอง ไม่ต้อง
@@ -334,7 +347,7 @@ window.CA_LivePOI = (function () {
         if (!index) return [];
         const list = [];
         for (const [id, entry] of index) {
-            list.push({ id, type, name: entry.poi.name, lat: entry.poi.lat, lng: entry.poi.lng, hidden: hiddenIds.has(id) });
+            list.push({ id, type, name: entry.poi.name, lat: entry.poi.lat, lng: entry.poi.lng, imgUrl: entry.poi.imageUrl || null, hidden: hiddenIds.has(id) });
         }
         return list;
     }

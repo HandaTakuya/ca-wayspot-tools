@@ -523,7 +523,9 @@ window.CAWayspotApp = (function () {
             if (drawModeActive) cancelDrawMode(); else startDrawMode();
         });
         safeListen('btn-draw-mode-cancel', 'click', () => cancelDrawMode());
-        safeListen('btn-close-draw-selection', 'click', () => CA_UI.closeModal('draw-selection-modal-overlay'));
+        // ปุ่ม X ต้องล้างเขตที่วาดไปด้วย ไม่ใช่แค่ปิด modal — ไม่งั้นเส้นจะค้างบน
+        // แผนที่ตลอดไปเพราะไม่มีทางอื่นเปิด modal นี้กลับมาลบทีหลังได้เลย
+        safeListen('btn-close-draw-selection', 'click', () => clearSelection());
         safeListen('btn-draw-selection-clear', 'click', () => clearSelection());
         safeListen('btn-draw-selection-delete', 'click', () => deleteSelectedItems());
         safeListen('btn-draw-selection-export-json', 'click', () => exportSelectedJSON());
