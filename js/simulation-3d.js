@@ -587,7 +587,7 @@ const CA_Simulation3D = (() => {
 
         // Person sub-group — scaled independently so ring stays at true 80m
         const personGroup = new THREE.Group();
-        personGroup.scale.setScalar(1.8);
+        personGroup.scale.setScalar(1.8 * 1.4); // ใหญ่ขึ้นอีก 40% จากเดิม = 2.52
         playerGroup.add(personGroup);
 
         // Shadow / feet base
