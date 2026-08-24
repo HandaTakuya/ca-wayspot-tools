@@ -701,10 +701,16 @@ window.CAWayspotApp = (function () {
                 }
             });
 
-            // ถ้ามี token บันทึกไว้จากครั้งก่อนแล้ว เปิดปุ่ม Power Spot ให้ทันที
+            // ถ้ามี token บันทึกไว้จากครั้งก่อนแล้ว เปิดปุ่ม Power Spot ให้ทันที —
+            // ต้อง set checked + เรียก setVisible จริง ไม่ใช่แค่ปลด disabled
+            // (เดิมพลาดตรงนี้ทำให้ toggle เด้งปิดเอง + ไม่ fetch ใหม่ทุกครั้งที่ refresh)
             if (CA_LivePOI.getToken()) {
                 const powerspotToggle = document.getElementById('filter-live-powerspot');
-                if (powerspotToggle) powerspotToggle.disabled = false;
+                if (powerspotToggle) {
+                    powerspotToggle.disabled = false;
+                    powerspotToggle.checked = true;
+                    CA_LivePOI.setVisible('powerspot', true);
+                }
             }
         }
 
@@ -776,6 +782,7 @@ window.CAWayspotApp = (function () {
                     CA_Map.spotsData[id].radius = r;
                     if (CA_Map.spotsData[id].circle) CA_Map.spotsData[id].circle.setRadius(r);
                 }
+                if (window.CA_LivePOI) CA_LivePOI.setAllRadius(r);
                 saveToStorage(); refreshInfoPanel();
             }
         });
@@ -1416,6 +1423,7 @@ window.CAWayspotApp = (function () {
         let lastClickTime = 0;
         CA_Map.map.on('click', (e) => {
             if (window.isDraggableMode) return;
+            if (drawModeActive) return; // อยู่ในโหมดวาดเขต — ห้ามคลิกสร้าง Wayspot ปน
             const now = Date.now();
             if (now - lastClickTime < 350) { createSpot(e.latlng); lastClickTime = 0; }
             else lastClickTime = now;

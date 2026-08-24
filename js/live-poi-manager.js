@@ -6,9 +6,18 @@
  */
 window.CA_LivePOI = (function () {
     const API_BASE = 'https://pokemongodpu.com/api/public/live-poi';
-    const DEBOUNCE_MS = 600;
+    // รอแผนที่นิ่งจริงๆ ก่อนค่อย fetch — ตั้งไว้นานพอสมควร (1.5s) เพราะ pan/zoom
+    // ต่อเนื่อง (โดยเฉพาะ scroll wheel zoom หลายครั้งรัว) แต่ละครั้งยิง moveend
+    // ของตัวเอง ถ้า debounce สั้นเกินจะ fetch ซ้อนกันหลายรอบระหว่างที่ user ยังเลื่อน
+    // อยู่ แล้ว reconcile() ที่สร้าง marker+circle จำนวนมากพร้อมกันจะไป block
+    // main thread จนเมาส์ event ที่ user ลากค้างคิวไว้ — พอ thread ว่างค่อย
+    // process รวดเดียว แผนที่เลยดูเหมือน "ดีด" กระโดดไปไกล
+    const DEBOUNCE_MS = 1500;
     const TOKEN_KEY = 'caWayspotCampfireToken';
     const PAD_RATIO = 0.15; // ขยาย bounds เล็กน้อยกันหมุดโผล่/หายที่ขอบจอ
+    // ซูมออกไกลกว่านี้ = พื้นที่กว้างเกิน POI จะเยอะมาก ไม่ fetch เลย กัน
+    // reconcile() ต้องสร้าง marker พร้อมกันเป็นร้อยเป็นพันจุดจน browser ค้าง
+    const MIN_ZOOM_FOR_FETCH = 14;
 
     const CAMPFIRE_GRAPHQL = 'https://niantic-social-api.nianticlabs.com/graphql';
     // Bookmarklet: อ่าน Campfire session token/csrf token จาก localStorage ของ
@@ -226,8 +235,16 @@ window.CA_LivePOI = (function () {
         const img = poi.imageUrl
             ? `<img crossorigin="anonymous" src="${poi.imageUrl}" class="popup-spot-image" style="border: 3px solid ${ringColor};" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'live-poi-popup-fallback',textContent:'${defaultIconFor(poi.type)}'}))">`
             : `<div class="live-poi-popup-fallback">${defaultIconFor(poi.type)}</div>`;
+        // ปุ่มตา — กดซ่อนจุดนี้ได้ตรงจาก popup เหมือน Wayspot ของผู้ใช้เอง
+        // (กด hidden แล้ว marker หลุดจากแผนที่ทันที popup เลยปิดตามไปเอง ไม่ต้อง
+        // reopen อะไรเพิ่ม — จะเห็นปุ่มนี้ที่ "👁 ซ่อน" เสมอ เพราะจุดที่ hidden=true
+        // อยู่แล้วจะไม่มีทางเปิด popup ได้จากการคลิก marker บนแผนที่)
+        const isHidden = hiddenIds.has(poi.id);
+        // ไม่มีปุ่มล็อคมาแข่งพื้นที่เหมือน Wayspot ของผู้ใช้เอง — เลื่อนมาชิดซ้ายสุด
+        const hideBtn = `<button class="popup-hide-corner${isHidden ? ' spot-hidden' : ''}" style="left:0;" onclick="window.CA_LivePOI.toggleHidden('${poi.id}')" title="${isHidden ? t('btnShowSpot') : t('btnHideSpot')}">${isHidden ? '🙈' : '👁'}</button>`;
         return `
-            <div style="text-align:center; min-width:170px;">
+            <div style="text-align:center; min-width:170px; position:relative;">
+                ${hideBtn}
                 <h4 style="margin:0;">${CA_UI.escapeHTML(poi.name)}</h4>
                 <span style="font-size:12px; color:var(--text-secondary);">${typeLabel}</span>${megaBadge}
                 ${img}
@@ -373,11 +390,12 @@ window.CA_LivePOI = (function () {
             idle: '',
             loading: t('livePoiLoading'),
             ok: '',
+            'zoom-too-far': t('livePoiZoomInHint'),
             'token-error': t('livePoiTokenExpired'),
             'fetch-error': t('livePoiFetchError'),
             'network-error': t('livePoiNetworkError'),
         };
-        line.textContent = state === 'loading' ? messages.loading : '';
+        line.textContent = (state === 'loading' || state === 'zoom-too-far') ? messages[state] : '';
         if (state === 'token-error' || state === 'fetch-error' || state === 'network-error') {
             errBox.textContent = messages[state] + (extra ? ` (${extra})` : '');
             errBox.style.display = 'block';
@@ -394,6 +412,10 @@ window.CA_LivePOI = (function () {
     async function fetchNow() {
         if (!map) return;
         if (inFlightController) inFlightController.abort();
+        if (map.getZoom() < MIN_ZOOM_FOR_FETCH) {
+            setStatus('zoom-too-far');
+            return;
+        }
         const controller = new AbortController();
         inFlightController = controller;
 
@@ -445,6 +467,17 @@ window.CA_LivePOI = (function () {
         });
     }
 
+    // เรียกจากปุ่ม "บังคับเปลี่ยนรัศมี Wayspot ทั้งหมด" — บังคับเฉพาะวงที่กำลัง
+    // แสดงอยู่ตอนนี้ (เหมือนพฤติกรรมของ Wayspot ที่ผู้ใช้สร้างเอง ไม่ได้เปลี่ยน
+    // ค่า default 45m ถาวร จุดใหม่ที่ fetch เข้ามาทีหลังยังใช้ 45m ตามเดิม)
+    function setAllRadius(r) {
+        TYPES.forEach((type) => {
+            for (const [, entry] of markerIndex[type]) {
+                if (entry.circle) entry.circle.setRadius(r);
+            }
+        });
+    }
+
     function setVisible(type, on) {
         if (!layerGroups[type]) return;
         visible[type] = !!on;
@@ -481,6 +514,7 @@ window.CA_LivePOI = (function () {
         renderTokenStatusUI,
         renderQRCode,
         setShowRadius,
+        setAllRadius,
         toggleHidden,
         getPoiList,
         getAllPoiList,
