@@ -45,6 +45,19 @@ const CA_Simulation3D = (() => {
     };
     const GYM_TYPES = new Set(['gym', 'cagym', 'clgymwayspot']);
 
+    // ทุกโมเดลตั้งต้นใหญ่ขึ้น 30% จากขนาดจริง แล้วปรับต่อจุดตามคำขอ: Gym ใหญ่
+    // ขึ้นอีก 50% จากตรงนั้น (1.3*1.5=1.95), PokeStop ลดลง 20% จากตรงนั้น
+    // (1.3*0.8=1.04), Power Spot ลดลง 15% จากตรงนั้น (1.3*0.85=1.105)
+    const MODEL_SCALE = {
+        pokestop: 1.3 * 0.8,
+        gym: 1.3 * 1.5,
+        caspot: 1.3,
+        cagym: 1.3 * 1.5,
+        clwayspot: 1.3,
+        clgymwayspot: 1.3 * 1.5,
+        powerspot: 1.3 * 0.85,
+    };
+
     // ── Coordinate helpers ────────────────────────────────────────────────────
 
     function toXZ(lat, lng, cLat, cLng) {
@@ -638,10 +651,7 @@ const CA_Simulation3D = (() => {
                          : spot.type === 'powerspot' ? makePowerSpot()
                          : makePokeStop(hex, discImg);
             result.group.position.set(x, 0, z);
-            // ทุกโมเดลใหญ่ขึ้น 30% จากต้นฉบับ, Gym ใหญ่ขึ้นอีก 50% จากตรงนั้น
-            // (รวมแล้ว 1.3 * 1.5 = 1.95 เท่าต้นฉบับ) — ไม่กระทบ exclusion zone
-            // ring ที่วาดแยกต่างหาก
-            result.group.scale.setScalar(isGym ? 1.95 : 1.3);
+            result.group.scale.setScalar(MODEL_SCALE[spot.type] || 1.3); // ไม่กระทบ exclusion zone ring ที่วาดแยกต่างหาก
             scene.add(result.group);
             result.spin.forEach(s => spinParts.push(s));
             if (result.spinCW) result.spinCW.forEach(s => spinPartsClockwise.push(s));
