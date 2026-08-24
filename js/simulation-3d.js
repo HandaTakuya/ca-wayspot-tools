@@ -633,11 +633,15 @@ const CA_Simulation3D = (() => {
             const localImg = { caspot: 'poi_img/CA_PokeStop.jpeg', clwayspot: 'poi_img/CL_POI.jpg' };
             const discImg  = localImg[spot.type] || spot.imgUrl || null;
 
-            const result = GYM_TYPES.has(spot.type) ? makeGym(hex)
+            const isGym = GYM_TYPES.has(spot.type);
+            const result = isGym ? makeGym(hex)
                          : spot.type === 'powerspot' ? makePowerSpot()
                          : makePokeStop(hex, discImg);
             result.group.position.set(x, 0, z);
-            result.group.scale.setScalar(1.3); // ใหญ่ขึ้น 30% — ไม่กระทบ exclusion zone ring ที่วาดแยกต่างหาก
+            // ทุกโมเดลใหญ่ขึ้น 30% จากต้นฉบับ, Gym ใหญ่ขึ้นอีก 50% จากตรงนั้น
+            // (รวมแล้ว 1.3 * 1.5 = 1.95 เท่าต้นฉบับ) — ไม่กระทบ exclusion zone
+            // ring ที่วาดแยกต่างหาก
+            result.group.scale.setScalar(isGym ? 1.95 : 1.3);
             scene.add(result.group);
             result.spin.forEach(s => spinParts.push(s));
             if (result.spinCW) result.spinCW.forEach(s => spinPartsClockwise.push(s));
