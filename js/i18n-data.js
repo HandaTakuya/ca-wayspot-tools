@@ -163,7 +163,19 @@ const CA_I18N = {
         btnDownloadScript: "ดาวน์โหลด Script",
         btnInstallInstructions: "วิธีติดตั้ง",
         installInstructionsList: "1. กดปุ่ม \"ดาวน์โหลด Script\"<br>2. ติดตั้ง Script ผ่านทาง tampermonkey หรือ Userscripts<br>3. ล็อกอินเข้าเว็บ Niantic Wayfarer และไปที่หน้า Mapview<br>4. กดปุ่ม Export CA ระบบจะดาวน์โหลดไฟล์ที่ชื่อ CA_Wayfarer_500m_XXXX.json<br>5. นำไฟล์ CA_Wayfarer_500m_XXXX.json ผ่านช่องทาง \"นำเข้า JSON\"<br>6. เอนจอย 🥰",
-        dragDropText: "ลากไฟล์มาวางที่นี่เพื่อนำเข้าข้อมูล"
+        dragDropText: "ลากไฟล์มาวางที่นี่เพื่อนำเข้าข้อมูล",
+        accLivePoi: "📡 POI จริงจาก Niantic",
+        livePoiPowerSpotLabel: "Power Spot",
+        livePoiTokenSectionTitle: "Campfire Session Token",
+        livePoiTokenPlaceholder: "Bearer eyJ... หรือ token เฉยๆ",
+        btnClear: "ล้าง",
+        livePoiTokenHowTo: "วิธีขอ Token",
+        livePoiTokenHelpText: "1. เปิด campfire.nianticlabs.com แล้วล็อกอิน<br>2. เปิด DevTools (F12) → แท็บ Network<br>3. รีเฟรชหน้า หา request ไปยัง niantic-social-api.nianticlabs.com/graphql<br>4. คัดลอกค่าใน Authorization header (ตัด \"Bearer \" ออกได้) มาวางที่นี่",
+        livePoiLoading: "กำลังโหลด POI...",
+        livePoiTokenExpired: "Token หมดอายุหรือไม่ถูกต้อง กรุณาขอ Token ใหม่",
+        livePoiFetchError: "โหลดข้อมูล POI ไม่สำเร็จ",
+        livePoiNetworkError: "เชื่อมต่อไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ต",
+        livePoiReadOnlyNote: "ข้อมูลจริงจาก Niantic (ดูอย่างเดียว)"
     },
     en: {
         tooltipAddWayspot: "Add Wayspot",
@@ -328,6 +340,18 @@ const CA_I18N = {
         btnDownloadScript: "Download Script",
         btnInstallInstructions: "Install Instructions",
         installInstructionsList: "1. Click \"Download Script\"<br>2. Install the script via Tampermonkey or Userscripts<br>3. Log in to Niantic Wayfarer and go to Mapview page<br>4. Click \"Export CA\" and the system will download a file named CA_Wayfarer_500m_XXXX.json<br>5. Import the CA_Wayfarer_500m_XXXX.json file via \"Import JSON\"<br>6. Enjoy 🥰",
-        dragDropText: "Drop file here to import data"
+        dragDropText: "Drop file here to import data",
+        accLivePoi: "📡 Live POI from Niantic",
+        livePoiPowerSpotLabel: "Power Spot",
+        livePoiTokenSectionTitle: "Campfire Session Token",
+        livePoiTokenPlaceholder: "Bearer eyJ... or just the token",
+        btnClear: "Clear",
+        livePoiTokenHowTo: "How to get a Token",
+        livePoiTokenHelpText: "1. Open campfire.nianticlabs.com and log in<br>2. Open DevTools (F12) → Network tab<br>3. Refresh the page, find a request to niantic-social-api.nianticlabs.com/graphql<br>4. Copy the Authorization header value (the \"Bearer \" prefix is optional) and paste it here",
+        livePoiLoading: "Loading POI...",
+        livePoiTokenExpired: "Token expired or invalid — please get a new one",
+        livePoiFetchError: "Failed to load POI data",
+        livePoiNetworkError: "Connection failed — check your internet",
+        livePoiReadOnlyNote: "Live data from Niantic (read-only)"
     }
 };

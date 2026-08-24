@@ -519,6 +519,46 @@ window.CAWayspotApp = (function () {
             });
         });
 
+        // Live POI Layer Listeners (PokéStop/Gym/Power Spot จริงจาก Niantic)
+        if (window.CA_LivePOI) {
+            safeListen('filter-live-pokestop', 'change', (e) => CA_LivePOI.setVisible('pokestop', e.target.checked));
+            safeListen('filter-live-gym', 'change', (e) => CA_LivePOI.setVisible('gym', e.target.checked));
+            safeListen('filter-live-powerspot', 'change', (e) => CA_LivePOI.setVisible('powerspot', e.target.checked));
+
+            safeListen('btn-live-poi-token-save', 'click', () => {
+                const input = document.getElementById('live-poi-token-input');
+                const value = (input.value || '').trim();
+                if (!value) return;
+                CA_LivePOI.saveToken(value);
+                input.value = '';
+                const powerspotToggle = document.getElementById('filter-live-powerspot');
+                if (powerspotToggle) {
+                    powerspotToggle.disabled = false;
+                    powerspotToggle.checked = true;
+                    CA_LivePOI.setVisible('powerspot', true);
+                }
+            });
+            safeListen('btn-live-poi-token-clear', 'click', () => {
+                CA_LivePOI.clearToken();
+                const powerspotToggle = document.getElementById('filter-live-powerspot');
+                if (powerspotToggle) {
+                    powerspotToggle.checked = false;
+                    powerspotToggle.disabled = true;
+                    CA_LivePOI.setVisible('powerspot', false);
+                }
+            });
+            safeListen('btn-live-poi-token-help', 'click', () => {
+                const el = document.getElementById('live-poi-token-help');
+                if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            });
+
+            // ถ้ามี token บันทึกไว้จากครั้งก่อนแล้ว เปิดปุ่ม Power Spot ให้ทันที
+            if (CA_LivePOI.getToken()) {
+                const powerspotToggle = document.getElementById('filter-live-powerspot');
+                if (powerspotToggle) powerspotToggle.disabled = false;
+            }
+        }
+
         // Custom Wayspot Colors Listeners
         ['pokestop', 'gym', 'caspot', 'cagym', 'clwayspot', 'clgymwayspot', 'powerspot'].forEach(type => {
             safeListen('color-' + type, 'change', (e) => {
@@ -946,7 +986,8 @@ window.CAWayspotApp = (function () {
         const savedPos = JSON.parse(localStorage.getItem('caWayspotLastPos'));
         const initialView = savedPos || { center: [13.7649, 100.5383], zoom: 16 };
         CA_Map.init('map', initialView);
-        
+        if (window.CA_LivePOI) CA_LivePOI.init(CA_Map.map);
+
         // Load Settings
         if (localStorage.getItem('caWayspotDarkMode') === 'true') {
             document.body.classList.add('dark-mode');
@@ -1013,6 +1054,7 @@ window.CAWayspotApp = (function () {
                 zoom: CA_Map.map.getZoom()
             }));
             CA_Map.updateS2Grid(document.getElementById('setting-s2grid').checked);
+            if (window.CA_LivePOI) CA_LivePOI.scheduleFetch();
         });
 
         // Location Handlers

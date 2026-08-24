@@ -4,7 +4,7 @@
 const CA_UI = {
     currentLang: localStorage.getItem('appLang') || 'th',
     currentTheme: localStorage.getItem('caWayspotTheme') || 'default',
-    isControlPanelOpen: true,
+    isControlPanelOpen: false,
 
     t(key, params = {}) {
         let str = CA_I18N[this.currentLang][key] || key;

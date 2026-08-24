@@ -59,10 +59,10 @@
     </div>
 
     <!-- Main Control Panel -->
-    <div id="control-panel" class="glass-panel">
+    <div id="control-panel" class="glass-panel collapsed">
         <div class="panel-header">
             <h3 data-i18n="addWayspotTitle">➕ เพิ่ม Wayspot</h3>
-            <button class="btn-icon" id="btn-toggle-control">🔽</button>
+            <button class="btn-icon" id="btn-toggle-control">🔼</button>
         </div>
 
         <div id="control-content" class="flex-column-gap-12">
@@ -190,6 +190,56 @@
                             <span class="toggle-label" data-i18n="s2Grid">🌐 แสดง S2 Cells (L14, L17)</span>
                             <label class="switch"><input type="checkbox" id="setting-s2grid"><span
                                     class="slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Group 1.5: Live POI (PokéStop/Gym/Power Spot จริงจาก Niantic) -->
+            <div class="accordion-item" id="acc-live-poi">
+                <button class="accordion-header">
+                    <span data-i18n="accLivePoi">📡 POI จริงจาก Niantic</span>
+                    <span class="icon">▼</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="accordion-inner">
+                        <div class="toggle-row">
+                            <span class="toggle-label">PokéStop <b id="live-poi-count-pokestop">0</b></span>
+                            <label class="switch"><input type="checkbox" id="filter-live-pokestop" checked><span
+                                    class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label">Gym <b id="live-poi-count-gym">0</b></span>
+                            <label class="switch"><input type="checkbox" id="filter-live-gym" checked><span
+                                    class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <span class="toggle-label" data-i18n="livePoiPowerSpotLabel">Power Spot <b
+                                    id="live-poi-count-powerspot">0</b> (ต้องใส่ Token)</span>
+                            <label class="switch"><input type="checkbox" id="filter-live-powerspot" disabled><span
+                                    class="slider"></span></label>
+                        </div>
+                        <div id="live-poi-status" class="live-poi-status-line"></div>
+                        <div id="live-poi-error" class="live-poi-error-banner" style="display:none;"></div>
+
+                        <div class="section-title margin-t-15 padding-t-15" data-i18n="livePoiTokenSectionTitle">
+                            Campfire Session Token</div>
+                        <div class="input-group">
+                            <input type="text" id="live-poi-token-input" data-i18n-placeholder="livePoiTokenPlaceholder"
+                                placeholder="Bearer eyJ... หรือ token เฉยๆ">
+                        </div>
+                        <div class="input-row margin-t-10">
+                            <button class="btn btn-primary" id="btn-live-poi-token-save" data-i18n="btnSave">บันทึก</button>
+                            <button class="btn btn-secondary" id="btn-live-poi-token-clear" data-i18n="btnClear">ล้าง</button>
+                        </div>
+                        <button class="btn btn-secondary margin-t-10" id="btn-live-poi-token-help"
+                            data-i18n="livePoiTokenHowTo">วิธีขอ Token</button>
+                        <div id="live-poi-token-help" class="live-poi-help-text" style="display:none;"
+                            data-i18n="livePoiTokenHelpText">
+                            1. เปิด campfire.nianticlabs.com แล้วล็อกอิน<br>
+                            2. เปิด DevTools (F12) → แท็บ Network<br>
+                            3. รีเฟรชหน้า หา request ไปยัง niantic-social-api.nianticlabs.com/graphql<br>
+                            4. คัดลอกค่าใน Authorization header (ตัด "Bearer " ออกได้) มาวางที่นี่
                         </div>
                     </div>
                 </div>
@@ -542,6 +592,7 @@
     <script src="js/ui-controller.js?v=3.0.1"></script>
     <script src="js/collab-manager.js?v=3.0.1"></script>
     <script src="js/simulation-3d.js?v=3.0.1"></script>
+    <script src="js/live-poi-manager.js?v=3.1.0"></script>
     <!-- Main App -->
     <script src="app.js?v=3.0.1"></script>
 </body>
