@@ -625,6 +625,21 @@
             font-size: 14px;
             border-bottom: 1px solid var(--border-glass);
             padding-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .info-category-hideall {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .info-category-hideall input {
+            cursor: pointer;
         }
 
         .info-item {
@@ -633,6 +648,25 @@
             background: var(--info-item);
             border-radius: 8px;
             margin-bottom: 6px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .info-item.info-item-hidden {
+            opacity: 0.5;
+        }
+
+        .info-item-checkbox {
+            flex-shrink: 0;
+            margin-top: 3px;
+            cursor: pointer;
+        }
+
+        .info-item-body {
+            flex: 1;
+            min-width: 0;
+            cursor: pointer;
         }
 
         .info-item-coords {
@@ -831,7 +865,8 @@
             color: var(--accent-red);
         }
 
-        .popup-lock-corner {
+        .popup-lock-corner,
+        .popup-hide-corner {
             position: absolute;
             top: 0;
             left: 0;
@@ -850,11 +885,22 @@
             padding: 0;
         }
 
-        .popup-lock-corner:hover {
+        /* ปุ่มตาอยู่ถัดจากปุ่มล็อคในแถวเดียวกัน (ล็อคชิดซ้ายสุด, ตาถัดไป) —
+           เว้นมุมขวาบนไว้ให้ปุ่มปิด (X) ของ Leaflet popup เอง */
+        .popup-hide-corner {
+            left: 28px;
+        }
+
+        .popup-lock-corner:hover,
+        .popup-hide-corner:hover {
             opacity: 0.8;
         }
 
         .popup-lock-corner.locked {
+            opacity: 1;
+        }
+
+        .popup-hide-corner.spot-hidden {
             opacity: 1;
         }
 
@@ -1348,6 +1394,46 @@ input.search-input-field {
     gap: 12px;
 }
 
+/* Draw mode — banner ลอยกลางบนขณะกำลังวาดเขต (คลิกเพิ่มจุด/ดับเบิ้ลคลิกจบ) */
+.draw-mode-hint {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 500;
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--border-radius-md);
+    padding: 10px 16px;
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-main);
+    max-width: 90vw;
+}
+
+.draw-mode-hint button {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 8px;
+    background: var(--btn-secondary);
+    color: var(--text-main);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.draw-selection-count {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
 .welcome-title {
     font-size: 24px;
     color: var(--text-main);
@@ -1381,8 +1467,11 @@ input.search-input-field {
 }
 
 .live-poi-thumb {
-    width: 100%;
-    height: 100%;
+    /* !important จำเป็น: leaflet.css กำหนด .leaflet-marker-pane img { width: auto }
+       ด้วย specificity สูงกว่า class เดียวนี้ ทำให้รูปยืดตาม intrinsic ratio
+       แทนที่จะเต็มวงกลม container (เห็นเป็นวงรีแทนวงกลม) */
+    width: 100% !important;
+    height: 100% !important;
     border-radius: 50%;
     object-fit: cover;
     opacity: 0.92;
@@ -1410,6 +1499,21 @@ input.search-input-field {
     color: #ff9500;
 }
 
+/* fallback แทนรูปใหญ่ในป็อปอัพ Live POI กรณีไม่มี imageUrl หรือโหลดรูปพัง —
+   ขนาด/margin เท่า .popup-spot-image เพื่อให้ layout ไม่กระโดด */
+.live-poi-popup-fallback {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    margin: 20px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    background: var(--info-item);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
 .live-poi-readonly-note {
     font-size: 10px;
     color: var(--text-secondary);
@@ -1433,12 +1537,178 @@ input.search-input-field {
     margin: 6px 0;
 }
 
-.live-poi-help-text {
+/* Live POI — Campfire Token card (redesign: status card + bookmarklet/shortcut/QR วิธีขอ token) */
+.live-poi-token-card {
+    background: var(--info-item);
+    border-radius: var(--border-radius-md);
+    padding: 14px 16px;
+    margin-top: 8px;
+    border: 1px solid var(--border-glass);
+}
+
+.live-poi-token-card-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.live-poi-token-card-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.live-poi-token-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.live-poi-token-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.live-poi-token-status-text {
     font-size: 12px;
     color: var(--text-secondary);
-    background: var(--info-item);
-    padding: 10px;
+    margin-top: 2px;
+}
+
+.live-poi-token-status-text.is-ok { color: var(--accent-green); }
+.live-poi-token-status-text.is-warning { color: #ff9f0a; }
+.live-poi-token-status-text.is-none { color: var(--accent-red); }
+
+.live-poi-token-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.live-poi-token-toggle-btn {
+    width: auto;
+    padding: 8px 14px;
+    font-size: 13px;
+}
+
+.live-poi-token-clear-link {
+    background: none;
+    border: none;
+    color: var(--accent-red);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px;
+    text-decoration: underline;
+}
+
+.live-poi-token-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-glass);
+}
+
+.live-poi-howto-box {
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.live-poi-howto-green {
+    background: rgba(52, 199, 89, 0.08);
+    border: 1px solid rgba(52, 199, 89, 0.25);
+}
+
+.live-poi-howto-blue {
+    background: var(--accent-blue-light);
+    border: 1px solid rgba(0, 122, 255, 0.25);
+}
+
+.live-poi-howto-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.live-poi-howto-list {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.live-poi-bookmarklet-slot a {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background-color: var(--accent-green);
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+    text-decoration: none;
+    cursor: grab;
+}
+
+.live-poi-shortcut-link {
+    color: var(--accent-blue);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.live-poi-howto-mobile-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.live-poi-howto-mobile-row .live-poi-howto-list {
+    flex: 1;
+}
+
+.live-poi-qr-box {
+    background: #fff;
+    padding: 6px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    line-height: 0;
+}
+
+.live-poi-paste-btn {
+    align-self: flex-start;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background-color: var(--accent-green);
+    color: #fff;
+    border: none;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: var(--font-family);
+}
+
+.live-poi-hint-box {
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: rgba(92, 138, 255, 0.08);
+    padding: 10px 14px;
     border-radius: 8px;
     line-height: 1.6;
-    margin-top: 8px;
+}
+
+.live-poi-privacy-note {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    padding: 0 2px;
 }

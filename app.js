@@ -7,6 +7,15 @@ window.CAWayspotApp = (function () {
     const MAX_UNDO = 50;
     let tutorialIndex = 0;
 
+    // Draw mode — วาด polygon อิสระบนแผนที่เพื่อเลือก Wayspot (ทั้งของผู้ใช้เอง
+    // และ Live POI จาก Wayfarer) ที่อยู่ในเขต ไม่พึ่ง library ภายนอก
+    let drawModeActive = false;
+    let drawPoints = [];
+    let drawPreviewLine = null;
+    let drawPolygonLayer = null;
+    const selectedSpotIds = new Set();
+    const selectedLivePoiIds = new Set();
+
     const tutorialContent = [
         { title: 'tutorialSlide1Title', text: 'tutorialSlide1Content', image: 'img/img_tutorial%20page%201.webp' },
         { title: 'tutorialSlide2Title', text: 'tutorialSlide2Content', image: 'img/img_tutorial%20page%202.webp' },
@@ -42,10 +51,47 @@ window.CAWayspotApp = (function () {
             let spot = CA_Map.spotsData[id];
             dataToSave.push({
                 id: spot.id, type: spot.type, name: spot.name, imgUrl: spot.imgUrl,
-                lat: spot.lat, lng: spot.lng, radius: spot.radius, locked: spot.locked || false
+                lat: spot.lat, lng: spot.lng, radius: spot.radius, locked: spot.locked || false,
+                hidden: spot.hidden || false
             });
         }
         CA_Storage.updateActiveProjectData(dataToSave);
+    }
+
+    // ซ่อน/แสดง layerGroup (marker+circle) ของ spot ตามทั้ง filter checkbox ของ
+    // type และสถานะ hidden ทีละจุด — เรียกทุกครั้งที่ตัวใดตัวหนึ่งเปลี่ยน กัน
+    // 2 ระบบ (filter ต่อ type / hidden ทีละจุด) ทับกันเอง
+    function updateSpotVisibility(spot) {
+        const filterEl = document.getElementById('filter-' + spot.type);
+        const typeVisible = filterEl ? filterEl.checked : true;
+        const shouldShow = typeVisible && !spot.hidden;
+        if (shouldShow) { if (!CA_Map.map.hasLayer(spot.layerGroup)) CA_Map.map.addLayer(spot.layerGroup); }
+        else { if (CA_Map.map.hasLayer(spot.layerGroup)) CA_Map.map.removeLayer(spot.layerGroup); }
+    }
+
+    function toggleHidden(id) {
+        const spot = CA_Map.spotsData[id];
+        if (!spot) return;
+        spot.hidden = !spot.hidden;
+        updateSpotVisibility(spot);
+        updatePopupContent(id);
+        // ซ่อนแล้ว marker หลุดจากแผนที่ไปแล้ว เปิด popup ไม่ได้ — เปิดใหม่ต่อเมื่อกดแสดงกลับ
+        if (!spot.hidden) spot.marker.openPopup();
+        refreshInfoPanel(document.getElementById('info-search-input') ? document.getElementById('info-search-input').value : '');
+        saveToStorage();
+    }
+
+    // ซ่อน/แสดงทุกจุดของ type เดียวกันพร้อมกัน — ใช้จาก checkbox "ซ่อนทั้งหมด"
+    // ที่หัวข้อแต่ละ category ใน list modal
+    function setAllHiddenForType(type, hidden) {
+        for (let id in CA_Map.spotsData) {
+            const spot = CA_Map.spotsData[id];
+            if (spot.type !== type) continue;
+            spot.hidden = hidden;
+            updateSpotVisibility(spot);
+        }
+        refreshInfoPanel(document.getElementById('info-search-input') ? document.getElementById('info-search-input').value : '');
+        saveToStorage();
     }
 
 
@@ -138,7 +184,7 @@ window.CAWayspotApp = (function () {
         CA_Map.spotsData[currentId] = {
             id: currentId, type: type, name: name, imgUrl: imgUrl,
             radius: radius, lat: latlng.lat, lng: latlng.lng,
-            locked: locked,
+            locked: locked, hidden: (savedData && savedData.hidden) || false,
             layerGroup: layerGroup, marker: marker, circle: circle
         };
 
@@ -181,7 +227,7 @@ window.CAWayspotApp = (function () {
         });
 
         updatePopupContent(currentId);
-        if (document.getElementById('filter-' + type).checked) layerGroup.addTo(CA_Map.map);
+        updateSpotVisibility(CA_Map.spotsData[currentId]);
         refreshInfoPanel();
         if (!savedData) {
             saveToStorage();
@@ -197,6 +243,7 @@ window.CAWayspotApp = (function () {
         const content = `
             <div style="text-align: center; min-width: 170px; position: relative;">
                 <button class="popup-lock-corner${spot.locked ? ' locked' : ''}" onclick="window.CAWayspotApp.toggleLock('${id}')" title="${spot.locked ? CA_UI.t('btnUnlock') : CA_UI.t('btnLock')}">${spot.locked ? '🔓' : '🔒'}</button>
+                <button class="popup-hide-corner${spot.hidden ? ' spot-hidden' : ''}" onclick="window.CAWayspotApp.toggleHidden('${id}')" title="${spot.hidden ? CA_UI.t('btnShowSpot') : CA_UI.t('btnHideSpot')}">${spot.hidden ? '🙈' : '👁'}</button>
                 <h4 style="margin: 0;">${CA_UI.escapeHTML(spot.name) || CA_UI.t('unnamedAlert')}</h4>
                 <img crossorigin="anonymous" src="${getImageUrl(spot.imgUrl, spot.type)}" class="popup-spot-image" style="border-color: ${styleInfo.color};" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'">
                 <div style="font-size: 11px; color: #b3b3b3; font-family: monospace; margin: 0 0 5px 0;">
@@ -224,6 +271,7 @@ window.CAWayspotApp = (function () {
     function refreshInfoPanel(filterText = '') {
         const htmlData = { 'pokestop': '', 'gym': '', 'caspot': '', 'cagym': '', 'clwayspot': '', 'clgymwayspot': '', 'powerspot': '' };
         const counts = { 'pokestop': 0, 'gym': 0, 'caspot': 0, 'cagym': 0, 'clwayspot': 0, 'clgymwayspot': 0, 'powerspot': 0 };
+        const hiddenCounts = { 'pokestop': 0, 'gym': 0, 'caspot': 0, 'cagym': 0, 'clwayspot': 0, 'clgymwayspot': 0, 'powerspot': 0 };
         filterText = filterText.toLowerCase();
 
         for (let id in CA_Map.spotsData) {
@@ -231,14 +279,20 @@ window.CAWayspotApp = (function () {
             if (filterText && !spot.name.toLowerCase().includes(filterText)) continue;
             const latlngText = `${spot.lat.toFixed(5)}, ${spot.lng.toFixed(5)}`;
             htmlData[spot.type] += `
-                <div class="info-item" onclick="window.CAWayspotApp.jumpToSpot('${id}')" style="cursor: pointer;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                        <b>${CA_UI.escapeHTML(spot.name)}</b>
-                        <span style="font-size: 10px; color: var(--text-secondary);">${spot.radius}m</span>
+                <div class="info-item${spot.hidden ? ' info-item-hidden' : ''}">
+                    <input type="checkbox" class="info-item-checkbox" ${spot.hidden ? '' : 'checked'}
+                        title="${CA_UI.t('hideItemTooltip')}"
+                        onchange="window.CAWayspotApp.toggleHidden('${id}')">
+                    <div class="info-item-body" onclick="window.CAWayspotApp.jumpToSpot('${id}')">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <b>${CA_UI.escapeHTML(spot.name)}</b>
+                            <span style="font-size: 10px; color: var(--text-secondary);">${spot.radius}m</span>
+                        </div>
+                        <span class="info-item-coords">📍 ${CA_UI.t('infoCoords')} ${latlngText}</span>
                     </div>
-                    <span class="info-item-coords">📍 ${CA_UI.t('infoCoords')} ${latlngText}</span>
                 </div>`;
             counts[spot.type]++;
+            if (spot.hidden) hiddenCounts[spot.type]++;
         }
 
         let finalHTML = "";
@@ -254,8 +308,57 @@ window.CAWayspotApp = (function () {
 
         cats.forEach(c => {
             const content = htmlData[c.id] || `<div style="font-size:12px; color:var(--text-secondary);">-</div>`;
-            finalHTML += `<div class="info-category"><h4 style="color:${c.color}; margin-top: 10px;">${c.name.split(' ')[0]} ${c.name.split(' ')[1] || ''} (${CA_UI.t('countLabel')} ${counts[c.id]})</h4>${content}</div>`;
+            // checkbox "ซ่อนทั้งหมด" ของ category — checked เมื่อยังมีจุดที่แสดงอยู่
+            // อย่างน้อย 1 จุด, unchecked เมื่อซ่อนหมดทุกจุดแล้ว (ไม่โชว์เลยถ้าไม่มีจุด)
+            const allHidden = counts[c.id] > 0 && hiddenCounts[c.id] === counts[c.id];
+            const headerCheckbox = counts[c.id] > 0
+                ? `<label class="info-category-hideall" title="${CA_UI.t('hideAllTooltip')}" onclick="event.stopPropagation()">
+                     <input type="checkbox" ${allHidden ? '' : 'checked'} onchange="window.CAWayspotApp.setAllHiddenForType('${c.id}', !this.checked)">
+                   </label>`
+                : '';
+            finalHTML += `<div class="info-category"><h4 style="color:${c.color}; margin-top: 10px;">
+                <span>${c.name.split(' ')[0]} ${c.name.split(' ')[1] || ''} (${CA_UI.t('countLabel')} ${counts[c.id]})</span>
+                ${headerCheckbox}
+            </h4>${content}</div>`;
         });
+
+        // Live POI จาก Wayfarer (PokéStop/Gym/Power Spot จริง) — ต่อท้าย 7
+        // category ของ Wayspot ที่ผู้ใช้สร้างเอง, checkbox ทีละจุด persist ใน
+        // live-poi-manager.js เอง, checkbox หัวข้อ sync 2 ทางกับ toggle ใน sidebar
+        if (window.CA_LivePOI && CA_LivePOI.getPoiList) {
+            const liveCats = [
+                { id: 'pokestop', labelKey: 'optPokestop', color: '#007aff' },
+                { id: 'gym', labelKey: 'optGym', color: '#ff3b30' },
+                { id: 'powerspot', labelKey: 'optPowerSpot', color: '#911042' },
+            ];
+            liveCats.forEach(c => {
+                const list = CA_LivePOI.getPoiList(c.id).filter(p => !filterText || p.name.toLowerCase().includes(filterText));
+                const filterEl = document.getElementById('filter-live-' + c.id);
+                const typeOn = filterEl ? filterEl.checked : true;
+                let content = '';
+                list.forEach(p => {
+                    content += `
+                        <div class="info-item${p.hidden ? ' info-item-hidden' : ''}">
+                            <input type="checkbox" class="info-item-checkbox" ${p.hidden ? '' : 'checked'}
+                                title="${CA_UI.t('hideItemTooltip')}"
+                                onchange="window.CA_LivePOI.toggleHidden('${p.id}'); window.CAWayspotApp.refreshInfoPanel();">
+                            <div class="info-item-body" onclick="window.CA_LivePOI.jumpTo('${p.id}')">
+                                <b>${CA_UI.escapeHTML(p.name)}</b>
+                                <span class="info-item-coords">📍 ${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</span>
+                            </div>
+                        </div>`;
+                });
+                if (!content) content = `<div style="font-size:12px; color:var(--text-secondary);">-</div>`;
+                const label = CA_UI.t(c.labelKey);
+                const headerCheckbox = `<label class="info-category-hideall" title="${CA_UI.t('hideAllTooltip')}" onclick="event.stopPropagation()">
+                    <input type="checkbox" ${typeOn ? 'checked' : ''} onchange="window.CAWayspotApp.setLivePoiTypeVisible('${c.id}', this.checked)">
+                </label>`;
+                finalHTML += `<div class="info-category"><h4 style="color:${c.color}; margin-top: 10px;">
+                    <span>${label.split(' ')[0]} ${label.split(' ')[1] || ''} ${CA_UI.t('livePoiFromWayfarerSuffix')} (${CA_UI.t('countLabel')} ${list.length})</span>
+                    ${headerCheckbox}
+                </h4>${content}</div>`;
+            });
+        }
 
         document.getElementById('info-content').innerHTML = finalHTML;
     }
@@ -415,6 +518,17 @@ window.CAWayspotApp = (function () {
             p.style.display = (p.style.display === 'block' ? 'none' : 'block');
             if (p.style.display === 'block') refreshInfoPanel();
         });
+
+        safeListen('fab-draw-mode', 'click', () => {
+            if (drawModeActive) cancelDrawMode(); else startDrawMode();
+        });
+        safeListen('btn-draw-mode-cancel', 'click', () => cancelDrawMode());
+        safeListen('btn-close-draw-selection', 'click', () => CA_UI.closeModal('draw-selection-modal-overlay'));
+        safeListen('btn-draw-selection-clear', 'click', () => clearSelection());
+        safeListen('btn-draw-selection-delete', 'click', () => deleteSelectedItems());
+        safeListen('btn-draw-selection-export-json', 'click', () => exportSelectedJSON());
+        safeListen('btn-draw-selection-export-kml', 'click', () => exportSelectedKML());
+
         function syncGmapKeyGroup() {
             const sel = document.getElementById('mapLayer');
             const g = document.getElementById('gmap-api-key-group');
@@ -502,54 +616,89 @@ window.CAWayspotApp = (function () {
         
         ['filter-pokestop', 'filter-gym', 'filter-caspot', 'filter-cagym', 'filter-clwayspot', 'filter-clgymwayspot', 'filter-powerspot'].forEach(id => {
             safeListen(id, 'change', () => {
-                const results = { 
-                    'pokestop': document.getElementById('filter-pokestop').checked, 
-                    'gym': document.getElementById('filter-gym').checked, 
-                    'caspot': document.getElementById('filter-caspot').checked, 
-                    'cagym': document.getElementById('filter-cagym').checked,
-                    'clwayspot': document.getElementById('filter-clwayspot').checked,
-                    'clgymwayspot': document.getElementById('filter-clgymwayspot').checked,
-                    'powerspot': document.getElementById('filter-powerspot').checked
-                };
                 for (let sid in CA_Map.spotsData) {
-                    const spot = CA_Map.spotsData[sid];
-                    if (results[spot.type]) { if (!CA_Map.map.hasLayer(spot.layerGroup)) CA_Map.map.addLayer(spot.layerGroup); }
-                    else { if (CA_Map.map.hasLayer(spot.layerGroup)) CA_Map.map.removeLayer(spot.layerGroup); }
+                    updateSpotVisibility(CA_Map.spotsData[sid]);
                 }
             });
         });
 
         // Live POI Layer Listeners (PokéStop/Gym/Power Spot จริงจาก Niantic)
         if (window.CA_LivePOI) {
-            safeListen('filter-live-pokestop', 'change', (e) => CA_LivePOI.setVisible('pokestop', e.target.checked));
-            safeListen('filter-live-gym', 'change', (e) => CA_LivePOI.setVisible('gym', e.target.checked));
-            safeListen('filter-live-powerspot', 'change', (e) => CA_LivePOI.setVisible('powerspot', e.target.checked));
+            safeListen('filter-live-pokestop', 'change', (e) => { CA_LivePOI.setVisible('pokestop', e.target.checked); refreshInfoPanel(); });
+            safeListen('filter-live-gym', 'change', (e) => { CA_LivePOI.setVisible('gym', e.target.checked); refreshInfoPanel(); });
+            safeListen('filter-live-powerspot', 'change', (e) => { CA_LivePOI.setVisible('powerspot', e.target.checked); refreshInfoPanel(); });
 
-            safeListen('btn-live-poi-token-save', 'click', () => {
-                const input = document.getElementById('live-poi-token-input');
-                const value = (input.value || '').trim();
-                if (!value) return;
-                CA_LivePOI.saveToken(value);
-                input.value = '';
-                const powerspotToggle = document.getElementById('filter-live-powerspot');
-                if (powerspotToggle) {
-                    powerspotToggle.disabled = false;
-                    powerspotToggle.checked = true;
-                    CA_LivePOI.setVisible('powerspot', true);
+            const tokenForm = document.getElementById('live-poi-token-form');
+            const tokenFormError = document.getElementById('live-poi-token-form-error');
+            const bearerInput = document.getElementById('live-poi-token-input');
+            const csrfInput = document.getElementById('live-poi-csrf-input');
+            const saveBtn = document.getElementById('btn-live-poi-token-save');
+
+            const showTokenFormError = (msg) => {
+                if (!tokenFormError) return;
+                tokenFormError.textContent = msg;
+                tokenFormError.style.display = msg ? 'block' : 'none';
+            };
+
+            const openTokenForm = () => {
+                if (!tokenForm) return;
+                const opening = tokenForm.style.display === 'none';
+                tokenForm.style.display = opening ? 'flex' : 'none';
+                showTokenFormError('');
+                if (opening) CA_LivePOI.renderQRCode();
+            };
+
+            safeListen('btn-live-poi-token-toggle', 'click', openTokenForm);
+            safeListen('btn-live-poi-token-cancel', 'click', () => {
+                if (tokenForm) tokenForm.style.display = 'none';
+                showTokenFormError('');
+            });
+
+            safeListen('btn-live-poi-paste', 'click', async () => {
+                try {
+                    const { bearerToken, csrfToken } = await CA_LivePOI.pasteFromClipboard();
+                    if (bearerInput) bearerInput.value = bearerToken;
+                    if (csrfInput) csrfInput.value = csrfToken;
+                    showTokenFormError('');
+                } catch (e) {
+                    showTokenFormError(CA_UI.t('livePoiPasteError'));
                 }
             });
+
+            safeListen('btn-live-poi-token-save', 'click', async () => {
+                const bearer = (bearerInput && bearerInput.value || '').trim();
+                const csrf = (csrfInput && csrfInput.value || '').trim();
+                if (!bearer) { showTokenFormError(CA_UI.t('livePoiBearerRequired')); return; }
+                showTokenFormError('');
+                if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = CA_UI.t('livePoiSaving'); }
+                try {
+                    await CA_LivePOI.validateAndSaveToken(bearer, csrf);
+                    if (bearerInput) bearerInput.value = '';
+                    if (csrfInput) csrfInput.value = '';
+                    if (tokenForm) tokenForm.style.display = 'none';
+                    CA_LivePOI.renderTokenStatusUI();
+                    const powerspotToggle = document.getElementById('filter-live-powerspot');
+                    if (powerspotToggle) {
+                        powerspotToggle.disabled = false;
+                        powerspotToggle.checked = true;
+                        CA_LivePOI.setVisible('powerspot', true);
+                    }
+                } catch (e) {
+                    showTokenFormError(CA_UI.t('livePoiTokenInvalid'));
+                } finally {
+                    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = CA_UI.t('btnSave'); }
+                }
+            });
+
             safeListen('btn-live-poi-token-clear', 'click', () => {
                 CA_LivePOI.clearToken();
+                CA_LivePOI.renderTokenStatusUI();
                 const powerspotToggle = document.getElementById('filter-live-powerspot');
                 if (powerspotToggle) {
                     powerspotToggle.checked = false;
                     powerspotToggle.disabled = true;
                     CA_LivePOI.setVisible('powerspot', false);
                 }
-            });
-            safeListen('btn-live-poi-token-help', 'click', () => {
-                const el = document.getElementById('live-poi-token-help');
-                if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
             });
 
             // ถ้ามี token บันทึกไว้จากครั้งก่อนแล้ว เปิดปุ่ม Power Spot ให้ทันที
@@ -612,6 +761,7 @@ window.CAWayspotApp = (function () {
             for (let id in CA_Map.spotsData) {
                 if (CA_Map.spotsData[id].circle) CA_Map.spotsData[id].circle.setStyle({ fillOpacity: show ? 0.10 : 0, opacity: show ? 1 : 0 });
             }
+            if (window.CA_LivePOI) CA_LivePOI.setShowRadius(show);
         });
 
         safeListen('setting-show-exclusion', 'change', (e) => {
@@ -978,6 +1128,230 @@ window.CAWayspotApp = (function () {
         saveToStorage();
     }
 
+    // === Draw Mode: วาด polygon อิสระเพื่อเลือก Wayspot ในเขต ===
+
+    // ray-casting algorithm มาตรฐาน — ไม่พึ่ง library ภายนอก
+    function pointInPolygon(lat, lng, points) {
+        let inside = false;
+        for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+            const yi = points[i].lat, xi = points[i].lng;
+            const yj = points[j].lat, xj = points[j].lng;
+            const intersect = ((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
+    }
+
+    function handleDrawClick(e) {
+        drawPoints.push(e.latlng);
+        updateDrawPreview();
+    }
+
+    function handleDrawDblClick(e) {
+        // Leaflet ยิง click ตามด้วย dblclick เสมอ — จุดสุดท้ายจาก click handler
+        // ก่อนหน้าซ้ำกับตำแหน่ง dblclick นี้ ตัดออก 1 จุดกันจุดซ้อน
+        if (drawPoints.length > 1) drawPoints.pop();
+        finishDrawPolygon();
+    }
+
+    function updateDrawPreview() {
+        const map = CA_Map.map;
+        if (drawPreviewLine) map.removeLayer(drawPreviewLine);
+        if (drawPoints.length < 2) return;
+        drawPreviewLine = L.polyline(drawPoints, { color: '#007aff', weight: 2, dashArray: '6,6', interactive: false }).addTo(map);
+    }
+
+    function startDrawMode() {
+        if (drawModeActive) return;
+        drawModeActive = true;
+        drawPoints = [];
+        const map = CA_Map.map;
+        map.getContainer().style.cursor = 'crosshair';
+        map.doubleClickZoom.disable();
+        map.on('click', handleDrawClick);
+        map.on('dblclick', handleDrawDblClick);
+        const hint = document.getElementById('draw-mode-hint');
+        if (hint) hint.style.display = 'flex';
+        const btn = document.getElementById('fab-draw-mode');
+        if (btn) btn.classList.add('active');
+    }
+
+    function exitDrawInteraction() {
+        const map = CA_Map.map;
+        map.off('click', handleDrawClick);
+        map.off('dblclick', handleDrawDblClick);
+        map.doubleClickZoom.enable();
+        map.getContainer().style.cursor = '';
+        drawModeActive = false;
+        const hint = document.getElementById('draw-mode-hint');
+        if (hint) hint.style.display = 'none';
+        const btn = document.getElementById('fab-draw-mode');
+        if (btn) btn.classList.remove('active');
+    }
+
+    function cancelDrawMode() {
+        exitDrawInteraction();
+        drawPoints = [];
+        if (drawPreviewLine) { CA_Map.map.removeLayer(drawPreviewLine); drawPreviewLine = null; }
+    }
+
+    function computeSelectionFromPolygon(points) {
+        selectedSpotIds.clear();
+        selectedLivePoiIds.clear();
+        for (const id in CA_Map.spotsData) {
+            const spot = CA_Map.spotsData[id];
+            if (pointInPolygon(spot.lat, spot.lng, points)) selectedSpotIds.add(id);
+        }
+        if (window.CA_LivePOI) {
+            CA_LivePOI.getAllPoiList().forEach(p => {
+                if (pointInPolygon(p.lat, p.lng, points)) selectedLivePoiIds.add(p.id);
+            });
+        }
+    }
+
+    function finishDrawPolygon() {
+        exitDrawInteraction();
+        if (drawPreviewLine) { CA_Map.map.removeLayer(drawPreviewLine); drawPreviewLine = null; }
+
+        if (drawPoints.length < 3) { drawPoints = []; return; } // เขตต้องมีอย่างน้อย 3 จุด
+
+        if (drawPolygonLayer) CA_Map.map.removeLayer(drawPolygonLayer);
+        drawPolygonLayer = L.polygon(drawPoints, { color: '#007aff', fillColor: '#007aff', fillOpacity: 0.1, weight: 2, interactive: false }).addTo(CA_Map.map);
+
+        computeSelectionFromPolygon(drawPoints);
+        renderSelectionPanel();
+        CA_UI.openModal('draw-selection-modal-overlay');
+    }
+
+    function renderSelectionPanel() {
+        const countEl = document.getElementById('draw-selection-count-text');
+        const contentEl = document.getElementById('draw-selection-content');
+        if (!countEl || !contentEl) return;
+        const total = selectedSpotIds.size + selectedLivePoiIds.size;
+        countEl.textContent = CA_UI.t('countLabel') + ' ' + total;
+
+        let html = '';
+
+        // Wayspot ของผู้ใช้เอง — group ตาม type
+        const spotByType = {};
+        selectedSpotIds.forEach(id => {
+            const spot = CA_Map.spotsData[id];
+            if (!spot) return;
+            (spotByType[spot.type] = spotByType[spot.type] || []).push({ id, spot });
+        });
+        Object.keys(spotByType).forEach(type => {
+            const items = spotByType[type];
+            const styleInfo = getStyleByType(type);
+            html += `<div class="info-category"><h4 style="color:${styleInfo.color};"><span>${styleInfo.typeName} (${CA_UI.t('countLabel')} ${items.length})</span></h4>`;
+            items.forEach(({ id, spot }) => {
+                html += `
+                    <div class="info-item">
+                        <input type="checkbox" class="info-item-checkbox" checked
+                            onchange="window.CAWayspotApp.removeFromSelection('spot','${id}')">
+                        <div class="info-item-body" onclick="window.CAWayspotApp.jumpToSpot('${id}')">
+                            <b>${CA_UI.escapeHTML(spot.name) || CA_UI.t('unnamedAlert')}</b>
+                            <span class="info-item-coords">📍 ${spot.lat.toFixed(5)}, ${spot.lng.toFixed(5)}</span>
+                        </div>
+                    </div>`;
+            });
+            html += `</div>`;
+        });
+
+        // Live POI จาก Wayfarer — group ตาม type
+        if (window.CA_LivePOI && selectedLivePoiIds.size > 0) {
+            const allLive = CA_LivePOI.getAllPoiList();
+            const liveByType = {};
+            selectedLivePoiIds.forEach(id => {
+                const found = allLive.find(p => p.id === id);
+                if (!found) return;
+                (liveByType[found.type] = liveByType[found.type] || []).push(found);
+            });
+            const liveLabels = { pokestop: CA_UI.t('optPokestop'), gym: CA_UI.t('optGym'), powerspot: CA_UI.t('optPowerSpot') };
+            const liveColors = { pokestop: '#007aff', gym: '#ff3b30', powerspot: '#911042' };
+            Object.keys(liveByType).forEach(type => {
+                const items = liveByType[type];
+                html += `<div class="info-category"><h4 style="color:${liveColors[type]};"><span>${liveLabels[type]} ${CA_UI.t('livePoiFromWayfarerSuffix')} (${CA_UI.t('countLabel')} ${items.length})</span></h4>`;
+                items.forEach(p => {
+                    html += `
+                        <div class="info-item">
+                            <input type="checkbox" class="info-item-checkbox" checked
+                                onchange="window.CAWayspotApp.removeFromSelection('live','${p.id}')">
+                            <div class="info-item-body" onclick="window.CA_LivePOI.jumpTo('${p.id}')">
+                                <b>${CA_UI.escapeHTML(p.name)}</b>
+                                <span class="info-item-coords">📍 ${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</span>
+                            </div>
+                        </div>`;
+                });
+                html += `</div>`;
+            });
+        }
+
+        if (!html) html = `<div style="font-size:13px; color:var(--text-secondary); text-align:center; padding:20px 0;">${CA_UI.t('drawNoSelection')}</div>`;
+        contentEl.innerHTML = html;
+    }
+
+    function removeFromSelection(kind, id) {
+        if (kind === 'spot') selectedSpotIds.delete(id);
+        else selectedLivePoiIds.delete(id);
+        renderSelectionPanel();
+    }
+
+    function clearSelection() {
+        selectedSpotIds.clear();
+        selectedLivePoiIds.clear();
+        if (drawPolygonLayer) { CA_Map.map.removeLayer(drawPolygonLayer); drawPolygonLayer = null; }
+        CA_UI.closeModal('draw-selection-modal-overlay');
+    }
+
+    function deleteSelectedItems() {
+        const total = selectedSpotIds.size + selectedLivePoiIds.size;
+        if (total === 0) return;
+        if (!confirm(CA_UI.t('confirmDeleteSelected').replace('{count}', total))) return;
+        Array.from(selectedSpotIds).forEach(id => removeSpot(id, true));
+        if (window.CA_LivePOI) {
+            const allLive = CA_LivePOI.getAllPoiList();
+            Array.from(selectedLivePoiIds).forEach(id => {
+                const found = allLive.find(p => p.id === id);
+                if (found && !found.hidden) CA_LivePOI.toggleHidden(id);
+            });
+        }
+        clearSelection();
+        refreshInfoPanel();
+    }
+
+    function buildSelectedExportData() {
+        const data = {};
+        selectedSpotIds.forEach(id => {
+            const spot = CA_Map.spotsData[id];
+            if (spot) data[id] = spot;
+        });
+        if (window.CA_LivePOI) {
+            const allLive = CA_LivePOI.getAllPoiList();
+            selectedLivePoiIds.forEach(id => {
+                const found = allLive.find(p => p.id === id);
+                if (found) data[id] = { name: found.name, type: found.type, lat: found.lat, lng: found.lng, radius: 45 };
+            });
+        }
+        return data;
+    }
+
+    function exportSelectedJSON() {
+        const data = buildSelectedExportData();
+        const arr = Object.keys(data).map(id => {
+            const s = data[id];
+            return { id, type: s.type, name: s.name, lat: s.lat, lng: s.lng, radius: s.radius };
+        });
+        if (arr.length === 0) return;
+        CA_Sync.downloadFile(JSON.stringify(arr, null, 2), 'wayspot_selection.json', 'application/json');
+    }
+
+    function exportSelectedKML() {
+        const data = buildSelectedExportData();
+        if (Object.keys(data).length === 0) return;
+        const kml = CA_Sync.exportKML(data, getStyleByType, CA_UI.escapeHTML);
+        if (kml) CA_Sync.downloadFile(kml, 'wayspot_selection.kml', 'application/vnd.google-earth.kml+xml');
+    }
+
     // --- Start App ---
 
     function init() {
@@ -1118,6 +1492,22 @@ window.CAWayspotApp = (function () {
         clearAllSpotsLocally,
         updatePopupContentLocally: (id) => updatePopupContent(id),
         toggleLock,
+        toggleHidden,
+        setAllHiddenForType,
+        refreshInfoPanel: () => refreshInfoPanel(document.getElementById('info-search-input') ? document.getElementById('info-search-input').value : ''),
+        setLivePoiTypeVisible: (type, checked) => {
+            const el = document.getElementById('filter-live-' + type);
+            if (!el) return;
+            el.checked = checked;
+            el.dispatchEvent(new Event('change'));
+        },
+        startDrawMode,
+        cancelDrawMode,
+        removeFromSelection,
+        clearSelection,
+        deleteSelectedItems,
+        exportSelectedJSON,
+        exportSelectedKML,
         openEditModal: (id) => { 
             window.currentEditId = id;
             const s = CA_Map.spotsData[id];

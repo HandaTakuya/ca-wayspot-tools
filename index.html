@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/s2-geometry@1.2.10/src/s2geometry.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://accounts.google.com/gsi/client" id="gsi-script" onload="if(window.initGSI) window.initGSI()"
         async defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
@@ -50,6 +51,7 @@
             <button class="fab" id="fab-edit-mode" data-tooltip-i18n="tooltipEditPosition" data-tooltip="แก้ไขตำแหน่ง">✏️</button>
             <button class="fab" id="fab-undo" data-tooltip-i18n="tooltipUndo" data-tooltip="ย้อนกลับ">↩️</button>
             <button class="fab" id="fab-info-mode" data-tooltip-i18n="tooltipWayspotList" data-tooltip="รายการ Wayspot">📋</button>
+            <button class="fab" id="fab-draw-mode" data-tooltip-i18n="tooltipDrawMode" data-tooltip="วาดเขตเลือก Wayspot">🎯</button>
 
             <button class="fab" id="fab-3d-sim" data-tooltip-i18n="tooltip3DSim" data-tooltip="จำลอง 3D">🎮</button>
             <button class="fab" id="btn-capture" data-tooltip-i18n="tooltipCapture" data-tooltip="📸 บันทึกภาพแผนที่">📸</button>
@@ -198,7 +200,7 @@
             <!-- Group 1.5: Live POI (PokéStop/Gym/Power Spot จริงจาก Niantic) -->
             <div class="accordion-item" id="acc-live-poi">
                 <button class="accordion-header">
-                    <span data-i18n="accLivePoi">📡 POI จริงจาก Niantic</span>
+                    <span data-i18n="accLivePoi">📡 POI จาก Wayfarer</span>
                     <span class="icon">▼</span>
                 </button>
                 <div class="accordion-content">
@@ -224,22 +226,79 @@
 
                         <div class="section-title margin-t-15 padding-t-15" data-i18n="livePoiTokenSectionTitle">
                             Campfire Session Token</div>
-                        <div class="input-group">
-                            <input type="text" id="live-poi-token-input" data-i18n-placeholder="livePoiTokenPlaceholder"
-                                placeholder="Bearer eyJ... หรือ token เฉยๆ">
-                        </div>
-                        <div class="input-row margin-t-10">
-                            <button class="btn btn-primary" id="btn-live-poi-token-save" data-i18n="btnSave">บันทึก</button>
-                            <button class="btn btn-secondary" id="btn-live-poi-token-clear" data-i18n="btnClear">ล้าง</button>
-                        </div>
-                        <button class="btn btn-secondary margin-t-10" id="btn-live-poi-token-help"
-                            data-i18n="livePoiTokenHowTo">วิธีขอ Token</button>
-                        <div id="live-poi-token-help" class="live-poi-help-text" style="display:none;"
-                            data-i18n="livePoiTokenHelpText">
-                            1. เปิด campfire.nianticlabs.com แล้วล็อกอิน<br>
-                            2. เปิด DevTools (F12) → แท็บ Network<br>
-                            3. รีเฟรชหน้า หา request ไปยัง niantic-social-api.nianticlabs.com/graphql<br>
-                            4. คัดลอกค่าใน Authorization header (ตัด "Bearer " ออกได้) มาวางที่นี่
+
+                        <div class="live-poi-token-card" id="live-poi-token-card">
+                            <div class="live-poi-token-card-row">
+                                <div class="live-poi-token-card-info">
+                                    <span class="live-poi-token-icon">🔑</span>
+                                    <div>
+                                        <div class="live-poi-token-title" data-i18n="livePoiTokenCardTitle">Campfire API Token</div>
+                                        <div id="live-poi-token-status-text" class="live-poi-token-status-text"></div>
+                                    </div>
+                                </div>
+                                <div class="live-poi-token-card-actions">
+                                    <button class="btn btn-secondary live-poi-token-toggle-btn" id="btn-live-poi-token-toggle"
+                                        data-i18n="livePoiTokenBtnSet">ตั้งค่า Token</button>
+                                    <button class="live-poi-token-clear-link" id="btn-live-poi-token-clear"
+                                        data-i18n="btnClear" style="display:none;">ล้าง</button>
+                                </div>
+                            </div>
+
+                            <div id="live-poi-token-form" class="live-poi-token-form" style="display:none;">
+                                <div class="live-poi-howto-box live-poi-howto-green">
+                                    <div class="live-poi-howto-title" data-i18n="livePoiHowToComputer">💻 วิธีง่าย — คอมพิวเตอร์</div>
+                                    <ol class="live-poi-howto-list">
+                                        <li><span data-i18n="livePoiHowToComputerStep1">ลากปุ่มนี้ไปวางบน Bookmark bar:</span>
+                                            <span id="live-poi-bookmarklet-slot" class="live-poi-bookmarklet-slot"></span></li>
+                                        <li data-i18n="livePoiHowToComputerStep2">เปิด campfire.nianticlabs.com แล้ว login ด้วยบัญชีของตัวเอง</li>
+                                        <li data-i18n="livePoiHowToComputerStep3">กดปุ่มที่ลากไว้ใน Bookmark bar</li>
+                                        <li data-i18n="livePoiHowToComputerStep4">กลับมาที่นี่ กดปุ่ม "วางจาก Clipboard" ด้านล่าง</li>
+                                    </ol>
+                                </div>
+
+                                <div class="live-poi-howto-box live-poi-howto-blue">
+                                    <div class="live-poi-howto-title" data-i18n="livePoiHowToMobile">📱 วิธีง่าย — iPhone/iPad (Safari)</div>
+                                    <div class="live-poi-howto-mobile-row">
+                                        <ol class="live-poi-howto-list">
+                                            <li><span data-i18n="livePoiHowToMobileStep1">กดลิงก์นี้ (ครั้งเดียว) เพื่อติดตั้ง Shortcut:</span>
+                                                <a href="https://www.icloud.com/shortcuts/5d79efc812324d25aba2870bdb836085"
+                                                    target="_blank" rel="noopener noreferrer" class="live-poi-shortcut-link"
+                                                    data-i18n="livePoiHowToMobileShortcutLink">เพิ่ม Shortcut "Campfire Token"</a>
+                                                <span data-i18n="livePoiHowToMobileStep1b">(หรือสแกน QR code)</span></li>
+                                            <li data-i18n="livePoiHowToMobileStep2">เปิด campfire.nianticlabs.com ใน Safari แล้ว login ด้วยบัญชีของตัวเอง</li>
+                                            <li data-i18n="livePoiHowToMobileStep3">กด Share → เลือก Shortcut "Campfire Token" (ครั้งแรกต้องกด Allow)</li>
+                                            <li data-i18n="livePoiHowToMobileStep4">กลับมาที่นี่ กดปุ่ม "วางจาก Clipboard" ด้านล่าง</li>
+                                        </ol>
+                                        <div class="live-poi-qr-box"><canvas id="live-poi-qr-canvas" width="72" height="72"></canvas></div>
+                                    </div>
+                                </div>
+
+                                <button type="button" class="live-poi-paste-btn" id="btn-live-poi-paste"
+                                    data-i18n="livePoiPasteClipboard">📋 วางจาก Clipboard</button>
+
+                                <div class="input-group">
+                                    <label data-i18n="livePoiBearerLabel">Bearer Token *</label>
+                                    <textarea id="live-poi-token-input" rows="3" data-i18n-placeholder="livePoiTokenPlaceholder"
+                                        placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."></textarea>
+                                </div>
+                                <div class="input-group">
+                                    <label data-i18n="livePoiCsrfLabel">X-Csrf-Token (ไม่บังคับ)</label>
+                                    <input type="text" id="live-poi-csrf-input" placeholder="1DQSaLSuYWPn3ljmCCZrXw==">
+                                </div>
+
+                                <div class="live-poi-hint-box" data-i18n="livePoiHintText">
+                                    💡 ถ้า 2 วิธีด้านบนใช้ไม่ได้ — เปิด campfire.nianticlabs.com → DevTools → Network → คลิก request ไปที่ niantic-social-api.nianticlabs.com/graphql → ดู Request Headers → Authorization (ตัด "Bearer " ออก)
+                                </div>
+                                <div class="live-poi-privacy-note" data-i18n="livePoiPrivacyNote">
+                                    🔒 ค่า Campfire API Token จะถูกเก็บในเครื่องนี้เท่านั้น จะไม่ถูกอัปโหลด หรือส่งไปให้บุคคลใดบุคคลหนึ่งเด็ดขาด
+                                </div>
+                                <div id="live-poi-token-form-error" class="live-poi-error-banner" style="display:none;"></div>
+
+                                <div class="input-row margin-t-10">
+                                    <button class="btn btn-secondary" id="btn-live-poi-token-cancel" data-i18n="btnCancel">ยกเลิก</button>
+                                    <button class="btn btn-primary" id="btn-live-poi-token-save" data-i18n="btnSave">บันทึก Token</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -464,6 +523,30 @@
 
             <div class="modal-buttons" style="margin-top: 20px;">
                 <button class="btn btn-primary" id="btn-close-settings-done" data-i18n="btnDone">เสร็จสิ้น</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Draw Mode: hint banner ระหว่างวาดเขต -->
+    <div id="draw-mode-hint" class="draw-mode-hint" style="display:none;">
+        <span data-i18n="drawModeHint">คลิกบนแผนที่เพื่อวาดเขต — ดับเบิ้ลคลิกเพื่อจบ</span>
+        <button id="btn-draw-mode-cancel" data-i18n="btnCancel">ยกเลิก</button>
+    </div>
+
+    <!-- Draw Selection Modal: สถานะ + จัดการ Wayspot ที่เลือกจากการวาดเขต -->
+    <div id="draw-selection-modal-overlay" class="modal-overlay">
+        <div class="modal" id="draw-selection-modal">
+            <button id="btn-close-draw-selection" class="btn-icon modal-close-top">❌</button>
+            <h3 data-i18n="drawSelectionTitle">พื้นที่ที่เลือก</h3>
+            <div class="draw-selection-count" id="draw-selection-count-text"></div>
+            <div id="draw-selection-content"></div>
+            <div class="modal-buttons-gap-12 margin-t-20">
+                <button class="btn btn-secondary" id="btn-draw-selection-clear" data-i18n="btnClearSelection">ยกเลิกการเลือก</button>
+                <button class="btn btn-danger" id="btn-draw-selection-delete" data-i18n="btnDeleteSelected">ลบที่เลือก</button>
+            </div>
+            <div class="modal-buttons-gap-12 margin-t-10">
+                <button class="btn btn-secondary" id="btn-draw-selection-export-json" data-i18n="btnExportSelectedJson">📄 Export JSON</button>
+                <button class="btn btn-secondary" id="btn-draw-selection-export-kml" data-i18n="btnExportSelectedKml">📤 Export KML</button>
             </div>
         </div>
     </div>
