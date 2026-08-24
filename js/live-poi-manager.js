@@ -258,7 +258,7 @@ window.CA_LivePOI = (function () {
         return `
             <div style="text-align:center; min-width:170px; position:relative;">
                 ${hideBtn}
-                <h4 style="margin:0;">${CA_UI.escapeHTML(poi.name)}</h4>
+                <h4 style="margin:0; padding:0 26px;">${CA_UI.escapeHTML(poi.name)}</h4>
                 <span style="font-size:12px; color:var(--text-secondary);">${typeLabel}</span>${megaBadge}
                 ${img}
                 <div style="font-size:11px; color:var(--text-secondary); font-family:monospace;">

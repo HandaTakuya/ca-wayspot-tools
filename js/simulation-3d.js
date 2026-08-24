@@ -637,6 +637,7 @@ const CA_Simulation3D = (() => {
                          : spot.type === 'powerspot' ? makePowerSpot()
                          : makePokeStop(hex, discImg);
             result.group.position.set(x, 0, z);
+            result.group.scale.setScalar(1.3); // ใหญ่ขึ้น 30% — ไม่กระทบ exclusion zone ring ที่วาดแยกต่างหาก
             scene.add(result.group);
             result.spin.forEach(s => spinParts.push(s));
             if (result.spinCW) result.spinCW.forEach(s => spinPartsClockwise.push(s));

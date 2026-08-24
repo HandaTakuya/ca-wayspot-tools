@@ -937,6 +937,7 @@ window.CAWayspotApp = (function () {
                     try {
                         const data = JSON.parse(ev.target.result);
                         if (Array.isArray(data) && data[0] && data[0].hasOwnProperty('data')) {
+                            // full backup format: array ของ project ทั้งชุด (เช่นจาก Google Drive backup) — แทนที่/เพิ่ม project
                             data.forEach(proj => {
                                 if (proj.data) proj.data = proj.data.filter(s => s.type !== 'none');
                                 const idx = CA_Storage.projects.findIndex(p => p.id === proj.id);
@@ -947,6 +948,20 @@ window.CAWayspotApp = (function () {
                             CA_Storage.saveAll();
                             loadFromStorage();
                             alert(CA_UI.t('loadSuccess'));
+                        } else if (Array.isArray(data) && data[0] && data[0].hasOwnProperty('lat') && data[0].hasOwnProperty('lng')) {
+                            // flat array ของ spot เดี่ยวๆ (เช่นจาก "Export JSON" ของโหมดวาดเขตเลือก)
+                            // — เพิ่มเข้า project ที่เปิดอยู่ตอนนี้ ไม่ทับทั้ง project เหมือน format ด้านบน
+                            let count = 0;
+                            data.forEach(s => {
+                                if (!s.type || s.type === 'none' || typeof s.lat !== 'number' || typeof s.lng !== 'number') return;
+                                createSpot(L.latLng(s.lat, s.lng), {
+                                    id: CA_UI.generateId(), type: s.type, name: s.name || '',
+                                    imgUrl: s.imgUrl || '', radius: s.radius || 45, locked: false, hidden: false
+                                }, false);
+                                count++;
+                            });
+                            if (count > 0) { saveToStorage(); refreshInfoPanel(); }
+                            alert(CA_UI.t('importSuccessCount', { count: count, dup: 0 }));
                         }
                     } catch(e) {}
                 } else if (fn.endsWith('.kml')) {
