@@ -58,13 +58,20 @@ window.CAWayspotApp = (function () {
         CA_Storage.updateActiveProjectData(dataToSave);
     }
 
+    // เช็คว่า spot กำลังแสดงผลอยู่บนแผนที่จริงหรือไม่ ตามทั้ง filter checkbox
+    // ของ type และสถานะ hidden ทีละจุด — ใช้ร่วมกันทั้ง updateSpotVisibility
+    // และตอนคำนวณ selection จากการวาดเขต กัน 2 จุดตรรกะ shouldShow เพี้ยนตามกัน
+    function isSpotVisible(spot) {
+        const filterEl = document.getElementById('filter-' + spot.type);
+        const typeVisible = filterEl ? filterEl.checked : true;
+        return typeVisible && !spot.hidden;
+    }
+
     // ซ่อน/แสดง layerGroup (marker+circle) ของ spot ตามทั้ง filter checkbox ของ
     // type และสถานะ hidden ทีละจุด — เรียกทุกครั้งที่ตัวใดตัวหนึ่งเปลี่ยน กัน
     // 2 ระบบ (filter ต่อ type / hidden ทีละจุด) ทับกันเอง
     function updateSpotVisibility(spot) {
-        const filterEl = document.getElementById('filter-' + spot.type);
-        const typeVisible = filterEl ? filterEl.checked : true;
-        const shouldShow = typeVisible && !spot.hidden;
+        const shouldShow = isSpotVisible(spot);
         if (shouldShow) { if (!CA_Map.map.hasLayer(spot.layerGroup)) CA_Map.map.addLayer(spot.layerGroup); }
         else { if (CA_Map.map.hasLayer(spot.layerGroup)) CA_Map.map.removeLayer(spot.layerGroup); }
     }
@@ -1300,10 +1307,16 @@ window.CAWayspotApp = (function () {
         selectedLivePoiIds.clear();
         for (const id in CA_Map.spotsData) {
             const spot = CA_Map.spotsData[id];
+            // ข้าม spot ที่ถูกซ่อนอยู่ (ทั้งซ่อนทีละจุด และ filter ปิดทั้ง type) —
+            // ไม่ควรถูกเลือกโดยการวาดเขต เพราะไม่ได้แสดงผลบนแผนที่อยู่แล้ว
+            if (!isSpotVisible(spot)) continue;
             if (pointInPolygon(spot.lat, spot.lng, points)) selectedSpotIds.add(id);
         }
         if (window.CA_LivePOI) {
             CA_LivePOI.getAllPoiList().forEach(p => {
+                if (p.hidden) return;
+                const filterEl = document.getElementById('filter-live-' + p.type);
+                if (filterEl && !filterEl.checked) return;
                 if (pointInPolygon(p.lat, p.lng, points)) selectedLivePoiIds.add(p.id);
             });
         }
