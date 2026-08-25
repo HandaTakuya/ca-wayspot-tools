@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CA Wayspot Exporter
 // @namespace    http://tampermonkey.net/
-// @version      2.1.0
+// @version      2.2.0
 // @description  ส่งออกข้อมูล Wayspot จาก Niantic Wayfarer พร้อมเลือกโหมด รัศมี และเลือก POI รายจุด
 // @author       HandaTakuya
 // @match        *://wayfarer.nianticlabs.com/*
@@ -151,7 +151,9 @@
 
     const _doDownload = (spots, label) => {
         const timestamp = new Date().toLocaleString('th-TH');
-        const exportSpots = spots.map(s => ({ ...s, name: _tagName(s) }));
+        // ทำเครื่องหมาย source: 'wayfarer' ทุกจุด — ให้ CA Wayspot Tools ฝั่ง import
+        // แยกออกได้ว่าจุดไหนดึงมาจาก Wayfarer จริงๆ ต่างจากจุดที่ user เพิ่มเอง
+        const exportSpots = spots.map(s => ({ ...s, name: _tagName(s), source: 'wayfarer' }));
         _triggerDownload([{
             id: 'proj_' + Date.now(),
             name: `Wayfarer Export [${label}] ${timestamp}`,

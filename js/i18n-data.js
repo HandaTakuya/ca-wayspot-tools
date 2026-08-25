@@ -217,7 +217,12 @@ const CA_I18N = {
         livePoiPasteError: "อ่าน Clipboard ไม่ได้ — ลองก็อปแล้ววางเองในช่อง Bearer Token ด้านล่าง",
         livePoiBearerRequired: "กรุณาใส่ Bearer Token",
         livePoiSaving: "กำลังตรวจสอบ...",
-        livePoiTokenInvalid: "Token ใช้งานไม่ได้ — ตรวจสอบว่าคัดลอกมาถูกต้องและยังไม่หมดอายุ"
+        livePoiTokenInvalid: "Token ใช้งานไม่ได้ — ตรวจสอบว่าคัดลอกมาถูกต้องและยังไม่หมดอายุ",
+        wayfarerImportTitle: "📡 พบ Wayspot จาก Wayfarer",
+        wayfarerImportDesc: "ไฟล์นี้มี Wayspot ที่มีเครื่องหมายว่ามาจาก Wayfarer อยู่ {count} จุด ต้องการนำเข้าอย่างไร?",
+        wayfarerImportAll: "นำเข้าข้อมูลทั้งหมด",
+        wayfarerImportUserOnly: "นำเข้าเฉพาะ Wayspot ที่เพิ่มเอง",
+        wayfarerImportCancelled: "ยกเลิกการนำเข้าข้อมูลแล้ว"
     },
     en: {
         tooltipAddWayspot: "Add Wayspot",
@@ -436,6 +441,11 @@ const CA_I18N = {
         livePoiPasteError: "Couldn't read the clipboard — try copying and pasting it into the Bearer Token field below yourself",
         livePoiBearerRequired: "Please enter a Bearer Token",
         livePoiSaving: "Verifying...",
-        livePoiTokenInvalid: "Token doesn't work — check it was copied correctly and hasn't expired"
+        livePoiTokenInvalid: "Token doesn't work — check it was copied correctly and hasn't expired",
+        wayfarerImportTitle: "📡 Wayfarer Wayspots Found",
+        wayfarerImportDesc: "This file contains {count} Wayspot(s) marked as coming from Wayfarer. How would you like to import it?",
+        wayfarerImportAll: "Import All Data",
+        wayfarerImportUserOnly: "Import Only My Own Wayspots",
+        wayfarerImportCancelled: "Import cancelled"
     }
 };

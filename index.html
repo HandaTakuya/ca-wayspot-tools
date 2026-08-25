@@ -639,6 +639,21 @@
         </div>
     </div>
 
+    <!-- Wayfarer Import Choice Modal -->
+    <div id="wayfarer-import-modal-overlay" class="modal-overlay">
+        <div class="modal modal-narrow" id="wayfarer-import-modal">
+            <h3 data-i18n="wayfarerImportTitle">📡 พบ Wayspot จาก Wayfarer</h3>
+            <p id="wayfarer-import-desc" style="font-size: 13px; color: var(--text-secondary); margin-top: -6px;"></p>
+            <div class="flex-column-gap-12 margin-t-15">
+                <button class="btn btn-primary" id="btn-wayfarer-import-all" data-i18n="wayfarerImportAll">นำเข้าข้อมูลทั้งหมด</button>
+                <button class="btn btn-secondary" id="btn-wayfarer-import-user-only" data-i18n="wayfarerImportUserOnly">นำเข้าเฉพาะ Wayspot ที่เพิ่มเอง</button>
+            </div>
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button class="btn btn-danger" id="btn-wayfarer-import-cancel" data-i18n="btnCancel">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 3D Simulation Overlay -->
     <div id="sim3d-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; flex-direction:column; background:#080818; font-family: 'Noto Sans Thai', sans-serif;">
         <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:rgba(0,0,0,0.65); backdrop-filter:blur(10px); flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.08);">

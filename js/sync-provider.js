@@ -94,7 +94,11 @@ const CA_Sync = {
         for (let id in spotsData) {
             let spot = spotsData[id];
             let typeName = getStyleByType(spot.type).typeName;
-            kmlContent += `    <Placemark>\n      <name>${escapeHTML(spot.name)}</name>\n      <description>ประเภท: ${typeName} | รัศมี: ${spot.radius} เมตร</description>\n      <Point><coordinates>${spot.lng},${spot.lat},0</coordinates></Point>\n    </Placemark>\n`;
+            // caSource: 'wayfarer' | 'user' — ExtendedData เป็น field มาตรฐานของ KML ที่ viewer
+            // อื่นเมิน ไม่กระทบการแสดงผล แต่ CA Wayspot Tools อ่านกลับตอน import เพื่อแยก
+            // Wayspot ที่มาจาก Wayfarer ออกจากที่ user เพิ่มเอง
+            const source = spot.source || 'user';
+            kmlContent += `    <Placemark>\n      <name>${escapeHTML(spot.name)}</name>\n      <description>ประเภท: ${typeName} | รัศมี: ${spot.radius} เมตร</description>\n      <ExtendedData><Data name="caSource"><value>${source}</value></Data></ExtendedData>\n      <Point><coordinates>${spot.lng},${spot.lat},0</coordinates></Point>\n    </Placemark>\n`;
         }
         kmlContent += `  </Document>\n</kml>`;
         return kmlContent;

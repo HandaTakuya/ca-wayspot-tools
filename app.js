@@ -52,7 +52,7 @@ window.CAWayspotApp = (function () {
             dataToSave.push({
                 id: spot.id, type: spot.type, name: spot.name, imgUrl: spot.imgUrl,
                 lat: spot.lat, lng: spot.lng, radius: spot.radius, locked: spot.locked || false,
-                hidden: spot.hidden || false
+                hidden: spot.hidden || false, source: spot.source || 'user'
             });
         }
         CA_Storage.updateActiveProjectData(dataToSave);
@@ -95,6 +95,74 @@ window.CAWayspotApp = (function () {
     }
 
 
+
+    // === Wayfarer Import Choice ===
+    // เมื่อไฟล์ที่นำเข้า (JSON / KML / Google Drive) มี Wayspot ที่มาร์ค
+    // source: 'wayfarer' ปนอยู่ — เปิด popup ให้ user เลือกว่าจะนำเข้าทั้งหมด
+    // หรือนำเข้าเฉพาะ Wayspot ที่ผู้ใช้เพิ่มเอง (ตัด Wayfarer ออก)
+    let wayfarerChoiceResolve = null;
+
+    function promptWayfarerImportChoice(count) {
+        return new Promise((resolve) => {
+            const descEl = document.getElementById('wayfarer-import-desc');
+            if (descEl) descEl.textContent = CA_UI.t('wayfarerImportDesc', { count });
+            wayfarerChoiceResolve = resolve;
+            CA_UI.openModal('wayfarer-import-modal-overlay');
+        });
+    }
+
+    function resolveWayfarerChoice(choice) {
+        if (!wayfarerChoiceResolve) return;
+        const resolve = wayfarerChoiceResolve;
+        wayfarerChoiceResolve = null;
+        CA_UI.closeModal('wayfarer-import-modal-overlay');
+        resolve(choice);
+    }
+
+    // กรอง array ของ item (แต่ละอันมี source ผ่าน getSource) ตามที่ user เลือก
+    // — คืน null เมื่อ user กดยกเลิก (ไม่ import อะไรเลย)
+    // ถามเฉพาะตอนข้อมูลมีทั้ง 2 แหล่งปนกันเท่านั้น (0 < wfCount < ทั้งหมด) — ถ้าเป็น
+    // Wayfarer ล้วน 100% (เช่นไฟล์ที่ export ตรงจาก CA Wayspot Exporter userscript,
+    // ใช้เป็นทางสำรองเวลาดึง Wayspot จาก Wayfarer โดยตรงมีปัญหา) ให้นำเข้าทั้งหมดทันที
+    // ไม่ต้องถาม เพราะเลือก "เฉพาะที่เพิ่มเอง" ไปก็จะไม่เหลืออะไรให้นำเข้าอยู่ดี
+    async function resolveWayfarerFilter(items, getSource) {
+        const wfCount = items.filter(it => getSource(it) === 'wayfarer').length;
+        if (wfCount === 0 || wfCount === items.length) return items;
+        const choice = await promptWayfarerImportChoice(wfCount);
+        if (choice === 'cancel') return null;
+        return choice === 'user-only' ? items.filter(it => getSource(it) !== 'wayfarer') : items;
+    }
+
+    // นำเข้าไฟล์ backup แบบ "array ของ project ทั้งชุด" (จาก Google Drive หรือ
+    // ไฟล์ .json ที่มี .data — รวมถึงไฟล์ที่ export ตรงจาก CA Wayspot Exporter
+    // userscript) — ตรวจ Wayfarer mark ข้าม project ทั้งหมดก่อน merge
+    async function mergeProjectsWithWayfarerCheck(projectsArray) {
+        projectsArray.forEach(proj => {
+            if (proj.data) proj.data = proj.data.filter(s => s.type !== 'none'); // Remove legacy 'none' data
+        });
+        const allItems = projectsArray.reduce((acc, proj) => acc.concat(proj.data || []), []);
+        const wfCount = allItems.filter(s => s.source === 'wayfarer').length;
+        // ถามเฉพาะตอนมีทั้ง Wayspot ของผู้ใช้เองและของ Wayfarer ปนกันอยู่จริง — ไฟล์ที่เป็น
+        // Wayfarer ล้วน (เช่นจาก userscript โดยตรง) นำเข้าทั้งหมดเสมอ ไม่ต้องถาม
+        if (wfCount > 0 && wfCount < allItems.length) {
+            const choice = await promptWayfarerImportChoice(wfCount);
+            if (choice === 'cancel') return false;
+            if (choice === 'user-only') {
+                projectsArray.forEach(proj => {
+                    if (proj.data) proj.data = proj.data.filter(s => s.source !== 'wayfarer');
+                });
+            }
+        }
+        projectsArray.forEach(proj => {
+            const idx = CA_Storage.projects.findIndex(p => p.id === proj.id);
+            if (idx >= 0) CA_Storage.projects[idx] = proj;
+            else CA_Storage.projects.push(proj);
+        });
+        CA_Storage.activeProjectId = projectsArray[0].id;
+        CA_Storage.saveAll();
+        loadFromStorage();
+        return true;
+    }
 
     function loadFromStorage() {
         CA_Storage.init();
@@ -181,10 +249,14 @@ window.CAWayspotApp = (function () {
         const layerGroup = L.layerGroup([circle, marker]);
         const currentId = savedData && savedData.id ? savedData.id : CA_UI.generateId();
 
+        // source: 'wayfarer' | 'user' — 'wayfarer' มาจากไฟล์ที่ CA Wayspot Exporter
+        // (userscript) หรือ Live POI ทำเครื่องหมายมาให้ตอน export, ใช้แยกจุดที่ผู้ใช้
+        // เพิ่มเองตอนนำเข้าข้อมูลซ้ำ (ดู promptWayfarerImportChoice)
         CA_Map.spotsData[currentId] = {
             id: currentId, type: type, name: name, imgUrl: imgUrl,
             radius: radius, lat: latlng.lat, lng: latlng.lng,
             locked: locked, hidden: (savedData && savedData.hidden) || false,
+            source: (savedData && savedData.source) || 'user',
             layerGroup: layerGroup, marker: marker, circle: circle
         };
 
@@ -259,6 +331,7 @@ window.CAWayspotApp = (function () {
                     'powerspot': 'optPowerSpot'
                 }[spot.type] || 'Unknown').replace(/ [🔵🔴🌸🟣🍊🟡🟢]/, '')}</b></span><br>
                 <span style="font-size: 12px; color: var(--text-secondary);">${CA_UI.t('radiusLabel').replace(' (เมตร)', '').replace(' (meters)', '')}: <b>${spot.radius} m</b></span><br>
+                ${spot.source === 'wayfarer' ? `<div class="live-poi-readonly-note">📡 ${CA_UI.t('livePoiFromWayfarerSuffix')}</div>` : ''}
                 <div class="popup-buttons">
                     <button class="popup-btn btn-edit-popup" onclick="window.CAWayspotApp.openEditModal('${id}')">${CA_UI.t('btnEdit')}</button>
                     <button class="popup-btn btn-del-popup" onclick="window.CAWayspotApp.removeSpot('${id}')">${CA_UI.t('btnDelete')}</button>
@@ -285,7 +358,7 @@ window.CAWayspotApp = (function () {
                         onchange="window.CAWayspotApp.toggleHidden('${id}')">
                     <div class="info-item-body" onclick="window.CAWayspotApp.jumpToSpot('${id}')">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <b>${CA_UI.escapeHTML(spot.name)}</b>
+                            <b title="${spot.source === 'wayfarer' ? CA_UI.t('livePoiFromWayfarerSuffix') : ''}">${spot.source === 'wayfarer' ? '📡 ' : ''}${CA_UI.escapeHTML(spot.name)}</b>
                             <span style="font-size: 10px; color: var(--text-secondary);">${spot.radius}m</span>
                         </div>
                         <span class="info-item-coords">📍 ${CA_UI.t('infoCoords')} ${latlngText}</span>
@@ -474,7 +547,7 @@ window.CAWayspotApp = (function () {
         if (CA_Map.spotsData[id] && (skipConfirm || confirm(CA_UI.t('deleteConfirmMark')))) {
             if (!window.isUndoing) {
                 const s = CA_Map.spotsData[id];
-                pushToUndo({ type: 'DELETE', id: id, data: { type: s.type, name: s.name, imgUrl: s.imgUrl, lat: s.lat, lng: s.lng, radius: s.radius } });
+                pushToUndo({ type: 'DELETE', id: id, data: { type: s.type, name: s.name, imgUrl: s.imgUrl, lat: s.lat, lng: s.lng, radius: s.radius, source: s.source } });
             }
             if (CA_Map.map.hasLayer(CA_Map.spotsData[id].layerGroup)) CA_Map.map.removeLayer(CA_Map.spotsData[id].layerGroup);
             delete CA_Map.spotsData[id]; refreshInfoPanel(); saveToStorage();
@@ -793,17 +866,18 @@ window.CAWayspotApp = (function () {
         safeListen('btn-sync-import', 'click', () => CA_Sync.requestDriveAccess('import', async () => {
             const data = await CA_Sync.downloadFromDrive('CA_Wayspot_All_Backup.json');
             if (data && Array.isArray(data)) {
-                data.forEach(proj => {
-                    const idx = CA_Storage.projects.findIndex(p => p.id === proj.id);
-                    if (idx >= 0) CA_Storage.projects[idx] = proj;
-                    else CA_Storage.projects.push(proj);
-                });
-                CA_Storage.activeProjectId = data[0].id;
-                CA_Storage.saveAll();
-                loadFromStorage();
-                alert(CA_UI.t('loadSuccess'));
+                const ok = await mergeProjectsWithWayfarerCheck(data);
+                alert(CA_UI.t(ok ? 'loadSuccess' : 'wayfarerImportCancelled'));
             }
         }));
+
+        // Wayfarer Import Choice Modal
+        safeListen('btn-wayfarer-import-all', 'click', () => resolveWayfarerChoice('all'));
+        safeListen('btn-wayfarer-import-user-only', 'click', () => resolveWayfarerChoice('user-only'));
+        safeListen('btn-wayfarer-import-cancel', 'click', () => resolveWayfarerChoice('cancel'));
+        safeListen('wayfarer-import-modal-overlay', 'click', (e) => {
+            if (e.target.id === 'wayfarer-import-modal-overlay') resolveWayfarerChoice('cancel');
+        });
         
         safeListen('btn-json-export', 'click', () => {
             CA_Sync.pendingDriveAction = null;
@@ -932,31 +1006,27 @@ window.CAWayspotApp = (function () {
             if (!file) return;
             const fn = file.name.toLowerCase();
             const reader = new FileReader();
-            reader.onload = (ev) => {
+            reader.onload = async (ev) => {
                 if (fn.endsWith('.json')) {
                     try {
                         const data = JSON.parse(ev.target.result);
                         if (Array.isArray(data) && data[0] && data[0].hasOwnProperty('data')) {
-                            // full backup format: array ของ project ทั้งชุด (เช่นจาก Google Drive backup) — แทนที่/เพิ่ม project
-                            data.forEach(proj => {
-                                if (proj.data) proj.data = proj.data.filter(s => s.type !== 'none');
-                                const idx = CA_Storage.projects.findIndex(p => p.id === proj.id);
-                                if (idx >= 0) CA_Storage.projects[idx] = proj;
-                                else CA_Storage.projects.push(proj);
-                            });
-                            CA_Storage.activeProjectId = data[0].id;
-                            CA_Storage.saveAll();
-                            loadFromStorage();
-                            alert(CA_UI.t('loadSuccess'));
+                            // full backup format: array ของ project ทั้งชุด (เช่นจาก Google Drive backup
+                            // หรือไฟล์ที่ CA Wayspot Exporter ดึงมาจาก Wayfarer) — แทนที่/เพิ่ม project
+                            const ok = await mergeProjectsWithWayfarerCheck(data);
+                            alert(CA_UI.t(ok ? 'loadSuccess' : 'wayfarerImportCancelled'));
                         } else if (Array.isArray(data) && data[0] && data[0].hasOwnProperty('lat') && data[0].hasOwnProperty('lng')) {
                             // flat array ของ spot เดี่ยวๆ (เช่นจาก "Export JSON" ของโหมดวาดเขตเลือก)
                             // — เพิ่มเข้า project ที่เปิดอยู่ตอนนี้ ไม่ทับทั้ง project เหมือน format ด้านบน
+                            const valid = data.filter(s => s.type && s.type !== 'none' && typeof s.lat === 'number' && typeof s.lng === 'number');
+                            const toImport = await resolveWayfarerFilter(valid, s => s.source || 'user');
+                            if (toImport === null) { alert(CA_UI.t('wayfarerImportCancelled')); return; }
                             let count = 0;
-                            data.forEach(s => {
-                                if (!s.type || s.type === 'none' || typeof s.lat !== 'number' || typeof s.lng !== 'number') return;
+                            toImport.forEach(s => {
                                 createSpot(L.latLng(s.lat, s.lng), {
                                     id: CA_UI.generateId(), type: s.type, name: s.name || '',
-                                    imgUrl: s.imgUrl || '', radius: s.radius || 45, locked: false, hidden: false
+                                    imgUrl: s.imgUrl || '', radius: s.radius || 45, locked: false, hidden: false,
+                                    source: s.source || 'user'
                                 }, false);
                                 count++;
                             });
@@ -967,15 +1037,21 @@ window.CAWayspotApp = (function () {
                 } else if (fn.endsWith('.kml')) {
                     const parser = new DOMParser();
                     const kml = parser.parseFromString(ev.target.result, "text/xml");
-                    const placemarks = kml.querySelectorAll("Placemark");
-                    let count = 0;
-                    placemarks.forEach(pm => {
+                    const items = Array.from(kml.querySelectorAll("Placemark")).map(pm => {
                         const name = pm.querySelector("name") ? pm.querySelector("name").textContent : "Imported Spot";
                         const coords = pm.querySelector("coordinates") ? pm.querySelector("coordinates").textContent.trim().split(",") : null;
-                        if (coords && coords.length >= 2) {
-                            createSpot(L.latLng(parseFloat(coords[1]), parseFloat(coords[0])), { name, type: 'pokestop', radius: 45 }, false);
-                            count++;
-                        }
+                        // caSource ถูกเขียนไว้ตอน export โดย CA_Sync.exportKML — ไม่มี field นี้ถือว่าเป็น 'user'
+                        const valueEl = pm.querySelector('ExtendedData Data[name="caSource"] value');
+                        const source = (valueEl && valueEl.textContent.trim() === 'wayfarer') ? 'wayfarer' : 'user';
+                        return { name, coords, source };
+                    }).filter(it => it.coords && it.coords.length >= 2);
+
+                    const toImport = await resolveWayfarerFilter(items, it => it.source);
+                    if (toImport === null) { alert(CA_UI.t('wayfarerImportCancelled')); return; }
+                    let count = 0;
+                    toImport.forEach(it => {
+                        createSpot(L.latLng(parseFloat(it.coords[1]), parseFloat(it.coords[0])), { name: it.name, type: 'pokestop', radius: 45, source: it.source }, false);
+                        count++;
                     });
                     if (count > 0) { saveToStorage(); refreshInfoPanel(); }
                     alert(CA_UI.t('importSuccessCount', { count: count, dup: 0 }));
@@ -1353,7 +1429,9 @@ window.CAWayspotApp = (function () {
             const allLive = CA_LivePOI.getAllPoiList();
             selectedLivePoiIds.forEach(id => {
                 const found = allLive.find(p => p.id === id);
-                if (found) data[id] = { name: found.name, type: found.type, lat: found.lat, lng: found.lng, radius: 45 };
+                // POI จาก Wayfarer มาร์ค source: 'wayfarer' เสมอ — แยกจาก Wayspot ของผู้ใช้เอง
+                // ตอน export รวมกันเป็นไฟล์เดียว
+                if (found) data[id] = { name: found.name, type: found.type, lat: found.lat, lng: found.lng, radius: 45, source: 'wayfarer' };
             });
         }
         return data;
@@ -1363,7 +1441,7 @@ window.CAWayspotApp = (function () {
         const data = buildSelectedExportData();
         const arr = Object.keys(data).map(id => {
             const s = data[id];
-            return { id, type: s.type, name: s.name, lat: s.lat, lng: s.lng, radius: s.radius };
+            return { id, type: s.type, name: s.name, lat: s.lat, lng: s.lng, radius: s.radius, source: s.source || 'user' };
         });
         if (arr.length === 0) return;
         CA_Sync.downloadFile(JSON.stringify(arr, null, 2), 'wayspot_selection.json', 'application/json');
