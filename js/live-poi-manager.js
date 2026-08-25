@@ -1,11 +1,13 @@
 /**
  * Live POI Layer — ดึง PokéStop / Gym / Power Spot จริงจาก Niantic (ผ่าน
- * pogodpu-web's public proxy) มาแสดงบนแผนที่ตามขอบเขตที่มองเห็นอยู่ปัจจุบัน
- * แยกจากระบบ CA_Map.spotsData เดิมโดยสิ้นเชิง: ชั้นข้อมูลนี้เป็น read-only
- * (ดูอย่างเดียว ห้ามลาก/แก้ไข/ลบ) ใช้เป็นข้อมูลอ้างอิงประกอบการวางแผนเท่านั้น
+ * pogodpu-campfire-api's public proxy — แยกออกมาจาก pogodpu-web เมื่อ
+ * 2026-08-25 เพื่อลด Vercel Fluid Active CPU ของ pogodpu-web) มาแสดงบน
+ * แผนที่ตามขอบเขตที่มองเห็นอยู่ปัจจุบัน แยกจากระบบ CA_Map.spotsData เดิม
+ * โดยสิ้นเชิง: ชั้นข้อมูลนี้เป็น read-only (ดูอย่างเดียว ห้ามลาก/แก้ไข/ลบ)
+ * ใช้เป็นข้อมูลอ้างอิงประกอบการวางแผนเท่านั้น
  */
 window.CA_LivePOI = (function () {
-    const API_BASE = 'https://pokemongodpu.com/api/public/live-poi';
+    const API_BASE = 'https://campfire-api.pokemongodpu.com/api/public/live-poi';
     // รอแผนที่นิ่งจริงๆ ก่อนค่อย fetch — ตั้งไว้นานพอสมควร (1.5s) เพราะ pan/zoom
     // ต่อเนื่อง (โดยเฉพาะ scroll wheel zoom หลายครั้งรัว) แต่ละครั้งยิง moveend
     // ของตัวเอง ถ้า debounce สั้นเกินจะ fetch ซ้อนกันหลายรอบระหว่างที่ user ยังเลื่อน
