@@ -1353,22 +1353,34 @@ window.CAWayspotApp = (function () {
 
         let html = '';
 
-        // Wayspot ของผู้ใช้เอง — group ตาม type
+        // Wayspot ของผู้ใช้เอง — group ตาม type จาก candidate ทั้งหมดที่วาดเขต
+        // ครอบไว้ (ไม่ใช่แค่ตัวที่ติ๊กเลือกอยู่ตอนนี้) กัน section ทั้งกลุ่มหายไป
+        // ตอนกดถอนติ๊กหมดทุกจุดในหมวดนั้น
         const spotByType = {};
-        selectedSpotIds.forEach(id => {
+        drawCandidateSpotIds.forEach(id => {
             const spot = CA_Map.spotsData[id];
             if (!spot) return;
             (spotByType[spot.type] = spotByType[spot.type] || []).push({ id, spot });
         });
         Object.keys(spotByType).forEach(type => {
             const items = spotByType[type];
+            const checkedCount = items.filter(({ id }) => selectedSpotIds.has(id)).length;
+            const allChecked = checkedCount === items.length;
+            const partial = checkedCount > 0 && !allChecked;
             const styleInfo = getStyleByType(type);
-            html += `<div class="info-category"><h4 style="color:${styleInfo.color};"><span>${styleInfo.typeName} (${CA_UI.t('countLabel')} ${items.length})</span></h4>`;
+            html += `<div class="info-category"><h4 style="color:${styleInfo.color};">
+                <span>${styleInfo.typeName} (${CA_UI.t('countLabel')} ${items.length})</span>
+                <label class="info-category-selectall" title="${CA_UI.t('selectAllTooltip')}" onclick="event.stopPropagation()">
+                    <input type="checkbox" ${allChecked ? 'checked' : ''} data-partial="${partial}"
+                        onchange="window.CAWayspotApp.toggleSelectAllCategory('spot','${type}', this.checked)">
+                </label>
+            </h4>`;
             items.forEach(({ id, spot }) => {
+                const checked = selectedSpotIds.has(id);
                 html += `
                     <div class="info-item">
-                        <input type="checkbox" class="info-item-checkbox" checked
-                            onchange="window.CAWayspotApp.removeFromSelection('spot','${id}')">
+                        <input type="checkbox" class="info-item-checkbox" ${checked ? 'checked' : ''}
+                            onchange="window.CAWayspotApp.toggleSelectionItem('spot','${id}', this.checked)">
                         <div class="info-item-body" onclick="window.CAWayspotApp.jumpToSpot('${id}')">
                             <b>${CA_UI.escapeHTML(spot.name) || CA_UI.t('unnamedAlert')}</b>
                             <span class="info-item-coords">📍 ${spot.lat.toFixed(5)}, ${spot.lng.toFixed(5)}</span>
@@ -1378,11 +1390,11 @@ window.CAWayspotApp = (function () {
             html += `</div>`;
         });
 
-        // Live POI จาก Wayfarer — group ตาม type
-        if (window.CA_LivePOI && selectedLivePoiIds.size > 0) {
+        // Live POI จาก Wayfarer — group ตาม type จาก candidate ทั้งหมด เหตุผลเดียวกัน
+        if (window.CA_LivePOI && drawCandidateLivePoiIds.size > 0) {
             const allLive = CA_LivePOI.getAllPoiList();
             const liveByType = {};
-            selectedLivePoiIds.forEach(id => {
+            drawCandidateLivePoiIds.forEach(id => {
                 const found = allLive.find(p => p.id === id);
                 if (!found) return;
                 (liveByType[found.type] = liveByType[found.type] || []).push(found);
@@ -1391,12 +1403,22 @@ window.CAWayspotApp = (function () {
             const liveColors = { pokestop: '#007aff', gym: '#ff3b30', powerspot: '#911042' };
             Object.keys(liveByType).forEach(type => {
                 const items = liveByType[type];
-                html += `<div class="info-category"><h4 style="color:${liveColors[type]};"><span>${liveLabels[type]} ${CA_UI.t('livePoiFromWayfarerSuffix')} (${CA_UI.t('countLabel')} ${items.length})</span></h4>`;
+                const checkedCount = items.filter(p => selectedLivePoiIds.has(p.id)).length;
+                const allChecked = checkedCount === items.length;
+                const partial = checkedCount > 0 && !allChecked;
+                html += `<div class="info-category"><h4 style="color:${liveColors[type]};">
+                    <span>${liveLabels[type]} ${CA_UI.t('livePoiFromWayfarerSuffix')} (${CA_UI.t('countLabel')} ${items.length})</span>
+                    <label class="info-category-selectall" title="${CA_UI.t('selectAllTooltip')}" onclick="event.stopPropagation()">
+                        <input type="checkbox" ${allChecked ? 'checked' : ''} data-partial="${partial}"
+                            onchange="window.CAWayspotApp.toggleSelectAllCategory('live','${type}', this.checked)">
+                    </label>
+                </h4>`;
                 items.forEach(p => {
+                    const checked = selectedLivePoiIds.has(p.id);
                     html += `
                         <div class="info-item">
-                            <input type="checkbox" class="info-item-checkbox" checked
-                                onchange="window.CAWayspotApp.removeFromSelection('live','${p.id}')">
+                            <input type="checkbox" class="info-item-checkbox" ${checked ? 'checked' : ''}
+                                onchange="window.CAWayspotApp.toggleSelectionItem('live','${p.id}', this.checked)">
                             <div class="info-item-body" onclick="window.CA_LivePOI.jumpTo('${p.id}')">
                                 <b>${CA_UI.escapeHTML(p.name)}</b>
                                 <span class="info-item-coords">📍 ${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</span>
@@ -1409,17 +1431,45 @@ window.CAWayspotApp = (function () {
 
         if (!html) html = `<div style="font-size:13px; color:var(--text-secondary); text-align:center; padding:20px 0;">${CA_UI.t('drawNoSelection')}</div>`;
         contentEl.innerHTML = html;
+
+        // ตั้ง indeterminate ให้ checkbox "เลือกทั้งหมด" ที่ติ๊กไว้บางส่วน — กำหนดได้
+        // ผ่าน DOM property เท่านั้น ใส่เป็น HTML attribute ตรงๆ ไม่ได้ ต้องทำหลัง
+        // ใส่ innerHTML แล้วเท่านั้น
+        contentEl.querySelectorAll('input[data-partial="true"]').forEach(el => { el.indeterminate = true; });
     }
 
-    function removeFromSelection(kind, id) {
-        if (kind === 'spot') selectedSpotIds.delete(id);
-        else selectedLivePoiIds.delete(id);
+    // ติ๊ก/ถอนติ๊กทีละจุดในรายการที่วาดเขตเลือกไว้ — ไม่ลบออกจาก candidate จริง
+    // แค่เอาออกจาก selection ที่จะเอาไปลบ/export เท่านั้น ติ๊กกลับได้เสมอ
+    function toggleSelectionItem(kind, id, checked) {
+        const set = kind === 'spot' ? selectedSpotIds : selectedLivePoiIds;
+        if (checked) set.add(id); else set.delete(id);
+        renderSelectionPanel();
+    }
+
+    // ติ๊ก/ถอนติ๊กทั้งหมวด (type เดียว) จาก checkbox "เลือกทั้งหมด" ที่หัวข้อ
+    function toggleSelectAllCategory(kind, type, checked) {
+        if (kind === 'spot') {
+            drawCandidateSpotIds.forEach(id => {
+                const spot = CA_Map.spotsData[id];
+                if (!spot || spot.type !== type) return;
+                if (checked) selectedSpotIds.add(id); else selectedSpotIds.delete(id);
+            });
+        } else {
+            const allLive = window.CA_LivePOI ? CA_LivePOI.getAllPoiList() : [];
+            drawCandidateLivePoiIds.forEach(id => {
+                const found = allLive.find(p => p.id === id);
+                if (!found || found.type !== type) return;
+                if (checked) selectedLivePoiIds.add(id); else selectedLivePoiIds.delete(id);
+            });
+        }
         renderSelectionPanel();
     }
 
     function clearSelection() {
         selectedSpotIds.clear();
         selectedLivePoiIds.clear();
+        drawCandidateSpotIds.clear();
+        drawCandidateLivePoiIds.clear();
         if (drawPolygonLayer) { CA_Map.map.removeLayer(drawPolygonLayer); drawPolygonLayer = null; }
         CA_UI.closeModal('draw-selection-modal-overlay');
     }
@@ -1627,7 +1677,8 @@ window.CAWayspotApp = (function () {
         },
         startDrawMode,
         cancelDrawMode,
-        removeFromSelection,
+        toggleSelectionItem,
+        toggleSelectAllCategory,
         clearSelection,
         deleteSelectedItems,
         exportSelectedJSON,
