@@ -15,6 +15,11 @@ window.CAWayspotApp = (function () {
     let drawPolygonLayer = null;
     const selectedSpotIds = new Set();
     const selectedLivePoiIds = new Set();
+    // สแนปช็อตรายชื่อทั้งหมดที่วาดเขตครอบไว้ ณ ตอนวาด — ไม่เปลี่ยนตามการติ๊ก/
+    // ถอนติ๊กรายจุดภายหลัง ใช้เป็นฐาน render กลุ่ม type และคำนวณ checkbox
+    // "เลือกทั้งหมด/ไม่เลือกทั้งหมด" ต่อ type (กัน section หายไปตอนถอนติ๊กหมดทั้ง type)
+    let drawCandidateSpotIds = new Set();
+    let drawCandidateLivePoiIds = new Set();
 
     const tutorialContent = [
         { title: 'tutorialSlide1Title', text: 'tutorialSlide1Content', image: 'img/img_tutorial%20page%201.webp' },
@@ -1320,6 +1325,9 @@ window.CAWayspotApp = (function () {
                 if (pointInPolygon(p.lat, p.lng, points)) selectedLivePoiIds.add(p.id);
             });
         }
+        // สแนปช็อตไว้ตอนนี้ — ทุกจุดเริ่มต้นติ๊กเลือกไว้หมด
+        drawCandidateSpotIds = new Set(selectedSpotIds);
+        drawCandidateLivePoiIds = new Set(selectedLivePoiIds);
     }
 
     function finishDrawPolygon() {

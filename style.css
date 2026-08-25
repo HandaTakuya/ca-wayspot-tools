@@ -631,14 +631,16 @@
             gap: 8px;
         }
 
-        .info-category-hideall {
+        .info-category-hideall,
+        .info-category-selectall {
             display: flex;
             align-items: center;
             cursor: pointer;
             flex-shrink: 0;
         }
 
-        .info-category-hideall input {
+        .info-category-hideall input,
+        .info-category-selectall input {
             cursor: pointer;
         }
 
