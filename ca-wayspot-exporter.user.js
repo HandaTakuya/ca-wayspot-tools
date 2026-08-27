@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         CA Wayspot Exporter
 // @namespace    http://tampermonkey.net/
-// @version      2.2.0
+// @version      3.0.0
 // @description  ส่งออกข้อมูล Wayspot จาก Niantic Wayfarer พร้อมเลือกโหมด รัศมี และเลือก POI รายจุด
 // @author       HandaTakuya
-// @match        *://wayfarer.nianticlabs.com/*
+// @match        *://wayfarer.scopely.com/*
 // @grant        none
 // ==/UserScript==
 
