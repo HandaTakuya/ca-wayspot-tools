@@ -324,33 +324,35 @@ window.CAWayspotApp = (function () {
         const spot = CA_Map.spotsData[id];
         if (!spot) return;
         const styleInfo = getStyleByType(spot.type);
-        const content = `
-            <div style="text-align: center; min-width: 170px; position: relative;">
-                <button class="popup-lock-corner${spot.locked ? ' locked' : ''}" onclick="window.CAWayspotApp.toggleLock('${id}')" title="${spot.locked ? CA_UI.t('btnUnlock') : CA_UI.t('btnLock')}">${spot.locked ? '🔓' : '🔒'}</button>
-                <button class="popup-hide-corner${spot.hidden ? ' spot-hidden' : ''}" onclick="window.CAWayspotApp.toggleHidden('${id}')" title="${spot.hidden ? CA_UI.t('btnShowSpot') : CA_UI.t('btnHideSpot')}">${spot.hidden ? '🙈' : '👁'}</button>
-                <h4 style="margin: 0;">${CA_UI.escapeHTML(spot.name) || CA_UI.t('unnamedAlert')}</h4>
-                <img crossorigin="anonymous" src="${getImageUrl(spot.imgUrl, spot.type)}" class="popup-spot-image" style="border-color: ${styleInfo.color};" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Pokebola-pokeball-png-0.png/600px-Pokebola-pokeball-png-0.png'">
-                <div style="font-size: 11px; color: #b3b3b3; font-family: monospace; margin: 0 0 5px 0;">
-                    (${spot.lat.toFixed(6)}, ${spot.lng.toFixed(6)})
-                </div>
-                <span style="font-size: 13px; color: var(--text-secondary);">${CA_UI.t('wayspotTypeLabel')}: <b>${CA_UI.t({
-                    'pokestop': 'optPokestop',
-                    'gym': 'optGym',
-                    'caspot': 'optCaPokestop',
-                    'cagym': 'optCaGym',
-                    'clwayspot': 'optClWayspot',
-                    'clgymwayspot': 'optClGymWayspot',
-                    'powerspot': 'optPowerSpot'
-                }[spot.type] || 'Unknown').replace(/ [🔵🔴🌸🟣🍊🟡🟢]/, '')}</b></span><br>
-                <span style="font-size: 12px; color: var(--text-secondary);">${CA_UI.t('radiusLabel').replace(' (เมตร)', '').replace(' (meters)', '')}: <b>${spot.radius} m</b></span><br>
-                ${spot.source === 'wayfarer' ? `<div class="live-poi-readonly-note">📡 ${CA_UI.t('livePoiFromWayfarerSuffix')}</div>` : ''}
+        const typeLabel = CA_UI.t({
+            'pokestop': 'optPokestop',
+            'gym': 'optGym',
+            'caspot': 'optCaPokestop',
+            'cagym': 'optCaGym',
+            'clwayspot': 'optClWayspot',
+            'clgymwayspot': 'optClGymWayspot',
+            'powerspot': 'optPowerSpot'
+        }[spot.type] || 'Unknown').replace(/ [🔵🔴🌸🟣🍊🟡🟢]/, '');
+        const content = CA_UI.spotCardHTML({
+            name: spot.name || CA_UI.t('unnamedAlert'),
+            typeLabel,
+            color: styleInfo.color,
+            imgUrl: getImageUrl(spot.imgUrl, spot.type),
+            corner: `
+                <button class="spot-card-btn${spot.locked ? ' active' : ''}" onclick="window.CAWayspotApp.toggleLock('${id}')" title="${spot.locked ? CA_UI.t('btnUnlock') : CA_UI.t('btnLock')}">${spot.locked ? '🔓' : '🔒'}</button>
+                <button class="spot-card-btn${spot.hidden ? ' active' : ''}" onclick="window.CAWayspotApp.toggleHidden('${id}')" title="${spot.hidden ? CA_UI.t('btnShowSpot') : CA_UI.t('btnHideSpot')}">${spot.hidden ? '🙈' : '👁'}</button>`,
+            badges: spot.source === 'wayfarer' ? [`<span class="spot-card-badge">📡 ${CA_UI.t('livePoiFromWayfarerSuffix')}</span>`] : [],
+            boxes: [
+                { label: CA_UI.t('radiusLabel').replace(' (เมตร)', '').replace(' (meters)', ''), value: `${spot.radius} m`, wide: true },
+                { label: CA_UI.t('infoCoords').replace(/:$/, ''), value: `${spot.lat.toFixed(6)}, ${spot.lng.toFixed(6)}`, wide: true, mono: true },
+            ],
+            footer: `
                 <div class="popup-buttons">
                     <button class="popup-btn btn-edit-popup" onclick="window.CAWayspotApp.openEditModal('${id}')">${CA_UI.t('btnEdit')}</button>
                     <button class="popup-btn btn-del-popup" onclick="window.CAWayspotApp.removeSpot('${id}')">${CA_UI.t('btnDelete')}</button>
-                </div>
-            </div>
-        `;
-        spot.marker.bindPopup(content);
+                </div>`,
+        });
+        spot.marker.bindPopup(content, { className: 'spot-popup', minWidth: 260, maxWidth: 260 });
     }
 
     function refreshInfoPanel(filterText = '') {
@@ -368,12 +370,16 @@ window.CAWayspotApp = (function () {
                     <input type="checkbox" class="info-item-checkbox" ${spot.hidden ? '' : 'checked'}
                         title="${CA_UI.t('hideItemTooltip')}"
                         onchange="window.CAWayspotApp.toggleHidden('${id}')">
-                    <div class="info-item-body" onclick="window.CAWayspotApp.jumpToSpot('${id}')">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <b title="${spot.source === 'wayfarer' ? CA_UI.t('livePoiFromWayfarerSuffix') : ''}">${spot.source === 'wayfarer' ? '📡 ' : ''}${CA_UI.escapeHTML(spot.name)}</b>
-                            <span style="font-size: 10px; color: var(--text-secondary);">${spot.radius}m</span>
+                    <div class="info-item-body info-item-row" onclick="window.CAWayspotApp.jumpToSpot('${id}')">
+                        <div class="info-item-thumb" style="border-color: ${getStyleByType(spot.type).color};">
+                            <img loading="lazy" crossorigin="anonymous" src="${CA_UI.escapeHTML(getImageUrl(spot.imgUrl, spot.type))}" onerror="this.remove()">
                         </div>
-                        <span class="info-item-coords">📍 ${CA_UI.t('infoCoords')} ${latlngText}</span>
+                        <div class="info-item-text">
+                            <b title="${spot.source === 'wayfarer' ? CA_UI.t('livePoiFromWayfarerSuffix') : ''}">${spot.source === 'wayfarer' ? '📡 ' : ''}${CA_UI.escapeHTML(spot.name)}</b>
+                            <span class="info-item-coords">${latlngText}</span>
+                        </div>
+                        <span class="info-item-pill">${spot.radius}m</span>
+                        <span class="info-item-chevron">›</span>
                     </div>
                 </div>`;
             counts[spot.type]++;
@@ -392,7 +398,7 @@ window.CAWayspotApp = (function () {
         ];
 
         cats.forEach(c => {
-            const content = htmlData[c.id] || `<div style="font-size:12px; color:var(--text-secondary);">-</div>`;
+            const content = htmlData[c.id] || `<div class="info-empty">-</div>`;
             // checkbox "ซ่อนทั้งหมด" ของ category — checked เมื่อยังมีจุดที่แสดงอยู่
             // อย่างน้อย 1 จุด, unchecked เมื่อซ่อนหมดทุกจุดแล้ว (ไม่โชว์เลยถ้าไม่มีจุด)
             const allHidden = counts[c.id] > 0 && hiddenCounts[c.id] === counts[c.id];
@@ -401,8 +407,9 @@ window.CAWayspotApp = (function () {
                      <input type="checkbox" ${allHidden ? '' : 'checked'} onchange="window.CAWayspotApp.setAllHiddenForType('${c.id}', !this.checked)">
                    </label>`
                 : '';
-            finalHTML += `<div class="info-category"><h4 style="color:${c.color}; margin-top: 10px;">
-                <span>${c.name.split(' ')[0]} ${c.name.split(' ')[1] || ''} (${CA_UI.t('countLabel')} ${counts[c.id]})</span>
+            finalHTML += `<div class="info-category" style="--cat-color: ${c.color};"><h4>
+                <span class="info-category-title">${c.name.split(' ')[0]} ${c.name.split(' ')[1] || ''}</span>
+                <span class="info-category-count">${counts[c.id]}</span>
                 ${headerCheckbox}
             </h4>${content}</div>`;
         });
@@ -427,19 +434,26 @@ window.CAWayspotApp = (function () {
                             <input type="checkbox" class="info-item-checkbox" ${p.hidden ? '' : 'checked'}
                                 title="${CA_UI.t('hideItemTooltip')}"
                                 onchange="window.CA_LivePOI.toggleHidden('${p.id}'); window.CAWayspotApp.refreshInfoPanel();">
-                            <div class="info-item-body" onclick="window.CA_LivePOI.jumpTo('${p.id}')">
-                                <b>${CA_UI.escapeHTML(p.name)}</b>
-                                <span class="info-item-coords">📍 ${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</span>
+                            <div class="info-item-body info-item-row" onclick="window.CA_LivePOI.jumpTo('${p.id}')">
+                                <div class="info-item-thumb" style="border-color: ${c.color};">
+                                    ${p.imgUrl ? `<img loading="lazy" crossorigin="anonymous" src="${CA_UI.escapeHTML(p.imgUrl)}" onerror="this.remove()">` : ''}
+                                </div>
+                                <div class="info-item-text">
+                                    <b>${CA_UI.escapeHTML(p.name)}</b>
+                                    <span class="info-item-coords">${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</span>
+                                </div>
+                                <span class="info-item-chevron">›</span>
                             </div>
                         </div>`;
                 });
-                if (!content) content = `<div style="font-size:12px; color:var(--text-secondary);">-</div>`;
+                if (!content) content = `<div class="info-empty">-</div>`;
                 const label = CA_UI.t(c.labelKey);
                 const headerCheckbox = `<label class="info-category-hideall" title="${CA_UI.t('hideAllTooltip')}" onclick="event.stopPropagation()">
                     <input type="checkbox" ${typeOn ? 'checked' : ''} onchange="window.CAWayspotApp.setLivePoiTypeVisible('${c.id}', this.checked)">
                 </label>`;
-                finalHTML += `<div class="info-category"><h4 style="color:${c.color}; margin-top: 10px;">
-                    <span>${label.split(' ')[0]} ${label.split(' ')[1] || ''} ${CA_UI.t('livePoiFromWayfarerSuffix')} (${CA_UI.t('countLabel')} ${list.length})</span>
+                finalHTML += `<div class="info-category" style="--cat-color: ${c.color};"><h4>
+                    <span class="info-category-title">${label.split(' ')[0]} ${label.split(' ')[1] || ''} <small>📡 ${CA_UI.t('livePoiFromWayfarerSuffix')}</small></span>
+                    <span class="info-category-count">${list.length}</span>
                     ${headerCheckbox}
                 </h4>${content}</div>`;
             });

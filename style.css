@@ -622,13 +622,24 @@
 
         .info-category h4 {
             margin: 0 0 10px 0;
-            font-size: 14px;
-            border-bottom: 1px solid var(--border-glass);
-            padding-bottom: 5px;
+            font-size: 15px;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 8px;
+        }
+
+        /* Colored dot before the title — the category color lives in
+           --cat-color (info panel) or the h4's inline color (draw modal). */
+        .info-category h4::before {
+            content: '';
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: var(--cat-color, currentColor);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--cat-color, currentColor) 25%, transparent);
         }
 
         .info-category-hideall,
@@ -1727,4 +1738,358 @@ input.search-input-field {
     color: var(--text-secondary);
     line-height: 1.6;
     padding: 0 2px;
+}
+
+
+/* ===== Info panel list (Pokédex-style nav cards) ===== */
+.info-category-title {
+    flex: 1;
+    min-width: 0;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info-category-title small {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.info-category-count {
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 22px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-align: center;
+    color: #fff;
+    background: color-mix(in srgb, var(--cat-color, #888) 80%, transparent);
+}
+
+.info-empty {
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 4px 2px;
+}
+
+#info-panel .info-item {
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 14px;
+    border: 1px solid var(--border-glass);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+#info-panel .info-item:hover {
+    background: var(--btn-secondary-hover);
+}
+
+#info-panel .info-item:active {
+    transform: scale(0.98);
+}
+
+#info-panel .info-item-checkbox {
+    margin-top: 0;
+}
+
+.info-item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.info-item-thumb {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid;
+    background: var(--info-item);
+    overflow: hidden;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.info-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.info-item-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.info-item-text b {
+    display: block;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info-item-row .info-item-coords {
+    margin-top: 1px;
+    font-variant-numeric: tabular-nums;
+}
+
+.info-item-pill {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 999px;
+    color: var(--text-secondary);
+    background: var(--btn-secondary);
+    flex-shrink: 0;
+}
+
+.info-item-chevron {
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    flex-shrink: 0;
+}
+
+/* ===== Spot popup card (Pokédex-style hero + info grid) ===== */
+/* Selectors carry .leaflet-popup so they outrank the per-theme
+   body[data-theme] .leaflet-popup-content margin overrides. */
+.leaflet-popup.spot-popup .leaflet-popup-content-wrapper {
+    padding: 0;
+    overflow: hidden;
+    border-radius: 20px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.leaflet-popup.spot-popup .leaflet-popup-content {
+    margin: 0;
+    width: 260px !important;
+    line-height: 1.4;
+}
+
+.leaflet-popup.spot-popup .leaflet-popup-close-button {
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 18px;
+    line-height: 28px;
+    color: #fff !important;
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    z-index: 5;
+}
+
+.leaflet-popup.spot-popup .leaflet-popup-close-button:hover {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.spot-card-hero {
+    position: relative;
+    height: 170px;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--spot-color) 55%, transparent) 0%, transparent 70%),
+        color-mix(in srgb, var(--spot-color) 30%, #121214);
+}
+
+.spot-card-hero-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    padding-bottom: 30px;
+}
+
+.spot-card-hero-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    animation: spotCardHeroIn 0.35s ease-out;
+}
+
+/* Bottom scrim so the floating name stays readable over any photo */
+.spot-card-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0%, transparent 30%, transparent 45%, rgba(0, 0, 0, 0.75) 100%);
+    pointer-events: none;
+}
+
+@keyframes spotCardHeroIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.spot-card-corner {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    gap: 6px;
+    z-index: 2;
+}
+
+.spot-card-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    opacity: 0.85;
+    transition: opacity 0.2s, background-color 0.2s;
+}
+
+.spot-card-btn:hover {
+    opacity: 1;
+}
+
+.spot-card-btn.active {
+    opacity: 1;
+    background: rgba(255, 215, 0, 0.25);
+    border-color: rgba(255, 215, 0, 0.6);
+}
+
+.spot-card-header {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0 14px 12px;
+    z-index: 2;
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8), 0 0 24px rgba(0, 0, 0, 0.6);
+}
+
+.spot-card-name {
+    margin: 0 0 8px;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.spot-card-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.spot-card-type-badge,
+.spot-card-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 8px;
+    color: #fff;
+    text-shadow: none;
+    line-height: 1.3;
+}
+
+.spot-card-type-badge {
+    background: color-mix(in srgb, var(--spot-color) 80%, transparent);
+}
+
+.spot-card-badge {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.spot-card-body {
+    padding: 12px;
+}
+
+.spot-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.spot-card-box {
+    background: var(--info-item);
+    border: 1px solid var(--border-glass);
+    border-radius: 14px;
+    padding: 9px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+}
+
+.spot-card-box-wide {
+    grid-column: 1 / -1;
+}
+
+.spot-card-box-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+
+.spot-card-box-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.spot-card-box-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+    text-align: right;
+    word-break: break-word;
+}
+
+.spot-card-mono {
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    user-select: all;
+    -webkit-user-select: all;
+}
+
+.spot-card .popup-buttons {
+    margin-top: 12px;
+}
+
+.spot-card .popup-btn {
+    border-radius: 12px;
+    padding: 10px 12px;
+}
+
+.spot-card .live-poi-readonly-note {
+    text-align: center;
+    margin-top: 10px;
 }

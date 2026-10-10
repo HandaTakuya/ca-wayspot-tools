@@ -105,6 +105,45 @@ const CA_UI = {
         return str.replace(/[&<>'"]/g, tag => charsToReplace[tag] || tag);
     },
 
+    // Popup card shared by user Wayspots and Live POIs — hero photo with the
+    // name and type badge floating over it, then an icon-box info grid
+    // (same layout as the pogodpu.com Pokédex detail page).
+    // opts: { name, typeLabel, color, imgUrl, fallbackIcon, corner, badges, boxes, footer }
+    // boxes: [{ label, value, wide, mono }] — values are inserted as-is, escape before passing.
+    spotCardHTML(opts) {
+        const esc = (s) => this.escapeHTML(String(s ?? ''));
+        const img = opts.imgUrl
+            ? `<img crossorigin="anonymous" class="spot-card-hero-img" src="${esc(opts.imgUrl)}" onerror="this.remove()">`
+            : '';
+        const badges = (opts.badges || []).join('');
+        const boxes = (opts.boxes || []).map(b => `
+            <div class="spot-card-box${b.wide ? ' spot-card-box-wide' : ''}">
+                <div class="spot-card-box-head">
+                    <span class="spot-card-box-label">${b.label}</span>
+                </div>
+                <div class="spot-card-box-value${b.mono ? ' spot-card-mono' : ''}">${b.value}</div>
+            </div>`).join('');
+        return `
+            <div class="spot-card" style="--spot-color: ${esc(opts.color)};">
+                <div class="spot-card-hero">
+                    <div class="spot-card-hero-fallback">${opts.fallbackIcon || '📍'}</div>
+                    ${img}
+                    <div class="spot-card-corner">${opts.corner || ''}</div>
+                    <div class="spot-card-header">
+                        <h4 class="spot-card-name">${esc(opts.name)}</h4>
+                        <div class="spot-card-badges">
+                            <span class="spot-card-type-badge">${esc(opts.typeLabel)}</span>
+                            ${badges}
+                        </div>
+                    </div>
+                </div>
+                <div class="spot-card-body">
+                    <div class="spot-card-grid">${boxes}</div>
+                    ${opts.footer || ''}
+                </div>
+            </div>`;
+    },
+
     generateId() {
         try {
             if (typeof crypto !== 'undefined' && crypto.randomUUID) {

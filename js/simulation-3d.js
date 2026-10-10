@@ -4,12 +4,13 @@
  */
 const CA_Simulation3D = (() => {
     let scene, camera, renderer, controls, animId;
-    let spinParts = [];
+    let poiMixers = [];          // AnimationMixer per POI model
+    let poiTemplates = null;     // loaded GLB props (CA_PoiModels.load)
+    let startTime = 0;
     let playerGroup = null;
     let playerPos   = { x: 0, z: 0 };
     let lastFrameTime = 0;
     let joystickState       = { active: false, jx: 0, jy: 0 };
-    let spinPartsClockwise  = []; // rotates Y = -rot (clockwise from above)
     let zoneRings = [];          // exclusion zone ring meshes (togglable)
 
     // Load a texture — tries crossOrigin img first (works on file:// + HTTPS when server sends CORS *),
@@ -44,20 +45,6 @@ const CA_Simulation3D = (() => {
         powerspot:   0x911042
     };
     const GYM_TYPES = new Set(['gym', 'cagym', 'clgymwayspot']);
-
-    // ทุกโมเดลตั้งต้นใหญ่ขึ้น 30% จากขนาดจริง แล้วปรับต่อจุดตามคำขอ: Gym ใหญ่
-    // ขึ้นอีก 50% จากตรงนั้น แล้วใหญ่ขึ้นอีก 30% ต่อจากนั้นอีกที
-    // (1.3*1.5*1.3=2.535), PokeStop ลดลง 20% จากตรงนั้น (1.3*0.8=1.04),
-    // Power Spot ลดลง 15% จากตรงนั้น (1.3*0.85=1.105)
-    const MODEL_SCALE = {
-        pokestop: 1.3 * 0.8,
-        gym: 1.3 * 1.5 * 1.3,
-        caspot: 1.3,
-        cagym: 1.3 * 1.5 * 1.3,
-        clwayspot: 1.3,
-        clgymwayspot: 1.3 * 1.5 * 1.3,
-        powerspot: 1.3 * 0.85,
-    };
 
     // ── Coordinate helpers ────────────────────────────────────────────────────
 
@@ -231,312 +218,15 @@ const CA_Simulation3D = (() => {
         }
     }
 
-    // ── GLB model loader ──────────────────────────────────────────────────────
-
-
-    // ── POI 3D builders ───────────────────────────────────────────────────────
-
-    function makePokeStop(hex, imgUrl = null) {
-
-        const g      = new THREE.Group();
-        const silver = 0xaabbcc;
-
-        // ── Base & pole ──────────────────────────────────────
-        const base = new THREE.Mesh(
-            new THREE.CylinderGeometry(2, 2.5, 0.4, 12),
-            new THREE.MeshLambertMaterial({ color: silver })
-        );
-        base.position.y = 0.2;
-        g.add(base);
-
-        const pole = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.4, 0.5, 14, 8),
-            new THREE.MeshLambertMaterial({ color: silver })
-        );
-        pole.position.y = 7;
-        g.add(pole);
-
-        // ── Tray platform (item drop area below disc) ────────
-        const trayArm = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.2, 0.2, 4, 6),
-            new THREE.MeshLambertMaterial({ color: silver })
-        );
-        trayArm.position.y = 16;
-        g.add(trayArm);
-
-        const trayBoard = new THREE.Mesh(
-            new THREE.BoxGeometry(4.5, 0.55, 2.5),
-            new THREE.MeshLambertMaterial({ color: hex })
-        );
-        trayBoard.position.y = 18.3;
-        g.add(trayBoard);
-
-        // ── Disc assembly — all elements vertical (face Z) ───
-        const discGroup = new THREE.Group();
-        discGroup.position.y = 24;
-        g.add(discGroup);
-
-        // Main body disc (Pokeball face background)
-        const mainDisc = new THREE.Mesh(
-            new THREE.CylinderGeometry(6.5, 6.5, 0.7, 24),
-            new THREE.MeshLambertMaterial({ color: hex })
-        );
-        mainDisc.rotation.x = Math.PI / 2;
-        discGroup.add(mainDisc);
-
-        // Outer border ring
-        const midRing = new THREE.Mesh(
-            new THREE.TorusGeometry(6.5, 0.45, 6, 32),
-            new THREE.MeshBasicMaterial({ color: hex })
-        );
-        discGroup.add(midRing);
-
-        // POI image — front face
-        const imgMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.FrontSide });
-        const imgDisc = new THREE.Mesh(new THREE.CircleGeometry(6.2, 32), imgMat);
-        imgDisc.position.z = 0.4;
-        discGroup.add(imgDisc);
-
-        // POI image — back face (rotation.y=π keeps image un-mirrored from behind)
-        const imgDiscBack = new THREE.Mesh(new THREE.CircleGeometry(6.2, 32), imgMat);
-        imgDiscBack.position.z = -0.4;
-        imgDiscBack.rotation.y = Math.PI;
-        discGroup.add(imgDiscBack);
-
-        // Load POI image via blob URL to bypass WebGL cross-origin restriction
-        if (imgUrl) {
-            fetchTexture(imgUrl, (tex) => {
-                tex.minFilter = THREE.LinearFilter;
-                tex.generateMipmaps = false;
-                imgMat.map = tex;
-                imgMat.needsUpdate = true;
-            });
-        }
-
-
-        // ── Outer ring group (spinning CW around Y) ──────────
-        const outerRingGrp = new THREE.Group();
-
-        const outerRing = new THREE.Mesh(
-            new THREE.TorusGeometry(8.5, 0.55, 8, 48),
-            new THREE.MeshBasicMaterial({ color: hex })
-        );
-        outerRingGrp.add(outerRing);
-
-        // Arc segment decorations — tangentially placed
-        [0.8, Math.PI + 0.4, Math.PI * 1.65].forEach(angle => {
-            const arc = new THREE.Mesh(
-                new THREE.BoxGeometry(0.5, 2.2, 0.6),
-                new THREE.MeshBasicMaterial({ color: hex })
-            );
-            arc.position.set(Math.cos(angle) * 9.2, Math.sin(angle) * 9.2, 0);
-            arc.rotation.z = angle; // tangential to ring
-            outerRingGrp.add(arc);
-        });
-
-        discGroup.add(outerRingGrp);
-
-        // 60% smaller than Gym (gym scale=1.5, pokestop = 0.6)
-        g.scale.setScalar(0.6);
-
-        return { group: g, spin: [], spinCW: [outerRingGrp] };
-    }
-
-    function makeGym(hex) {
-
-        const g      = new THREE.Group();
-        const silver = 0xb8bcd0;
-        const dark   = 0x38384a;
-
-        // ── Base & pole ──────────────────────────────────────
-        const base = new THREE.Mesh(
-            new THREE.CylinderGeometry(2, 2.5, 0.4, 12),
-            new THREE.MeshLambertMaterial({ color: silver })
-        );
-        base.scale.setScalar(1 / 1.5);   // cancel parent scale → original size
-        base.position.y = 0.2 / 1.5;
-        g.add(base);
-
-        // Pole height extended so its world top (= h/2 + 1.5*pos_y) reaches
-        // the first scaled disc at world y=12.75.  Solving: h=12.75, pos_y=h/3
-        const pole = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.45, 0.55, 12.75, 8),
-            new THREE.MeshLambertMaterial({ color: silver })
-        );
-        pole.scale.setScalar(1 / 1.5);   // cancel parent scale → original thickness
-        pole.position.y = 4.25;           // = 12.75 / 3
-        g.add(pole);
-
-        // ── Lower stacked disc rings ─────────────────────────
-        [[8.5, 4.2], [10.2, 3.8], [11.6, 3.2]].forEach(([y, r]) => {
-            const disc = new THREE.Mesh(
-                new THREE.CylinderGeometry(r, r * 1.06, 0.45, 8),
-                new THREE.MeshLambertMaterial({ color: hex })
-            );
-            disc.position.y = y;
-            g.add(disc);
-        });
-
-        // ── Main hexagonal column ────────────────────────────
-        const col = new THREE.Mesh(
-            new THREE.CylinderGeometry(2.2, 2.6, 11, 6),
-            new THREE.MeshLambertMaterial({ color: dark })
-        );
-        col.position.y = 15;
-        g.add(col);
-
-        // ── Crystal rings (spinning) ─────────────────────────
-        function buildCrystalRing(y, r, rotY) {
-            const gr = new THREE.Group();
-            const torus = new THREE.Mesh(
-                new THREE.TorusGeometry(r, 0.28, 4, 18),
-                new THREE.MeshLambertMaterial({ color: silver })
-            );
-            torus.rotation.x = Math.PI / 2;
-            gr.add(torus);
-            for (let i = 0; i < 5; i++) {
-                const a = (i / 5) * Math.PI * 2;
-                const oct = new THREE.Mesh(
-                    new THREE.OctahedronGeometry(0.65, 0),
-                    new THREE.MeshBasicMaterial({ color: hex })
-                );
-                oct.position.set(Math.cos(a) * r, 0.35, Math.sin(a) * r);
-                oct.rotation.set(0.3, a, 0.2);
-                gr.add(oct);
-            }
-            gr.position.y = y;
-            gr.rotation.y = rotY;
-            return gr;
-        }
-
-        const cring1 = buildCrystalRing(13, 5.0, 0);
-        const cring2 = buildCrystalRing(17, 5.2, Math.PI / 5);
-        g.add(cring1);
-        g.add(cring2);
-
-        // ── Upper platform ───────────────────────────────────
-        const plat = new THREE.Mesh(
-            new THREE.CylinderGeometry(5.5, 5.0, 0.9, 8),
-            new THREE.MeshLambertMaterial({ color: hex })
-        );
-        plat.position.y = 22;
-        g.add(plat);
-
-        // ── Dome ─────────────────────────────────────────────
-        const dome = new THREE.Mesh(
-            new THREE.SphereGeometry(2.8, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.55),
-            new THREE.MeshLambertMaterial({ color: hex })
-        );
-        dome.position.y = 22.9;
-        g.add(dome);
-
-        const hub = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.9, 1.8, 1.5, 6),
-            new THREE.MeshLambertMaterial({ color: dark })
-        );
-        hub.position.y = 24.3;
-        g.add(hub);
-
-        // ── Large spinning halo ──────────────────────────────
-        const haloGrp = new THREE.Group();
-        haloGrp.position.y = 25;
-        const halo = new THREE.Mesh(
-            new THREE.TorusGeometry(7.8, 0.5, 6, 32),
-            new THREE.MeshBasicMaterial({ color: hex })
-        );
-        halo.rotation.x = Math.PI / 2;
-        haloGrp.add(halo);
-        g.add(haloGrp);
-
-        // ── Top cap ──────────────────────────────────────────
-        const topCap = new THREE.Mesh(
-            new THREE.CylinderGeometry(1.3, 1.3, 0.4, 12),
-            new THREE.MeshBasicMaterial({ color: hex })
-        );
-        topCap.position.y = 26.5;
-        g.add(topCap);
-
-        g.scale.setScalar(1.5);
-        return { group: g, spin: [haloGrp, cring1, cring2] };
-    }
-
-    function makePowerSpot() {
-        const g = new THREE.Group();
-        const purple    = 0x9b59b6;
-        const darkPurple= 0x6c3483;
-        const green     = 0x27ae60;
-        const pink      = 0xff44cc;
-
-        // Ground base glow disc
-        const base = new THREE.Mesh(
-            new THREE.CylinderGeometry(1.8, 1.8, 0.4, 20),
-            new THREE.MeshBasicMaterial({ color: pink })
-        );
-        base.position.y = 0.2;
-        g.add(base);
-
-        // Energy beam (ground → funnel tip)
-        const beam = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.45, 0.45, 10, 8),
-            new THREE.MeshBasicMaterial({ color: pink, transparent: true, opacity: 0.9 })
-        );
-        beam.position.y = 5;
-        g.add(beam);
-
-        const beamGlow = new THREE.Mesh(
-            new THREE.CylinderGeometry(1.6, 1.6, 10, 8),
-            new THREE.MeshBasicMaterial({ color: pink, transparent: true, opacity: 0.18, side: THREE.DoubleSide })
-        );
-        beamGlow.position.y = 5;
-        g.add(beamGlow);
-
-        // Funnel — inverted hexagonal cone (wide top @ y=28, tip @ y=10)
-        const funnel = new THREE.Mesh(
-            new THREE.CylinderGeometry(8, 0.8, 18, 6),
-            new THREE.MeshLambertMaterial({ color: darkPurple })
-        );
-        funnel.position.y = 19;
-        g.add(funnel);
-
-        // Inner energy — translucent spinning cone
-        const energy = new THREE.Mesh(
-            new THREE.CylinderGeometry(7.4, 0.4, 18, 14),
-            new THREE.MeshBasicMaterial({ color: pink, transparent: true, opacity: 0.32, side: THREE.DoubleSide })
-        );
-        energy.position.y = 19;
-        g.add(energy);
-
-        // Panel decorations × 3 on upper funnel sides
-        for (let i = 0; i < 3; i++) {
-            const angle = (i / 3) * Math.PI * 2 + Math.PI / 6;
-            const panel = new THREE.Mesh(
-                new THREE.BoxGeometry(2.5, 4.5, 0.7),
-                new THREE.MeshLambertMaterial({ color: purple })
-            );
-            panel.position.set(Math.cos(angle) * 5.8, 23, Math.sin(angle) * 5.8);
-            panel.rotation.y = -angle;
-            g.add(panel);
-        }
-
-        // Arena green inner disc
-        const arena = new THREE.Mesh(
-            new THREE.CylinderGeometry(7, 7, 0.5, 32),
-            new THREE.MeshLambertMaterial({ color: green })
-        );
-        arena.position.y = 28.6;
-        g.add(arena);
-
-        // Platform outer rim — static flat ring
-        const rim = new THREE.Mesh(
-            new THREE.RingGeometry(7.2, 8.8, 32),
-            new THREE.MeshLambertMaterial({ color: purple, side: THREE.DoubleSide })
-        );
-        rim.rotation.x = -Math.PI / 2;
-        rim.position.y = 29.1;
-        g.add(rim);
-
-        return { group: g, spin: [energy] };
-    }
+    // ── POI 3D models ─────────────────────────────────────────────────────────
+    // PokéStop / Gym / Power Spot are the game's own GLB props with their idle
+    // animations and FX (js/poi-models.js). Heights keep the size each model
+    // was tuned to here: PokéStop ~35 m, Gym ~136 m, Power Spot ~38 m.
+    const MODEL_HEIGHT = {
+        pokestop: 35,
+        gym: 136,
+        powerspot: 38.4,
+    };
 
     function makeExclusionZone(x, z, radius, hex) {
         const border = new THREE.Mesh(
@@ -556,6 +246,18 @@ const CA_Simulation3D = (() => {
         m.rotation.x = -Math.PI / 2;
         m.position.y = 0.25;
         return m;
+    }
+
+    // CA gyms are pink and CA PokéStops green; other gyms take a team colour
+    // picked from the spot's id, so a gym keeps its colour every time the view
+    // opens. Other PokéStops stay blue.
+    const GYM_TEAMS = ['mystic', 'valor', 'instinct'];
+    function poiTheme(spot, id) {
+        if (spot.type === 'cagym' || spot.type === 'caspot') return 'ca';
+        if (!GYM_TYPES.has(spot.type)) return undefined;
+        let h = 0;
+        for (let i = 0; i < id.length; i++) h = (Math.imul(h, 31) + id.charCodeAt(i)) | 0;
+        return GYM_TEAMS[Math.abs(h) % GYM_TEAMS.length];
     }
 
     // ── Scene construction ────────────────────────────────────────────────────
@@ -634,28 +336,24 @@ const CA_Simulation3D = (() => {
         playerGroup.add(makeRing(80, 0x009933, 0.75));
         scene.add(playerGroup);
 
-        spinParts = [];
+        poiMixers = [];
         zoneRings = [];
 
         if (spotList.length === 0) return;
 
-        spotList.forEach(spot => {
+        Object.entries(spotsData).forEach(([id, spot]) => {
             const [x, z] = toXZ(spot.lat, spot.lng, cLat, cLng);
             const hex = TYPE_COLORS[spot.type] || 0x007aff;
 
-            // Resolve disc image: local override for CA/CL types, else remote imgUrl
-            const localImg = { caspot: 'poi_img/CA_PokeStop.jpeg', clwayspot: 'poi_img/CL_POI.jpg' };
-            const discImg  = localImg[spot.type] || spot.imgUrl || null;
-
-            const isGym = GYM_TYPES.has(spot.type);
-            const result = isGym ? makeGym(hex)
-                         : spot.type === 'powerspot' ? makePowerSpot()
-                         : makePokeStop(hex, discImg);
-            result.group.position.set(x, 0, z);
-            result.group.scale.setScalar(MODEL_SCALE[spot.type] || 1.3); // ไม่กระทบ exclusion zone ring ที่วาดแยกต่างหาก
-            scene.add(result.group);
-            result.spin.forEach(s => spinParts.push(s));
-            if (result.spinCW) result.spinCW.forEach(s => spinPartsClockwise.push(s));
+            if (poiTemplates) {
+                const kind = GYM_TYPES.has(spot.type) ? 'gym'
+                           : spot.type === 'powerspot' ? 'powerspot'
+                           : 'pokestop';
+                const poi = CA_PoiModels.createInstance(poiTemplates, kind, MODEL_HEIGHT[kind], poiTheme(spot, id));
+                poi.group.position.set(x, 0, z);
+                scene.add(poi.group);
+                if (poi.mixer) poiMixers.push(poi.mixer);
+            }
 
             makeExclusionZone(x, z, 45, hex).forEach(m => { scene.add(m); zoneRings.push(m); });
         });
@@ -721,9 +419,9 @@ const CA_Simulation3D = (() => {
         const delta = Math.min((time - lastFrameTime) / 1000, 0.1);
         lastFrameTime = time;
 
-        const rot = time * 0.0007;
-        for (let i = 0; i < spinParts.length; i++)          spinParts[i].rotation.y          =  rot;
-        for (let i = 0; i < spinPartsClockwise.length; i++) spinPartsClockwise[i].rotation.y = -rot;
+        if (!startTime) startTime = time;
+        for (let i = 0; i < poiMixers.length; i++) poiMixers[i].update(delta);
+        CA_PoiModels.update((time - startTime) / 1000);
 
         // Camera-relative joystick movement
         if (playerGroup && (joystickState.jx !== 0 || joystickState.jy !== 0)) {
@@ -832,8 +530,10 @@ const CA_Simulation3D = (() => {
             });
         }
         scene = camera = controls = null;
-        spinParts = [];
-        spinPartsClockwise = [];
+        poiMixers = [];
+        poiTemplates = null;
+        startTime = 0;
+        CA_PoiModels.dispose();
         zoneRings = [];
         playerGroup = null;
         playerPos = { x: 0, z: 0 };
@@ -857,7 +557,16 @@ const CA_Simulation3D = (() => {
         }
 
         requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
+            requestAnimationFrame(async () => {
+                // Load the GLB props before building; the scene still opens
+                // (without POI models) if they fail.
+                try {
+                    poiTemplates = await CA_PoiModels.load();
+                } catch (err) {
+                    console.warn('[Sim3D] POI models failed to load', err);
+                    poiTemplates = null;
+                }
+                if (overlay.style.display === 'none') { poiTemplates = null; CA_PoiModels.dispose(); return; } // closed while loading
                 initThree();
                 buildScene(buildCombinedSpotsData());
                 initJoystick();

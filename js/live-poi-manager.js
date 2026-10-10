@@ -239,7 +239,7 @@ window.CA_LivePOI = (function () {
 
     function buildPopupHTML(poi) {
         const typeLabel = { pokestop: t('optPokestop'), gym: t('optGym'), powerspot: t('optPowerSpot') }[poi.type] || poi.type;
-        const megaBadge = poi.isMegaEnhancedEligible ? ` <span class="live-poi-mega-badge">⭐ Mega</span>` : '';
+        const megaBadge = poi.isMegaEnhancedEligible ? `<span class="spot-card-badge">⭐ Mega</span>` : '';
         // รูปใหญ่วงกลม — pattern เดียวกับ .popup-spot-image ของ custom marker
         // เดิม แค่ใส่ขอบสีตาม type (ฟ้า=PokéStop, แดง=Gym, ม่วง=Power Spot) ให้
         // ตรงกับสี ring ของ marker บนแผนที่ — ไม่มี imageUrl ก็ใช้รูป default
@@ -247,27 +247,27 @@ window.CA_LivePOI = (function () {
         // ถ้าไม่มีรูป default ด้วยหรือโหลดพัง ค่อย fallback เป็น emoji
         const ringColor = RING_COLOR[poi.type] || '#888';
         const imgSrc = poi.imageUrl || defaultImageFor(poi.type);
-        const img = imgSrc
-            ? `<img crossorigin="anonymous" src="${imgSrc}" class="popup-spot-image" style="border: 3px solid ${ringColor};" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'live-poi-popup-fallback',textContent:'${defaultIconFor(poi.type)}'}))">`
-            : `<div class="live-poi-popup-fallback">${defaultIconFor(poi.type)}</div>`;
         // ปุ่มตา — กดซ่อนจุดนี้ได้ตรงจาก popup เหมือน Wayspot ของผู้ใช้เอง
         // (กด hidden แล้ว marker หลุดจากแผนที่ทันที popup เลยปิดตามไปเอง ไม่ต้อง
         // reopen อะไรเพิ่ม — จะเห็นปุ่มนี้ที่ "👁 ซ่อน" เสมอ เพราะจุดที่ hidden=true
         // อยู่แล้วจะไม่มีทางเปิด popup ได้จากการคลิก marker บนแผนที่)
         const isHidden = hiddenIds.has(poi.id);
         // ไม่มีปุ่มล็อคมาแข่งพื้นที่เหมือน Wayspot ของผู้ใช้เอง — เลื่อนมาชิดซ้ายสุด
-        const hideBtn = `<button class="popup-hide-corner${isHidden ? ' spot-hidden' : ''}" style="left:0;" onclick="window.CA_LivePOI.toggleHidden('${poi.id}')" title="${isHidden ? t('btnShowSpot') : t('btnHideSpot')}">${isHidden ? '🙈' : '👁'}</button>`;
-        return `
-            <div style="text-align:center; min-width:170px; position:relative;">
-                ${hideBtn}
-                <h4 style="margin:0; padding:0 26px;">${CA_UI.escapeHTML(poi.name)}</h4>
-                <span style="font-size:12px; color:var(--text-secondary);">${typeLabel}</span>${megaBadge}
-                ${img}
-                <div style="font-size:11px; color:var(--text-secondary); font-family:monospace;">
-                    ${poi.lat.toFixed(6)}, ${poi.lng.toFixed(6)}
-                </div>
-                <div class="live-poi-readonly-note">${t('livePoiReadOnlyNote')}</div>
-            </div>`;
+        const hideBtn = `<button class="spot-card-btn${isHidden ? ' active' : ''}" onclick="window.CA_LivePOI.toggleHidden('${poi.id}')" title="${isHidden ? t('btnShowSpot') : t('btnHideSpot')}">${isHidden ? '🙈' : '👁'}</button>`;
+        return CA_UI.spotCardHTML({
+            name: poi.name,
+            typeLabel: typeLabel.replace(/ [🔵🔴🌸🟣🍊🟡🟢]/, ''),
+            color: ringColor,
+            imgUrl: imgSrc,
+            fallbackIcon: defaultIconFor(poi.type),
+            corner: hideBtn,
+            badges: [`<span class="spot-card-badge">📡 Wayfarer</span>`, megaBadge],
+            boxes: [
+                { label: t('radiusLabel').replace(' (เมตร)', '').replace(' (meters)', ''), value: `${LIVE_POI_RADIUS} m`, wide: true },
+                { label: t('infoCoords').replace(/:$/, ''), value: `${poi.lat.toFixed(6)}, ${poi.lng.toFixed(6)}`, wide: true, mono: true },
+            ],
+            footer: `<div class="live-poi-readonly-note">${t('livePoiReadOnlyNote')}</div>`,
+        });
     }
 
     // วง Exclusion Zone 45m รอบ POI จริง — รัศมีคงที่ (ไม่ปรับได้เหมือน spot ของ
@@ -305,7 +305,7 @@ window.CA_LivePOI = (function () {
         }
         const circle = buildCircle(poi);
         const marker = L.marker([poi.lat, poi.lng], { icon: buildIcon(poi), interactive: true, keyboard: false });
-        marker.bindPopup(buildPopupHTML(poi));
+        marker.bindPopup(buildPopupHTML(poi), { className: 'spot-popup', minWidth: 260, maxWidth: 260 });
         index.set(poi.id, { marker, circle, poi });
         if (!hiddenIds.has(poi.id)) {
             circle.addTo(group);
@@ -409,9 +409,10 @@ window.CA_LivePOI = (function () {
             'token-error': t('livePoiTokenExpired'),
             'fetch-error': t('livePoiFetchError'),
             'network-error': t('livePoiNetworkError'),
+            'server-unreachable': t('livePoiServerUnreachable'),
         };
         line.textContent = (state === 'loading' || state === 'zoom-too-far') ? messages[state] : '';
-        if (state === 'token-error' || state === 'fetch-error' || state === 'network-error') {
+        if (state === 'token-error' || state === 'fetch-error' || state === 'network-error' || state === 'server-unreachable') {
             errBox.textContent = messages[state] + (extra ? ` (${extra})` : '');
             errBox.style.display = 'block';
         } else {
@@ -467,7 +468,10 @@ window.CA_LivePOI = (function () {
             setStatus('ok');
         } catch (e) {
             if (e.name !== 'AbortError') {
-                setStatus('network-error');
+                // fetch() throws the same TypeError for "offline" and for a
+                // CORS-blocked response — only blame the internet when the
+                // browser actually reports being offline
+                setStatus(navigator.onLine === false ? 'network-error' : 'server-unreachable');
             }
         }
     }

@@ -177,6 +177,7 @@ const CA_I18N = {
         livePoiTokenExpired: "Token หมดอายุหรือไม่ถูกต้อง กรุณาขอ Token ใหม่",
         livePoiFetchError: "โหลดข้อมูล POI ไม่สำเร็จ",
         livePoiNetworkError: "เชื่อมต่อไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ต",
+        livePoiServerUnreachable: "เชื่อมต่อเซิร์ฟเวอร์ POI ไม่ได้ (เซิร์ฟเวอร์ไม่ตอบ หรือถูกบล็อกโดย CORS)",
         livePoiReadOnlyNote: "ข้อมูลจากทาง Wayfarer (ดูอย่างเดียว)",
 
         livePoiTokenCardTitle: "Campfire API Token",
@@ -402,6 +403,7 @@ const CA_I18N = {
         livePoiTokenExpired: "Token expired or invalid — please get a new one",
         livePoiFetchError: "Failed to load POI data",
         livePoiNetworkError: "Connection failed — check your internet",
+        livePoiServerUnreachable: "Can't reach the POI server (no response or blocked by CORS)",
         livePoiReadOnlyNote: "Data from Wayfarer (read-only)",
 
         livePoiTokenCardTitle: "Campfire API Token",
