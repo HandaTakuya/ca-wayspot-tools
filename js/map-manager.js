@@ -15,6 +15,21 @@ const POGO_GMAP_STYLE = [
     { featureType: 'all',                elementType: 'labels.text.fill', stylers: [{ color: '#5f6368' }] },
 ];
 
+// Pokémon GO-style Mapbox raster style. The newer token is URL-restricted to
+// GitHub Pages (403 elsewhere), so other hosts such as localhost use the legacy one.
+const MAPBOX_STYLE = {
+    user: 'yuljang01',
+    styleId: 'cjwiphjwn10lj1cp0nye6wtec',
+    token: location.hostname === 'handatakuya.github.io'
+        ? 'pk.eyJ1IjoieXVsamFuZzAxIiwiYSI6ImNtbzJhaDRvMDBzaWQycHF3amtmMmg1bHUifQ.z6KdZVVik50x4nNb7BEIBg'
+        : 'pk.eyJ1IjoieXVsamFuZzAxIiwiYSI6ImNqd2lwaDEzZTA3a3A0YnA2bTB3amw3bGQifQ.xP7t0DvEJTi97webcHYftg',
+};
+
+function mapboxTileUrl(z, x, y) {
+    const { user, styleId, token } = MAPBOX_STYLE;
+    return `https://api.mapbox.com/styles/v1/${user}/${styleId}/tiles/256/${z}/${x}/${y}?access_token=${token}`;
+}
+
 /**
  * Map Management Module (Leaflet, S2 Grid, Spots)
  */
@@ -32,10 +47,15 @@ const CA_Map = {
         this.map = L.map(elementId, { zoomControl: false, doubleClickZoom: false }).setView(initialView.center, initialView.zoom);
         L.control.zoom({ position: 'bottomleft' }).addTo(this.map);
 
-        this.layers.osm = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 20 });
+        // CARTO basemaps now require an API key — use OSM / Esri instead
+        this.layers.osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20, maxNativeZoom: 19, attribution: '© OpenStreetMap contributors' });
 this.layers.gmap_street = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'] });
         this.layers.gmap_sat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], className: 'no-invert' });
-        this.layers.cartodb_dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20, className: 'no-invert' });
+        const esriCanvas = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+        this.layers.cartodb_dark = L.layerGroup([
+            L.tileLayer(esriCanvas + 'World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20, maxNativeZoom: 16, attribution: 'Tiles © Esri', className: 'no-invert' }),
+            L.tileLayer(esriCanvas + 'World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20, maxNativeZoom: 16, className: 'no-invert' })
+        ]);
 
         const BingLayer = L.TileLayer.extend({
             getTileUrl: function (coords) {
@@ -61,12 +81,11 @@ this.layers.gmap_street = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y=
         return this.map;
     },
 
-    setLayer(layerKey, mapboxOptions = null) {
+    setLayer(layerKey) {
         if (this.currentLayer) this.map.removeLayer(this.currentLayer);
 
-        if (layerKey === 'mapbox' && mapboxOptions) {
-            const { user, styleId, token } = mapboxOptions;
-            const url = `https://api.mapbox.com/styles/v1/${user}/${styleId}/tiles/256/{z}/{x}/{y}?access_token=${token}`;
+        if (layerKey === 'mapbox') {
+            const url = mapboxTileUrl('{z}', '{x}', '{y}');
             this.currentLayer = L.tileLayer(url, { maxZoom: 20, attribution: '© Mapbox', className: 'no-invert' });
         } else {
             this.currentLayer = this.layers[layerKey] || this.layers.gmap_street;

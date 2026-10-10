@@ -673,10 +673,7 @@ window.CAWayspotApp = (function () {
             syncGmapKeyGroup();
 
             if (val === 'mapbox') {
-                const token = "pk.eyJ1IjoieXVsamFuZzAxIiwiYSI6ImNtbzJhaDRvMDBzaWQycHF3amtmMmg1bHUifQ.z6KdZVVik50x4nNb7BEIBg";
-                const user = "yuljang01";
-                const styleId = "cjwiphjwn10lj1cp0nye6wtec";
-                CA_Map.setLayer('mapbox', { user, styleId, token });
+                CA_Map.setLayer('mapbox');
             } else if (val === 'gmap_styled') {
                 const key = localStorage.getItem('caGmapApiKey') || '';
                 if (key) {
@@ -703,7 +700,7 @@ window.CAWayspotApp = (function () {
             document.body.classList[isDark ? 'add' : 'remove']('dark-mode');
             localStorage.setItem('caWayspotDarkMode', isDark);
 
-            // Auto-switch to CartoDB DarkMatter if currently using OSM and turning ON Dark Mode
+            // Auto-switch to the dark basemap (Esri Dark Gray) if currently using OSM and turning ON Dark Mode
             if (isDark) {
                 const mapSelect = document.getElementById('mapLayer');
                 if (mapSelect && mapSelect.value === 'osm') {
@@ -1568,10 +1565,7 @@ window.CAWayspotApp = (function () {
         const savedLayer = localStorage.getItem('caWayspotMapLayer') || 'gmap_street';
         document.getElementById('mapLayer').value = savedLayer;
         if (savedLayer === 'mapbox') {
-            const token = "pk.eyJ1IjoieXVsamFuZzAxIiwiYSI6ImNqd2lwaDEzZTA3a3A0YnA2bTB3amw3bGQifQ.xP7t0DvEJTi97webcHYftg";
-            const user = "yuljang01";
-            const styleId = "cjwiphjwn10lj1cp0nye6wtec";
-            CA_Map.setLayer('mapbox', { user, styleId, token });
+            CA_Map.setLayer('mapbox');
         } else if (savedLayer === 'gmap_styled') {
             const savedKey = localStorage.getItem('caGmapApiKey') || '';
             const keyInput = document.getElementById('gmapApiKey');

@@ -12,6 +12,8 @@ const CA_Simulation3D = (() => {
     let lastFrameTime = 0;
     let joystickState       = { active: false, jx: 0, jy: 0 };
     let zoneRings = [];          // exclusion zone ring meshes (togglable)
+    let groundGroup = null;      // map tile meshes (rebuilt when the 3D map layer changes)
+    let groundCenter = null;     // { lat, lng } the ground was built around
 
     // Load a texture — tries crossOrigin img first (works on file:// + HTTPS when server sends CORS *),
     // falls back to fetch→blob (bypasses WebGL cross-origin for non-null origins).
@@ -80,18 +82,40 @@ const CA_Simulation3D = (() => {
         return Math.atan(Math.sinh(Math.PI * (1 - 2 * tileY / n))) * 180 / Math.PI;
     }
 
-    function getTileUrl(tx, ty, zoom) {
-        const layer = localStorage.getItem('caWayspotMapLayer') || 'osm';
-        const s = ['a', 'b', 'c'][(tx + ty) % 3];
+    // OSM standard tiles (CARTO basemaps now require an API key)
+    function osmTileUrl(tx, ty, zoom) {
+        return `https://tile.openstreetmap.org/${zoom}/${tx}/${ty}.png`;
+    }
+
+    // Esri dark gray canvas only has real tiles up to z16 — callers crop the parent tile
+    const ESRI_DARK_MAX_ZOOM = 16;
+
+    // 3D map layer: 'auto' follows the main map's layer, otherwise its own choice
+    const SIM3D_LAYER_KEY = 'caWayspotSim3dLayer';
+
+    function getLayer() {
+        const own = localStorage.getItem(SIM3D_LAYER_KEY) || 'auto';
+        return own === 'auto' ? (localStorage.getItem('caWayspotMapLayer') || 'osm') : own;
+    }
+
+    function getTileUrl(tx, ty, zoom, layer) {
         switch (layer) {
-            case 'cartodb_dark':
-                return `https://${s}.basemaps.cartocdn.com/dark_all/${zoom}/${tx}/${ty}.png`;
+            case 'cartodb_dark': {
+                const shift = Math.max(0, zoom - ESRI_DARK_MAX_ZOOM);
+                return `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${zoom - shift}/${ty >> shift}/${tx >> shift}`;
+            }
             case 'mapbox':
-                // Works on HTTPS (localhost / GitHub Pages). Blocked on file:// (null origin).
-                return `https://api.mapbox.com/styles/v1/yuljang01/cjwiphjwn10lj1cp0nye6wtec/tiles/256/${zoom}/${tx}/${ty}?access_token=pk.eyJ1IjoieXVsamFuZzAxIiwiYSI6ImNtbzJhaDRvMDBzaWQycHF3amtmMmg1bHUifQ.z6KdZVVik50x4nNb7BEIBg`;
-            // gmap_street / gmap_sat / bing → no CORS, fall back to CartoDB voyager
+                return mapboxTileUrl(zoom, tx, ty);
+            case 'esri_sat':
+                return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${ty}/${tx}`;
+            // Google tiles send Access-Control-Allow-Origin: *, so they work as WebGL textures
+            case 'gmap_street':
+                return `https://mt${(tx + ty) % 4}.google.com/vt/lyrs=m&x=${tx}&y=${ty}&z=${zoom}`;
+            case 'gmap_sat':
+                return `https://mt${(tx + ty) % 4}.google.com/vt/lyrs=y&x=${tx}&y=${ty}&z=${zoom}`;
+            // bing → no CORS, fall back to OSM
             default:
-                return `https://${s}.basemaps.cartocdn.com/rastertiles/voyager/${zoom}/${tx}/${ty}.png`;
+                return osmTileUrl(tx, ty, zoom);
         }
     }
 
@@ -148,11 +172,18 @@ const CA_Simulation3D = (() => {
         const R      = 6371000;
         const cosLat = Math.cos(cLat * Math.PI / 180);
 
-        const layer   = localStorage.getItem('caWayspotMapLayer') || 'osm';
+        const layer   = getLayer();
         // Fallback color: matches the map's dominant palette while tiles load
         const fallback = layer === 'cartodb_dark' ? 0x252535
                        : layer === 'mapbox'       ? 0xd4eac0   // Pokemon GO greenish
+                       : layer === 'esri_sat' || layer === 'gmap_sat' ? 0x4a5240
+                       : layer === 'gmap_street'  ? 0xe8e8e8
                        : 0xddd8c8;
+
+        groundCenter = { lat: cLat, lng: cLng };
+        const group = new THREE.Group();
+        groundGroup = group;
+        scene.add(group);
 
         // Wide background so sky/horizon never shows below the tile grid
         const bg = new THREE.Mesh(
@@ -161,7 +192,7 @@ const CA_Simulation3D = (() => {
         );
         bg.rotation.x = -Math.PI / 2;
         bg.position.y = -0.5;
-        scene.add(bg);
+        group.add(bg);
 
         const RADIUS = 7; // 15 × 15 grid at zoom 19 — ~550m radius, max detail
         const BLEED  = 1; // 1 m overlap on each side to close seams
@@ -196,9 +227,17 @@ const CA_Simulation3D = (() => {
                 const plane = new THREE.Mesh(new THREE.PlaneGeometry(tileW, tileH), mat);
                 plane.rotation.x = -Math.PI / 2;
                 plane.position.set(centerX, yOffset, centerZ);
-                scene.add(plane);
+                group.add(plane);
 
-                const applyTex = (tex) => {
+                const applyTex = (tex, crop) => {
+                    // Ground was rebuilt (layer switched) or scene closed while loading
+                    if (groundGroup !== group) { tex.dispose(); return; }
+                    if (crop) {
+                        // Show only this tile's sub-square of a lower-zoom parent tile
+                        const k = 1 << crop;
+                        tex.repeat.set(1 / k, 1 / k);
+                        tex.offset.set((tx % k) / k, 1 - ((ty % k) + 1) / k);
+                    }
                     tex.generateMipmaps = true;
                     tex.minFilter       = THREE.LinearMipmapLinearFilter;
                     tex.magFilter       = THREE.LinearFilter;
@@ -209,10 +248,9 @@ const CA_Simulation3D = (() => {
                     mat.color.setHex(0xffffff);
                     mat.needsUpdate = true;
                 };
-                const s3 = ['a', 'b', 'c'][(tx + ty) % 3];
-                const fallbackTileUrl = `https://${s3}.basemaps.cartocdn.com/rastertiles/voyager/${ZOOM}/${tx}/${ty}.png`;
-                fetchTexture(getTileUrl(tx, ty, ZOOM), applyTex,
-                    () => fetchTexture(fallbackTileUrl, applyTex)
+                const crop = layer === 'cartodb_dark' ? Math.max(0, ZOOM - ESRI_DARK_MAX_ZOOM) : 0;
+                fetchTexture(getTileUrl(tx, ty, ZOOM, layer), tex => applyTex(tex, crop),
+                    () => fetchTexture(osmTileUrl(tx, ty, ZOOM), tex => applyTex(tex, 0))
                 );
             }
         }
@@ -221,11 +259,11 @@ const CA_Simulation3D = (() => {
     // ── POI 3D models ─────────────────────────────────────────────────────────
     // PokéStop / Gym / Power Spot are the game's own GLB props with their idle
     // animations and FX (js/poi-models.js). Heights keep the size each model
-    // was tuned to here: PokéStop ~35 m, Gym ~136 m, Power Spot ~38 m.
+    // was tuned to here: PokéStop ~35 m, Gym ~157 m, Power Spot ~50 m.
     const MODEL_HEIGHT = {
         pokestop: 35,
-        gym: 136,
-        powerspot: 38.4,
+        gym: 136 * 1.1 * 1.05,
+        powerspot: 38.4 * 1.3,
     };
 
     function makeExclusionZone(x, z, radius, hex) {
@@ -248,13 +286,13 @@ const CA_Simulation3D = (() => {
         return m;
     }
 
-    // CA gyms are pink and CA PokéStops green; other gyms take a team colour
-    // picked from the spot's id, so a gym keeps its colour every time the view
-    // opens. Other PokéStops stay blue.
+    // CA gyms stay neutral white and CA PokéStops green; other gyms take a team
+    // colour picked from the spot's id, so a gym keeps its colour every time the
+    // view opens. Other PokéStops stay blue.
     const GYM_TEAMS = ['mystic', 'valor', 'instinct'];
     function poiTheme(spot, id) {
-        if (spot.type === 'cagym' || spot.type === 'caspot') return 'ca';
-        if (!GYM_TYPES.has(spot.type)) return undefined;
+        if (spot.type === 'caspot') return 'ca';
+        if (spot.type === 'cagym' || !GYM_TYPES.has(spot.type)) return undefined;
         let h = 0;
         for (let i = 0; i < id.length; i++) h = (Math.imul(h, 31) + id.charCodeAt(i)) | 0;
         return GYM_TEAMS[Math.abs(h) % GYM_TEAMS.length];
@@ -262,18 +300,20 @@ const CA_Simulation3D = (() => {
 
     // ── Scene construction ────────────────────────────────────────────────────
 
-    function buildScene(spotsData) {
-        const spotList = Object.values(spotsData);
+    // Spots farther than this from the center fall outside the tile ground
+    const SCENE_RADIUS_M = 600;
 
-        // Use spot centroid or fall back to current map center
-        let cLat, cLng;
-        if (spotList.length > 0) {
-            cLat = spotList.reduce((s, sp) => s + sp.lat, 0) / spotList.length;
-            cLng = spotList.reduce((s, sp) => s + sp.lng, 0) / spotList.length;
-        } else {
-            const c = CA_Map.map.getCenter();
-            cLat = c.lat; cLng = c.lng;
-        }
+    function buildScene(allSpotsData) {
+        // Center on what the Map View is showing. A centroid of every spot drifts
+        // to another area when the project or loaded Live POIs span several places.
+        const c = CA_Map.map.getCenter();
+        const cLat = c.lat, cLng = c.lng;
+
+        const spotsData = {};
+        Object.entries(allSpotsData).forEach(([id, sp]) => {
+            if (haversine(cLat, cLng, sp.lat, sp.lng) <= SCENE_RADIUS_M) spotsData[id] = sp;
+        });
+        const spotList = Object.values(spotsData);
 
         buildSky();
         buildMapGround(cLat, cLng);
@@ -535,6 +575,8 @@ const CA_Simulation3D = (() => {
         startTime = 0;
         CA_PoiModels.dispose();
         zoneRings = [];
+        groundGroup = null;
+        groundCenter = null;
         playerGroup = null;
         playerPos = { x: 0, z: 0 };
         lastFrameTime = 0;
@@ -548,6 +590,7 @@ const CA_Simulation3D = (() => {
     function open() {
         const overlay = document.getElementById('sim3d-overlay');
         overlay.style.display = 'flex';
+        syncLayerSelect();
 
         const fabContainer = document.getElementById('fab-menu-container');
         if (fabContainer && fabContainer.classList.contains('active')) {
@@ -612,5 +655,31 @@ const CA_Simulation3D = (() => {
         if (btn) btn.textContent = visible ? '⭕ รัศมี' : '🚫 รัศมี';
     }
 
-    return { open, close, resetView, toggleZoneRings };
+    function disposeGround() {
+        if (!groundGroup) return;
+        scene.remove(groundGroup);
+        groundGroup.traverse(o => {
+            if (o.geometry) o.geometry.dispose();
+            if (o.material) {
+                if (o.material.map) o.material.map.dispose();
+                o.material.dispose();
+            }
+        });
+        groundGroup = null;
+    }
+
+    function setMapLayer(val) {
+        localStorage.setItem(SIM3D_LAYER_KEY, val);
+        if (!scene || !groundCenter) return;
+        const { lat, lng } = groundCenter;
+        disposeGround();
+        buildMapGround(lat, lng);
+    }
+
+    function syncLayerSelect() {
+        const sel = document.getElementById('sim3d-layer-select');
+        if (sel) sel.value = localStorage.getItem(SIM3D_LAYER_KEY) || 'auto';
+    }
+
+    return { open, close, resetView, toggleZoneRings, setMapLayer };
 })();

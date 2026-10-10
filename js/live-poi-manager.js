@@ -239,7 +239,7 @@ window.CA_LivePOI = (function () {
 
     function buildPopupHTML(poi) {
         const typeLabel = { pokestop: t('optPokestop'), gym: t('optGym'), powerspot: t('optPowerSpot') }[poi.type] || poi.type;
-        const megaBadge = poi.isMegaEnhancedEligible ? `<span class="spot-card-badge">⭐ Mega</span>` : '';
+        const megaBadge = poi.isMegaEnhancedEligible ? `<span class="spot-card-badge">Super Mega</span>` : '';
         // รูปใหญ่วงกลม — pattern เดียวกับ .popup-spot-image ของ custom marker
         // เดิม แค่ใส่ขอบสีตาม type (ฟ้า=PokéStop, แดง=Gym, ม่วง=Power Spot) ให้
         // ตรงกับสี ring ของ marker บนแผนที่ — ไม่มี imageUrl ก็ใช้รูป default
@@ -261,7 +261,7 @@ window.CA_LivePOI = (function () {
             imgUrl: imgSrc,
             fallbackIcon: defaultIconFor(poi.type),
             corner: hideBtn,
-            badges: [`<span class="spot-card-badge">📡 Wayfarer</span>`, megaBadge],
+            badges: [`<span class="spot-card-badge">Wayfarer</span>`, megaBadge],
             boxes: [
                 { label: t('radiusLabel').replace(' (เมตร)', '').replace(' (meters)', ''), value: `${LIVE_POI_RADIUS} m`, wide: true },
                 { label: t('infoCoords').replace(/:$/, ''), value: `${poi.lat.toFixed(6)}, ${poi.lng.toFixed(6)}`, wide: true, mono: true },

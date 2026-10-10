@@ -151,7 +151,7 @@
                                 <option value="gmap_street" data-i18n="optGmapStreet">Google Maps (ถนน)</option>
                                 <option value="gmap_sat" data-i18n="optGmapSat">Google Maps (ดาวเทียม)</option>
                                 <option value="osm" data-i18n="optOsm">OpenStreetMap</option>
-                                <option value="cartodb_dark" data-i18n="optCartoDark">CartoDB DarkMatter</option>
+                                <option value="cartodb_dark" data-i18n="optCartoDark">Dark Gray (Esri)</option>
                                 <option value="bing" data-i18n="optBing">Bing Maps (Satellite)</option>
                                 <option value="mapbox" data-i18n="optMapbox">Pokemon GO Map</option>
 <option value="gmap_styled" data-i18n="optGmapStyled">Google Maps (Pokemon GO Style)</option>
@@ -664,6 +664,15 @@
                 <span style="color:#555; font-size:11px;" id="sim3d-hint">ลากเพื่อหมุน · Scroll ซูม · Pinch ซูม (มือถือ)</span>
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
+                <select id="sim3d-layer-select" onchange="CA_Simulation3D.setMapLayer(this.value)" title="แผนที่พื้น 3D" style="background:rgba(255,255,255,0.1); color:#ddd; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px 8px; cursor:pointer; font-size:13px; font-family:inherit;">
+                    <option value="auto" style="color:#000;">🗺️ ตามแผนที่หลัก</option>
+                    <option value="gmap_street" style="color:#000;">Google Maps</option>
+                    <option value="gmap_sat" style="color:#000;">Google ดาวเทียม</option>
+                    <option value="osm" style="color:#000;">OpenStreetMap</option>
+                    <option value="mapbox" style="color:#000;">Pokémon GO Style</option>
+                    <option value="cartodb_dark" style="color:#000;">Dark</option>
+                    <option value="esri_sat" style="color:#000;">ดาวเทียม (Esri)</option>
+                </select>
                 <button id="btn-sim3d-rings" onclick="CA_Simulation3D.toggleZoneRings()" style="background:rgba(255,255,255,0.1); color:#ddd; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px 12px; cursor:pointer; font-size:13px;">⭕ รัศมี</button>
                 <button id="btn-sim3d-reset" style="background:rgba(255,255,255,0.1); color:#ddd; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px 12px; cursor:pointer; font-size:13px;">🔄</button>
                 <button id="btn-sim3d-close" style="background:rgba(255,80,80,0.2); color:#ff8888; border:1px solid rgba(255,80,80,0.3); border-radius:8px; padding:6px 14px; cursor:pointer; font-size:13px; font-weight:600;">✕</button>
