@@ -35,7 +35,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=4.1.0" />
+    <link rel="stylesheet" href="style.css?v=4.1.5" />
 </head>
 
 <body>
@@ -519,7 +519,7 @@
             </div>
 
             <div class="app-info-footer">
-                CA Wayspot Tools v4.1.0<br>
+                CA Wayspot Tools v4.1.5<br>
                 <span data-i18n="credits">จัดทำโดย CA: Community Ambassador Thailand</span>
             </div>
 
@@ -663,7 +663,7 @@
                 <span style="color:white; font-size:15px; font-weight:700;">🎮 จำลองตำแหน่ง 3D</span>
                 <span style="color:#555; font-size:11px;" id="sim3d-hint">ลากเพื่อหมุน · Scroll ซูม · Pinch ซูม (มือถือ)</span>
             </div>
-            <div style="display:flex; gap:8px; align-items:center;">
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
                 <select id="sim3d-layer-select" onchange="CA_Simulation3D.setMapLayer(this.value)" title="แผนที่พื้น 3D" style="background:rgba(255,255,255,0.1); color:#ddd; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px 8px; cursor:pointer; font-size:13px; font-family:inherit;">
                     <option value="auto" style="color:#000;">🗺️ ตามแผนที่หลัก</option>
                     <option value="gmap_street" style="color:#000;">Google Maps</option>
@@ -673,6 +673,8 @@
                     <option value="cartodb_dark" style="color:#000;">Dark</option>
                     <option value="esri_sat" style="color:#000;">ดาวเทียม (Esri)</option>
                 </select>
+                <button id="btn-sim3d-wayfarer" onclick="CA_Simulation3D.toggleWayfarer()" title="แสดง/ซ่อน POI จาก Wayfarer" style="background:rgba(255,255,255,0.1); color:#ddd; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px 12px; cursor:pointer; font-size:13px;">📍 Wayfarer</button>
+                <button id="btn-sim3d-hidden" onclick="CA_Simulation3D.toggleShowHidden()" title="แสดง/ซ่อนจุดที่ถูกซ่อนบนแผนที่หลัก" style="background:rgba(255,255,255,0.1); color:#ddd; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px 12px; cursor:pointer; font-size:13px;">🙈 จุดที่ซ่อน</button>
                 <button id="btn-sim3d-rings" onclick="CA_Simulation3D.toggleZoneRings()" style="background:rgba(255,255,255,0.1); color:#ddd; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px 12px; cursor:pointer; font-size:13px;">⭕ รัศมี</button>
                 <button id="btn-sim3d-reset" style="background:rgba(255,255,255,0.1); color:#ddd; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px 12px; cursor:pointer; font-size:13px;">🔄</button>
                 <button id="btn-sim3d-close" style="background:rgba(255,80,80,0.2); color:#ff8888; border:1px solid rgba(255,80,80,0.3); border-radius:8px; padding:6px 14px; cursor:pointer; font-size:13px; font-weight:600;">✕</button>
@@ -694,17 +696,17 @@
     </div>
 
     <!-- Modules -->
-    <script src="js/i18n-data.js?v=4.1.0"></script>
-    <script src="js/storage-manager.js?v=4.1.0"></script>
-    <script src="js/sync-provider.js?v=4.1.0"></script>
-    <script src="js/map-manager.js?v=4.1.0"></script>
-    <script src="js/ui-controller.js?v=4.1.0"></script>
-    <script src="js/collab-manager.js?v=4.1.0"></script>
-    <script src="js/poi-models.js?v=4.1.0"></script>
-    <script src="js/simulation-3d.js?v=4.1.0"></script>
-    <script src="js/live-poi-manager.js?v=4.1.0"></script>
+    <script src="js/i18n-data.js?v=4.1.5"></script>
+    <script src="js/storage-manager.js?v=4.1.5"></script>
+    <script src="js/sync-provider.js?v=4.1.5"></script>
+    <script src="js/map-manager.js?v=4.1.5"></script>
+    <script src="js/ui-controller.js?v=4.1.5"></script>
+    <script src="js/collab-manager.js?v=4.1.5"></script>
+    <script src="js/poi-models.js?v=4.1.5"></script>
+    <script src="js/simulation-3d.js?v=4.1.5"></script>
+    <script src="js/live-poi-manager.js?v=4.1.5"></script>
     <!-- Main App -->
-    <script src="app.js?v=4.1.0"></script>
+    <script src="app.js?v=4.1.5"></script>
 </body>
 
 </html>

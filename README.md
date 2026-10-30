@@ -1,4 +1,4 @@
-# 📍 CA Wayspot Tools (v4.1.0)
+# 📍 CA Wayspot Tools (v4.1.5)
 
 ![CA Wayspot Tools Preview](./img/preview.png)
 

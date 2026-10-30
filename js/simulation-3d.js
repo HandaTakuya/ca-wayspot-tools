@@ -12,6 +12,8 @@ const CA_Simulation3D = (() => {
     let lastFrameTime = 0;
     let joystickState       = { active: false, jx: 0, jy: 0 };
     let zoneRings = [];          // exclusion zone ring meshes (togglable)
+    let ringsOn = true;
+    let poiEntries = [];         // { objects, wayfarer, hidden } per spot — toggled by the filter buttons
     let groundGroup = null;      // map tile meshes (rebuilt when the 3D map layer changes)
     let groundCenter = null;     // { lat, lng } the ground was built around
 
@@ -92,6 +94,20 @@ const CA_Simulation3D = (() => {
 
     // 3D map layer: 'auto' follows the main map's layer, otherwise its own choice
     const SIM3D_LAYER_KEY = 'caWayspotSim3dLayer';
+    // 3D-only filters: show Wayfarer (Live POI) poles / show spots hidden on the main map
+    const SIM3D_SHOW_WAYFARER_KEY = 'caWayspotSim3dShowWayfarer';
+    const SIM3D_SHOW_HIDDEN_KEY   = 'caWayspotSim3dShowHidden';
+
+    function getFlag(key, def) {
+        try {
+            const v = localStorage.getItem(key);
+            return v === null ? def : v === '1';
+        } catch (e) { return def; }
+    }
+
+    function setFlag(key, on) {
+        try { localStorage.setItem(key, on ? '1' : '0'); } catch (e) { /* ignore */ }
+    }
 
     function getLayer() {
         const own = localStorage.getItem(SIM3D_LAYER_KEY) || 'auto';
@@ -378,12 +394,17 @@ const CA_Simulation3D = (() => {
 
         poiMixers = [];
         zoneRings = [];
+        poiEntries = [];
+        ringsOn = true;
+        syncFilterButtons();
 
         if (spotList.length === 0) return;
 
         Object.entries(spotsData).forEach(([id, spot]) => {
             const [x, z] = toXZ(spot.lat, spot.lng, cLat, cLng);
             const hex = TYPE_COLORS[spot.type] || 0x007aff;
+            const entry = { objects: [], rings: [], wayfarer: !!spot.wayfarer, hidden: !!spot.hidden };
+            poiEntries.push(entry);
 
             if (poiTemplates) {
                 const kind = GYM_TYPES.has(spot.type) ? 'gym'
@@ -392,10 +413,26 @@ const CA_Simulation3D = (() => {
                 const poi = CA_PoiModels.createInstance(poiTemplates, kind, MODEL_HEIGHT[kind], poiTheme(spot, id));
                 poi.group.position.set(x, 0, z);
                 scene.add(poi.group);
+                entry.objects.push(poi.group);
                 if (poi.mixer) poiMixers.push(poi.mixer);
             }
 
-            makeExclusionZone(x, z, 45, hex).forEach(m => { scene.add(m); zoneRings.push(m); });
+            makeExclusionZone(x, z, 45, hex).forEach(m => { scene.add(m); zoneRings.push(m); entry.rings.push(m); });
+        });
+        applyPoiVisibility();
+    }
+
+    function isEntryShown(entry) {
+        if (entry.wayfarer && !getFlag(SIM3D_SHOW_WAYFARER_KEY, true)) return false;
+        if (entry.hidden && !getFlag(SIM3D_SHOW_HIDDEN_KEY, false)) return false;
+        return true;
+    }
+
+    function applyPoiVisibility() {
+        poiEntries.forEach(entry => {
+            const shown = isEntryShown(entry);
+            entry.objects.forEach(o => { o.visible = shown; });
+            entry.rings.forEach(m => { m.visible = shown && ringsOn; });
         });
     }
 
@@ -575,6 +612,7 @@ const CA_Simulation3D = (() => {
         startTime = 0;
         CA_PoiModels.dispose();
         zoneRings = [];
+        poiEntries = [];
         groundGroup = null;
         groundCenter = null;
         playerGroup = null;
@@ -619,14 +657,29 @@ const CA_Simulation3D = (() => {
         });
     }
 
-    // รวม Wayspot ที่ผู้ใช้สร้างเองกับ POI จริงจาก Wayfarer (ที่ยังไม่ถูกซ่อน)
-    // เป็น object เดียวกันก่อนส่งเข้า buildScene — ให้จำลอง 3D เห็นทั้งสองแหล่ง
+    // รวม Wayspot ที่ผู้ใช้สร้างเองกับ POI จริงจาก Wayfarer เป็น object เดียวกัน
+    // ก่อนส่งเข้า buildScene — ใส่ทุกจุด (รวมจุดที่ซ่อนบนแผนที่หลัก) แต่ติดธง
+    // wayfarer / hidden ไว้ ให้ปุ่มกรองในหน้า 3D เปิด/ปิดได้โดยไม่ต้องสร้างฉากใหม่
+    // "hidden" = ไม่ได้แสดงบนแผนที่หลักอยู่ (ซ่อนทีละจุด หรือปิด checkbox ทั้ง type)
     function buildCombinedSpotsData() {
-        const combined = Object.assign({}, CA_Map.spotsData);
+        const typeFilterOff = id => {
+            const el = document.getElementById(id);
+            return !!el && !el.checked;
+        };
+        const combined = {};
+        Object.entries(CA_Map.spotsData).forEach(([id, sp]) => {
+            combined[id] = Object.assign({}, sp, {
+                wayfarer: false,
+                hidden: !!sp.hidden || typeFilterOff('filter-' + sp.type)
+            });
+        });
         if (window.CA_LivePOI && CA_LivePOI.getAllPoiList) {
             CA_LivePOI.getAllPoiList().forEach(p => {
-                if (p.hidden) return;
-                combined[p.id] = { type: p.type, name: p.name, lat: p.lat, lng: p.lng, imgUrl: p.imgUrl };
+                combined[p.id] = {
+                    type: p.type, name: p.name, lat: p.lat, lng: p.lng, imgUrl: p.imgUrl,
+                    wayfarer: true,
+                    hidden: !!p.hidden || typeFilterOff('filter-live-' + p.type)
+                };
             });
         }
         return combined;
@@ -649,10 +702,31 @@ const CA_Simulation3D = (() => {
     window.addEventListener('resize', onResize);
 
     function toggleZoneRings() {
-        const btn = document.getElementById('btn-sim3d-rings');
-        const visible = zoneRings.length > 0 && zoneRings[0].visible;
-        zoneRings.forEach(m => { m.visible = !visible; });
-        if (btn) btn.textContent = visible ? '⭕ รัศมี' : '🚫 รัศมี';
+        ringsOn = !ringsOn;
+        applyPoiVisibility();
+        syncFilterButtons();
+    }
+
+    function toggleWayfarer() {
+        setFlag(SIM3D_SHOW_WAYFARER_KEY, !getFlag(SIM3D_SHOW_WAYFARER_KEY, true));
+        applyPoiVisibility();
+        syncFilterButtons();
+    }
+
+    function toggleShowHidden() {
+        setFlag(SIM3D_SHOW_HIDDEN_KEY, !getFlag(SIM3D_SHOW_HIDDEN_KEY, false));
+        applyPoiVisibility();
+        syncFilterButtons();
+    }
+
+    // ป้ายปุ่มบอกสถานะปัจจุบัน (เหมือนปุ่มรัศมีเดิม: ⭕ = เปิดอยู่, 🚫 = ปิดอยู่)
+    function syncFilterButtons() {
+        const rings = document.getElementById('btn-sim3d-rings');
+        if (rings) rings.textContent = ringsOn ? '⭕ รัศมี' : '🚫 รัศมี';
+        const wf = document.getElementById('btn-sim3d-wayfarer');
+        if (wf) wf.textContent = getFlag(SIM3D_SHOW_WAYFARER_KEY, true) ? '📍 Wayfarer' : '🚫 Wayfarer';
+        const hid = document.getElementById('btn-sim3d-hidden');
+        if (hid) hid.textContent = getFlag(SIM3D_SHOW_HIDDEN_KEY, false) ? '👁 จุดที่ซ่อน' : '🙈 จุดที่ซ่อน';
     }
 
     function disposeGround() {
@@ -681,5 +755,5 @@ const CA_Simulation3D = (() => {
         if (sel) sel.value = localStorage.getItem(SIM3D_LAYER_KEY) || 'auto';
     }
 
-    return { open, close, resetView, toggleZoneRings, setMapLayer };
+    return { open, close, resetView, toggleZoneRings, toggleWayfarer, toggleShowHidden, setMapLayer };
 })();
